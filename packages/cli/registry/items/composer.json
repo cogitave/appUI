@@ -1,0 +1,339 @@
+{
+  "name": "composer",
+  "title": "Composer",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A responsive message composer with model selection, attachments, voice action, project context, and working state.",
+  "sections": [
+    "Preview",
+    "Working state",
+    "Send and attach"
+  ],
+  "example": "<Composer onSend={sendMessage} models={models}\n  branch=\"Main\" project=\"studio\" contextPercent={57} />",
+  "entryFiles": [
+    "components/blocks/composer/composer.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/composer/composer.tsx",
+      "names": [
+        "Composer",
+        "ComposerProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/dropdown/dropdown.tsx",
+      "content": "'use client';\n\nimport { createContext, useContext, useLayoutEffect, useRef, useState } from 'react';\nimport type { ComponentProps, ReactNode } from 'react';\nimport { Button as AriaButton, Dialog, DialogTrigger, Popover } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { IconButton, type IconButtonProps } from '@/components/base/buttons/icon-button';\n\nconst DropdownContext = createContext<{ close: () => void; isOpen: boolean } | null>(null);\n\nexport interface DropdownProps {\n  isOpen?: boolean;\n  defaultOpen?: boolean;\n  onOpenChange?: (isOpen: boolean) => void;\n  children: ReactNode;\n}\n\nexport function Dropdown({ isOpen, defaultOpen = false, onOpenChange, children }: DropdownProps) {\n  const [internalOpen, setInternalOpen] = useState(defaultOpen);\n  const open = isOpen === undefined ? internalOpen : isOpen;\n  function setOpen(next: boolean) {\n    if (isOpen === undefined) setInternalOpen(next);\n    onOpenChange?.(next);\n  }\n  return <DropdownContext.Provider value={{ close: () => setOpen(false), isOpen: open }}><DialogTrigger isOpen={open} onOpenChange={setOpen}>{children}</DialogTrigger></DropdownContext.Provider>;\n}\n\nexport type DropdownTriggerProps = Omit<ComponentProps<typeof AriaButton>, 'className'> & { className?: string };\nexport function DropdownTrigger({ className, ...props }: DropdownTriggerProps) {\n  return <AriaButton {...props} className={cx('ui-dropdown-trigger', className)} />;\n}\n\n// Icon triggers use the same dimensions as every other icon button.\nexport function DropdownIconTrigger(props: IconButtonProps) {\n  return <IconButton {...props} />;\n}\n\nexport interface DropdownPopoverProps {\n  'aria-label': string;\n  placement?: ComponentProps<typeof Popover>['placement'];\n  triggerRef?: ComponentProps<typeof Popover>['triggerRef'];\n  isOpen?: boolean;\n  onOpenChange?: (open: boolean) => void;\n  offset?: number;\n  className?: string;\n  children: ReactNode;\n}\n\nexport function DropdownPopover({ 'aria-label': ariaLabel, placement = 'bottom start', triggerRef, isOpen, onOpenChange, offset = 5, className, children }: DropdownPopoverProps) {\n  const context = useContext(DropdownContext);\n  const open = isOpen ?? context?.isOpen;\n  const dialogRef = useRef<HTMLElement>(null);\n  useLayoutEffect(() => {\n    if (!open) return;\n    // An interrupted exit keeps the popover mounted, so its focus scope does\n    // not mount again. Restore focus inside on every opening, including reopens.\n    const frame = requestAnimationFrame(() => {\n      const dialog = dialogRef.current;\n      if (dialog && (!dialog.contains(document.activeElement) || document.activeElement === dialog)) {\n        (dialog.querySelector<HTMLElement>('[role=\"menuitem\"]:not(:disabled), input:not([disabled]), textarea:not([disabled])') ?? dialog).focus({ preventScroll: true });\n      }\n    });\n    return () => cancelAnimationFrame(frame);\n  }, [open]);\n  return <Popover placement={placement} data-align={placement.split(' ')[1] ?? 'center'} triggerRef={triggerRef} isOpen={isOpen} onOpenChange={onOpenChange} offset={offset} className={cx('ui-dropdown-popover', className)}>{({isExiting})=><div className=\"ui-dropdown-content\" onKeyDown={event => {\n    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;\n    // Native text/range controls keep their own navigation keys.\n    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;\n    const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('.ui-dropdown-item:not(:disabled), [role=\"menuitem\"]:not(:disabled)'));\n    if (!items.length) return;\n    event.preventDefault();\n    const active = items.indexOf(document.activeElement as HTMLButtonElement);\n    const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : event.key === 'ArrowDown' ? (active + 1) % items.length : (active - 1 + items.length) % items.length;\n    items[next].focus();\n  }}><Dialog inert={isExiting} ref={dialogRef} aria-label={ariaLabel} className=\"ui-dropdown-dialog\"><div>{children}</div></Dialog></div>}</Popover>;\n}\n\nexport function DropdownGroup({ label, children, className }: { label?: string; children: ReactNode; className?: string }) {\n  return <div className={cx('ui-dropdown-group', className)}>{label && <span className=\"ui-dropdown-group__label\">{label}</span>}<div className=\"ui-dropdown-group__items\">{children}</div></div>;\n}\n\nexport interface DropdownItemProps {\n  selected?: boolean;\n  isDisabled?: boolean;\n  closeOnSelect?: boolean;\n  onSelect?: () => void;\n  className?: string;\n  children: ReactNode;\n}\n\nexport function DropdownItem({ selected, isDisabled, closeOnSelect = true, onSelect, className, children }: DropdownItemProps) {\n  const context = useContext(DropdownContext);\n  return <button type=\"button\" disabled={isDisabled} aria-pressed={selected || undefined} className={cx('ui-dropdown-item', className)} onClick={() => { onSelect?.(); if (closeOnSelect) context?.close(); }}>{children}</button>;\n}\n\nexport function DropdownDivider({ className }: { className?: string }) {\n  return <div role=\"separator\" aria-orientation=\"horizontal\" className={cx('ui-dropdown-divider', className)} />;\n}\n",
+      "sha256": "f794de32413632031206cfee27d00e2a72bc1949e99b5e376ba6b171ac06088a",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 271,
+          "end": 281
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 334,
+          "end": 371
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/agent-thinking/agent-thinking.tsx",
+      "content": "'use client';\n\nimport { useEffect, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AgentThinkingProps = {\n  variant?: 'wave' | 'spin' | 'stars' | 'infinity' | 'orb';\n  label?: string;\n  active?: boolean;\n  showTimer?: boolean;\n  shimmer?: boolean;\n  tone?: 'subtle' | 'accent';\n  className?: string;\n};\n\nconst orbitOrder = [0, 1, 2, 7, -1, 3, 6, 5, 4];\n\nfunction ThinkingIndicator({ variant }: { variant: NonNullable<AgentThinkingProps['variant']> }) {\n  if (variant === 'wave' || variant === 'spin') {\n    return <span className=\"ui-agent-thinking__dots\">{Array.from({ length: 9 }, (_, index) => <i key={index} style={{ animationDelay: variant === 'wave' ? `${(Math.floor(index / 3) + index % 3) * 95}ms` : `${orbitOrder[index] * -165}ms` }} />)}</span>;\n  }\n  if (variant === 'stars') return <span className=\"ui-agent-thinking__stars\">{Array.from({ length: 5 }, (_, index) => <i key={index} style={{ animationDelay: `${index * -320}ms` }} />)}</span>;\n  if (variant === 'infinity') return <svg className=\"ui-agent-thinking__infinity\" viewBox=\"0 0 30 18\" fill=\"none\" aria-hidden=\"true\"><path className=\"ui-agent-thinking__infinity-track\" d=\"M15 9C10 1 1 1 1 9s9 8 14 0c5-8 14-8 14 0s-9 8-14 0\" pathLength=\"100\" /><path className=\"ui-agent-thinking__infinity-head\" d=\"M15 9C10 1 1 1 1 9s9 8 14 0c5-8 14-8 14 0s-9 8-14 0\" pathLength=\"100\" /></svg>;\n  return <span className=\"ui-agent-thinking__orb\"><i /><i /><i /></span>;\n}\n\nexport function AgentThinking({ variant = 'wave', label = 'Thinking', active = true, showTimer = true, shimmer = true, tone = 'subtle', className }: AgentThinkingProps) {\n  const [elapsed, setElapsed] = useState(0);\n  useEffect(() => {\n    if (!active || !showTimer) return;\n    const start = performance.now();\n    const timer = window.setInterval(() => setElapsed((performance.now() - start) / 1000), 100);\n    return () => window.clearInterval(timer);\n  }, [active, showTimer]);\n\n  return <div className={cx('ui-agent-thinking', className)} data-variant={variant} data-active={active} data-tone={tone} role=\"status\" aria-live=\"polite\"><span className=\"ui-agent-thinking__indicator\" aria-hidden=\"true\"><ThinkingIndicator variant={variant} /></span><span className={cx('ui-agent-thinking__label', shimmer && active && 'ui-agent-thinking__label--shimmer')}>{active ? label : 'Ready'}</span>{active && showTimer && <time aria-hidden=\"true\">{elapsed.toFixed(1)}s</time>}</div>;\n}\n",
+      "sha256": "4efd3c824aab68812ccf45bd6c583a4157093720b11e96355696467b87116ccf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 80,
+          "end": 90
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/composer/composer-add-menu.tsx",
+      "content": "'use client';\n\nimport type { ReactNode, RefObject } from 'react';\nimport { DropdownPopover } from '@/components/base/dropdown/dropdown';\n\nexport type ComposerMenuItem = { id: string; label: string; description?: string; icon?: ReactNode; disabled?: boolean };\nexport type ComposerMenuGroup = { label: string; items: ComposerMenuItem[] };\n\ntype ComposerAddMenuProps = {\n  id: string;\n  open: boolean;\n  anchorRef: RefObject<HTMLButtonElement | null>;\n  groups: ComposerMenuGroup[];\n  onSelect: (id: string) => void;\n  onClose: () => void;\n};\n\nexport function ComposerAddMenu({ id, open, anchorRef, groups, onSelect, onClose }: ComposerAddMenuProps) {\n  const firstEnabledItem = groups.flatMap(group => group.items).find(item => !item.disabled);\n  return <DropdownPopover aria-label=\"Add to message\" isOpen={open} onOpenChange={next => { if (!next) onClose(); }} triggerRef={anchorRef} placement=\"top start\" offset={8} className=\"ui-composer-add-menu\">\n    <div id={id} role=\"menu\" aria-label=\"Add to message\" className=\"ui-composer-add-menu__groups\">\n      {groups.map(group => <section key={group.label} className=\"ui-composer-add-menu__group\">\n        <span className=\"ui-composer-add-menu__heading\">{group.label}</span>\n        {group.items.map(item => <button key={item.id} data-id={item.id} type=\"button\" role=\"menuitem\" autoFocus={item === firstEnabledItem} disabled={item.disabled} onClick={() => { onSelect(item.id); onClose(); }}>\n          <span className=\"ui-composer-add-menu__icon\" aria-hidden=\"true\">{item.icon}</span>\n          <span className=\"ui-composer-add-menu__text\"><strong>{item.label}</strong>{item.description && <small>{item.description}</small>}</span>\n        </button>)}\n      </section>)}\n    </div>\n  </DropdownPopover>;\n}\n",
+      "sha256": "77093be0aff8d72359c9145519a39c149ee4bcc05db8d903eaf418356d7b6dc8",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/dropdown/dropdown",
+          "target": "components/base/dropdown/dropdown.tsx",
+          "start": 99,
+          "end": 134
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/composer/composer-attachments.tsx",
+      "content": "'use client';\n\nimport { forwardRef, useRef } from 'react';\nimport { AnimatePresence, motion, useIsPresent } from 'motion/react';\nimport { RiAddLine, RiCloseLine, RiFileLine } from '@remixicon/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { cx } from '@/utils/cx';\n\nexport type ComposerAttachment = { id: string; name: string; thumbnail?: string; progress?: number; status?: 'uploading' | 'ready' | 'error' };\nexport type ComposerAttachmentsProps = { attachments: ComposerAttachment[]; onAddFiles?: (files: File[]) => void; onRemove?: (id: string) => void; accept?: string; className?: string };\n\nconst AttachmentTile = forwardRef<HTMLDivElement, { item: ComposerAttachment; onRemove?: (id: string) => void; reducedMotion: boolean }>(function AttachmentTile({ item, onRemove, reducedMotion }, ref) {\n  const present = useIsPresent();\n  const progress = typeof item.progress === 'number' ? Math.min(100, Math.max(0, item.progress)) : undefined;\n  const uploading = item.status === 'uploading';\n  return <motion.div ref={ref} inert={!present} layout={reducedMotion ? false : 'position'} initial={{ opacity: 0, scale: reducedMotion ? 1 : .94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: reducedMotion ? 1 : .94 }} transition={{ duration: reducedMotion ? 0 : .18, ease: [.2, .8, .2, 1] }} className=\"ui-composer-attachments__tile\" data-status={item.status ?? 'ready'}>\n    {item.thumbnail ? <img src={item.thumbnail} alt=\"\" /> : <RiFileLine size={21} aria-hidden />}\n    <span title={item.name}>{item.name}</span>\n    {progress !== undefined && <svg className=\"ui-composer-attachments__ring\" viewBox=\"0 0 56 56\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"53\" height=\"53\" rx=\"10\" pathLength=\"100\" style={{ strokeDashoffset: 100 - progress }} /></svg>}\n    {progress !== undefined && <small data-visible={uploading || undefined}>{Math.round(progress)}%</small>}\n    {onRemove && <button type=\"button\" aria-label={`Remove ${item.name}`} disabled={uploading} onClick={() => onRemove(item.id)}><RiCloseLine size={13} aria-hidden /></button>}\n  </motion.div>;\n});\n\nexport function ComposerAttachments({ attachments, onAddFiles, onRemove, accept, className }: ComposerAttachmentsProps) {\n  const inputRef = useRef<HTMLInputElement>(null);\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  return <AnimatedHeight className={cx('ui-composer-attachments', className)}>\n    <div className=\"ui-composer-attachments__tiles\" data-empty={!attachments.length && !onAddFiles || undefined}>\n      <AnimatePresence initial={false} mode=\"popLayout\">{attachments.map(item => <AttachmentTile key={item.id} item={item} onRemove={onRemove} reducedMotion={reducedMotion} />)}</AnimatePresence>\n      {onAddFiles && <><input ref={inputRef} className=\"ui-composer-attachments__input\" type=\"file\" multiple accept={accept} aria-label=\"Add attachments\" onChange={event => { onAddFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ''; }} /><motion.button layout={reducedMotion ? false : 'position'} transition={{ duration: reducedMotion ? 0 : .18, ease: [.2, .8, .2, 1] }} type=\"button\" className=\"ui-composer-attachments__add\" aria-label=\"Add attachments\" onClick={() => inputRef.current?.click()}><RiAddLine size={19} aria-hidden /></motion.button></>}\n    </div>\n  </AnimatedHeight>;\n}\n",
+      "sha256": "d1c656f277255f164d2c90e5e21f1d17696264f20e4c14224009031dd68144f7",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 232,
+          "end": 281
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 315,
+          "end": 338
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 361,
+          "end": 371
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/composer/composer-model-picker.tsx",
+      "content": "'use client';\n\nimport { useEffect, useId, useState, type CSSProperties } from 'react';\nimport { RiArrowUpSLine } from '@remixicon/react';\nimport { Dropdown, DropdownGroup, DropdownItem, DropdownPopover, DropdownTrigger } from '@/components/base/dropdown/dropdown';\n\nexport type ComposerModel = { id: string; label: string };\nexport const composerModels: ComposerModel[] = [\n  { id: 'composer', label: 'Composer 2.5' },\n  { id: 'sol', label: 'GPT-5.6 Sol' },\n  { id: 'fable', label: 'Fable 5' },\n  { id: 'sonnet', label: 'Sonnet 5' },\n];\nconst effortNames = ['Minimal', 'Low', 'Medium', 'High', 'Maximum'];\n\nexport function ComposerModelPicker({ models, selectedModel, onModelChange, effort, onEffortChange, disabled }: { models: ComposerModel[]; selectedModel?: string; onModelChange: (id: string) => void; effort: number; onEffortChange: (value: number) => void; disabled?: boolean }) {\n  const [open, setOpen] = useState(false);\n  const effortId = useId();\n  useEffect(() => { if (disabled) setOpen(false); }, [disabled]);\n  const current = models.find(model => model.id === selectedModel) ?? models[0];\n  return <Dropdown isOpen={open} onOpenChange={setOpen}>\n    <DropdownTrigger className=\"ui-composer-model__trigger\" aria-label=\"Model\" isDisabled={disabled}><span>{current?.label ?? 'Choose model'}</span><RiArrowUpSLine size={16} aria-hidden /></DropdownTrigger>\n    <DropdownPopover aria-label=\"Model and effort\" placement=\"top start\" offset={9} className=\"ui-composer-model__popover\">\n      <DropdownGroup label=\"Models\" className=\"ui-composer-model__models\">{models.map(model => <DropdownItem key={model.id} selected={model.id === selectedModel} onSelect={() => onModelChange(model.id)} className=\"ui-composer-model__option\"><span>{model.label}</span><span className=\"ui-composer-model__radio\" aria-hidden /></DropdownItem>)}</DropdownGroup>\n      <div className=\"ui-composer-model__effort\"><label htmlFor={effortId}>Effort <strong>{effortNames[effort] ?? 'Medium'}</strong></label><div><span>Faster</span><span>Smarter</span></div><div className=\"ui-composer-model__range\" style={{ '--effort-progress': `${effort * 25}%` } as CSSProperties}><div className=\"ui-composer-model__ticks\" aria-hidden>{effortNames.map(name => <i key={name} />)}</div><input id={effortId} type=\"range\" min=\"0\" max=\"4\" step=\"1\" value={effort} onChange={event => onEffortChange(Number(event.target.value))} aria-valuetext={effortNames[effort]} /></div></div>\n    </DropdownPopover>\n  </Dropdown>;\n}\n",
+      "sha256": "178670b5127e657e580cfbce88d2950a20f574ead4dd1f0a0935f84bfefd6bed",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/dropdown/dropdown",
+          "target": "components/base/dropdown/dropdown.tsx",
+          "start": 227,
+          "end": 262
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/composer/composer.tsx",
+      "content": "'use client';\n\nimport { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';\nimport { RiAddLine, RiArrowUpLine, RiAttachmentLine, RiFolder3Line, RiGitBranchLine, RiMicLine } from '@remixicon/react';\nimport { ComposerAttachments, type ComposerAttachment } from './composer-attachments';\nimport { ComposerModelPicker, composerModels } from './composer-model-picker';\nimport { AgentThinking } from '@/components/blocks/agent-thinking/agent-thinking';\nimport { cx } from '@/utils/cx';\nimport { ComposerAddMenu, type ComposerMenuGroup } from './composer-add-menu';\n\nexport type ComposerProps = { value?: string; defaultValue?: string; onChange?: (value: string) => void; onSend?: (message: string) => void; models?: { id: string; label: string }[]; selectedModel?: string; onModelChange?: (model: string) => void; effort?: number; defaultEffort?: number; onEffortChange?: (effort: number) => void; onVoice?: () => void; attachments?: ComposerAttachment[]; onAddFiles?: (files: File[]) => void; onRemoveAttachment?: (id: string) => void; menuGroups?: ComposerMenuGroup[]; onMenuAction?: (id: string) => void; branch?: string; project?: string; agentLabel?: string; contextPercent?: number; isWorking?: boolean; placeholder?: string; footerStart?: ReactNode; modelPicker?: ReactNode; status?: ReactNode; disabled?: boolean; inputRef?: Ref<HTMLTextAreaElement>; maxInputHeight?: number; statusPlacement?: 'bottom' | 'tab'; className?: string };\nconst defaultMenuGroups: ComposerMenuGroup[] = [{ label: 'Add', items: [{ id: 'files', label: 'Files and folders', icon: <RiAttachmentLine size={18} /> }] }];\nexport function Composer({ value, defaultValue = '', onChange, onSend, models = composerModels, selectedModel, onModelChange, effort, defaultEffort = 2, onEffortChange, onVoice, attachments = [], onAddFiles, onRemoveAttachment, menuGroups = defaultMenuGroups, onMenuAction, branch, project, agentLabel, contextPercent, isWorking = false, placeholder = 'Ask me anything', footerStart, modelPicker, status: statusSlot, disabled = false, inputRef: forwardedInputRef, maxInputHeight = 120, statusPlacement = 'bottom', className }: ComposerProps) {\n  const [internal, setInternal] = useState(defaultValue);\n  const [internalModel, setInternalModel] = useState(() => models.find(model => model.id === 'fable')?.id ?? models[0]?.id);\n  const [internalEffort, setInternalEffort] = useState(defaultEffort);\n  const [internalAttachments, setInternalAttachments] = useState<ComposerAttachment[]>([]);\n  const [menuOpen, setMenuOpen] = useState(false);\n  const inputRef = useRef<HTMLTextAreaElement>(null);\n  const inputMeasured = useRef(false);\n  const fileRef = useRef<HTMLInputElement>(null);\n  const addRef = useRef<HTMLButtonElement>(null);\n  const menuId = useId();\n  const closeMenu = useCallback(() => setMenuOpen(false), []);\n  useEffect(() => { if (isWorking || disabled) setMenuOpen(false); }, [isWorking, disabled]);\n  const text = value ?? internal;\n  const busy = disabled || isWorking;\n  useImperativeHandle(forwardedInputRef, () => inputRef.current!, []);\n  const resizeInput = useCallback(() => {\n    const input = inputRef.current;\n    if (!input) return;\n    const previousHeight = input.offsetHeight;\n    // Measure natural content without animating through an intermediate auto size.\n    // Restoring the current rendered height also makes rapid edits reverse smoothly.\n    input.style.transition = 'none';\n    input.style.height = 'auto';\n    const naturalHeight = input.scrollHeight;\n    const targetHeight = Math.min(naturalHeight, maxInputHeight);\n    input.style.overflowY = naturalHeight > maxInputHeight ? 'auto' : 'hidden';\n    input.style.height = `${inputMeasured.current ? previousHeight : targetHeight}px`;\n    void input.offsetHeight;\n    input.style.removeProperty('transition');\n    input.style.height = `${targetHeight}px`;\n    inputMeasured.current = true;\n  }, [maxInputHeight]);\n  useLayoutEffect(resizeInput, [text, resizeInput]);\n  useLayoutEffect(() => {\n    const input = inputRef.current;\n    if (!input) return;\n    let width = input.clientWidth;\n    const observer = new ResizeObserver(() => { if (input.clientWidth !== width) { width = input.clientWidth; resizeInput(); } });\n    observer.observe(input);\n    return () => observer.disconnect();\n  }, [resizeInput]);\n  const modelKey = models.some(model => model.id === (selectedModel ?? internalModel)) ? selectedModel ?? internalModel : models[0]?.id;\n  const items = attachments.length ? attachments : internalAttachments;\n  function update(next: string) { if (value === undefined) setInternal(next); onChange?.(next); }\n  function send() { const trimmed = text.trim(); if (!trimmed || busy) return; onSend?.(trimmed); update(''); }\n  function addFiles(files: File[]) { if (!files.length) return; if (onAddFiles) onAddFiles(files); else setInternalAttachments(current => [...current, ...files.map(file => ({ id: `${file.name}-${file.lastModified}`, name: file.name, status: 'ready' as const }))]); }\n  function remove(id: string) { if (onRemoveAttachment) onRemoveAttachment(id); else setInternalAttachments(current => current.filter(item => item.id !== id)); }\n  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(); } }\n  function chooseMenuItem(id: string) { if (id === 'files') fileRef.current?.click(); else onMenuAction?.(id); }\n  const status = statusSlot !== undefined ? statusSlot : (branch || project || agentLabel || contextPercent !== undefined) && <div className=\"ui-composer__status\">{branch && <span><RiGitBranchLine size={13} aria-hidden />{branch}</span>}{project && <span><RiFolder3Line size={13} aria-hidden />{project}</span>}<span className=\"ui-composer__status-spacer\" />{agentLabel && <span>{agentLabel}</span>}{contextPercent !== undefined && <span className=\"ui-composer__context\">◕ {Math.round(contextPercent)}%</span>}</div>;\n  return <div className={cx('ui-composer', className)} data-working={isWorking || undefined} data-status-placement={statusPlacement}>\n    {isWorking && <div className=\"ui-composer__thinking\"><AgentThinking label=\"Working\" /></div>}\n    {statusPlacement === 'tab' && status}\n    <input ref={fileRef} className=\"ui-composer-attachments__input\" type=\"file\" multiple disabled={busy} aria-label=\"Attach files\" onChange={event => { addFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ''; }} />\n    <div className=\"ui-composer__panel\">\n      <ComposerAttachments attachments={items} onRemove={remove} />\n      <div className=\"ui-composer__entry\">\n        <button ref={addRef} type=\"button\" className=\"ui-composer__add\" aria-label={menuOpen ? 'Close add menu' : 'Add attachment'} aria-haspopup=\"menu\" aria-controls={menuId} aria-expanded={menuOpen} disabled={busy} onClick={() => setMenuOpen(open => !open)}><RiAddLine size={18} aria-hidden /></button>\n        <textarea ref={inputRef} rows={1} value={text} placeholder={placeholder} aria-label=\"Message\" onChange={event => update(event.target.value)} style={{ maxHeight: maxInputHeight }} onKeyDown={onKeyDown} />\n        <div className=\"ui-composer__footer\">\n          {footerStart}<span className=\"ui-composer__footer-spacer\" />\n          {modelPicker !== undefined ? modelPicker : <ComposerModelPicker models={models} selectedModel={modelKey} onModelChange={key => { if (selectedModel === undefined) setInternalModel(key); onModelChange?.(key); }} effort={effort ?? internalEffort} onEffortChange={next => { if (effort === undefined) setInternalEffort(next); onEffortChange?.(next); }} disabled={busy} />}\n          <button type=\"button\" className=\"ui-composer__voice\" aria-label=\"Voice input\" onClick={onVoice} disabled={!onVoice || busy}><RiMicLine size={18} aria-hidden /></button>\n          <button type=\"button\" className=\"ui-composer__send\" aria-label=\"Send message\" disabled={!text.trim() || busy} onClick={send}><RiArrowUpLine size={20} aria-hidden /></button>\n        </div>\n      </div>\n    </div>\n    {statusPlacement === 'bottom' && status}\n    <ComposerAddMenu id={menuId} open={menuOpen && !busy} anchorRef={addRef} groups={menuGroups} onSelect={chooseMenuItem} onClose={closeMenu} />\n  </div>;\n}\n",
+      "sha256": "8cdc688726ba338180d01ba7d91c216699984ed993aece748fdd968fd6b70c1b",
+      "references": [
+        {
+          "kind": "module",
+          "value": "./composer-attachments",
+          "target": "components/blocks/composer/composer-attachments.tsx",
+          "start": 356,
+          "end": 378
+        },
+        {
+          "kind": "module",
+          "value": "./composer-model-picker",
+          "target": "components/blocks/composer/composer-model-picker.tsx",
+          "start": 434,
+          "end": 457
+        },
+        {
+          "kind": "module",
+          "value": "@/components/blocks/agent-thinking/agent-thinking",
+          "target": "components/blocks/agent-thinking/agent-thinking.tsx",
+          "start": 491,
+          "end": 540
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 563,
+          "end": 573
+        },
+        {
+          "kind": "module",
+          "value": "./composer-add-menu",
+          "target": "components/blocks/composer/composer-add-menu.tsx",
+          "start": 633,
+          "end": 652
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-agent-thinking",
+      "ui-agent-thinking__dots",
+      "ui-agent-thinking__indicator",
+      "ui-agent-thinking__infinity",
+      "ui-agent-thinking__infinity-head",
+      "ui-agent-thinking__infinity-track",
+      "ui-agent-thinking__label",
+      "ui-agent-thinking__label--shimmer",
+      "ui-agent-thinking__orb",
+      "ui-agent-thinking__stars",
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-composer",
+      "ui-composer-add-menu",
+      "ui-composer-add-menu__group",
+      "ui-composer-add-menu__groups",
+      "ui-composer-add-menu__heading",
+      "ui-composer-add-menu__icon",
+      "ui-composer-add-menu__text",
+      "ui-composer-attachments",
+      "ui-composer-attachments__add",
+      "ui-composer-attachments__input",
+      "ui-composer-attachments__ring",
+      "ui-composer-attachments__tile",
+      "ui-composer-attachments__tiles",
+      "ui-composer-model__effort",
+      "ui-composer-model__models",
+      "ui-composer-model__option",
+      "ui-composer-model__popover",
+      "ui-composer-model__radio",
+      "ui-composer-model__range",
+      "ui-composer-model__ticks",
+      "ui-composer-model__trigger",
+      "ui-composer__add",
+      "ui-composer__context",
+      "ui-composer__entry",
+      "ui-composer__footer",
+      "ui-composer__footer-spacer",
+      "ui-composer__panel",
+      "ui-composer__send",
+      "ui-composer__status",
+      "ui-composer__status-spacer",
+      "ui-composer__thinking",
+      "ui-composer__voice",
+      "ui-dropdown-content",
+      "ui-dropdown-dialog",
+      "ui-dropdown-divider",
+      "ui-dropdown-group",
+      "ui-dropdown-group__items",
+      "ui-dropdown-group__label",
+      "ui-dropdown-item",
+      "ui-dropdown-popover",
+      "ui-dropdown-trigger",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-spinner"
+    ],
+    "prefixes": []
+  }
+}

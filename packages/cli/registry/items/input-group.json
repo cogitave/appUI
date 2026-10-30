@@ -1,0 +1,190 @@
+{
+  "name": "input-group",
+  "title": "Input Group",
+  "group": "Base",
+  "type": "component",
+  "description": "Inline icons, text, actions and block additions composed from the shared Input and Textarea, with their labels, focus and validation intact.",
+  "sections": [
+    "Preview",
+    "Inline additions",
+    "Block additions",
+    "Textarea and actions",
+    "Sizes and states"
+  ],
+  "example": "<InputGroup label=\"Project address\" leading=\"https://\"\n  placeholder=\"your-project\" trailing=\".app\" />\n<InputGroup kind=\"textarea\" label=\"Project note\"\n  blockStart={<span>Markdown supported</span>}\n  blockEnd={<Button type=\"submit\">Save note</Button>} />",
+  "entryFiles": [
+    "components/base/input-group/input-group.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/input-group/input-group.tsx",
+      "names": [
+        "InputGroup",
+        "InputGroupProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input-group/input-group.tsx",
+      "content": "'use client';\n\nimport { Input, type InputProps } from '@/components/base/input/input';\nimport { Textarea, type TextareaProps } from '@/components/base/textarea/textarea';\nimport { cx } from '@/utils/cx';\n\nexport type InputGroupProps =\n  | (InputProps & { kind?: 'input' })\n  | (TextareaProps & { kind: 'textarea' });\n\n/** Additions belong to the shared input surface; labels and validation stay shared. */\nexport function InputGroup(props: InputGroupProps) {\n  if (props.kind === 'textarea') {\n    const {kind: _, className, ...fieldProps} = props;\n    return <Textarea {...fieldProps} className={cx('ui-input-group', className)}/>;\n  }\n  const {kind: _, className, ...fieldProps} = props;\n  return <Input {...fieldProps} className={cx('ui-input-group', className)}/>;\n}\n",
+      "sha256": "f37383f22c8784ad6cdf61b7b868a8485b75e82b953704c073f94c3463ac2ced",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/input/input",
+          "target": "components/base/input/input.tsx",
+          "start": 55,
+          "end": 84
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/textarea/textarea",
+          "target": "components/base/textarea/textarea.tsx",
+          "start": 133,
+          "end": 168
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 191,
+          "end": 201
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/field-feedback.tsx",
+      "content": "'use client';\n\nimport { useContext, useLayoutEffect, useRef, useState } from 'react';\nimport { FieldError, FieldErrorContext, Text } from 'react-aria-components';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\n\nfunction ErrorContent({ error }: { error?: string }) {\n  const present = useIsPresent();\n  const element = useRef<HTMLElement>(null);\n  const [snapshot, setSnapshot] = useState(error ?? '');\n  useLayoutEffect(() => {\n    if (present && element.current) {\n      const text = element.current.textContent ?? '';\n      setSnapshot(previous => previous === text ? previous : text);\n    }\n  });\n  return <div className=\"ui-field-feedback__error\" inert={!present} aria-hidden={!present || undefined}>\n    {present ? <FieldError ref={element} className=\"ui-input-field__message\">{error}</FieldError> : <span className=\"ui-input-field__message\">{snapshot}</span>}\n  </div>;\n}\n\n/** Keep native validation messages associated while animating their actual layout. */\nexport function FieldFeedback({ hint, error }: { hint?: string; error?: string }) {\n  const validation = useContext(FieldErrorContext);\n  const reduced = useReducedMotion();\n  const invalid = validation?.isInvalid ?? Boolean(error);\n  const showHint = Boolean(hint && !error);\n  return <div className=\"ui-field-feedback\" data-content={invalid || showHint || undefined}>\n    <AnimatedHeight>\n      {showHint && <Text slot=\"description\" className=\"ui-input-field__message\">{hint}</Text>}\n      <AnimatePresence initial={false} mode=\"popLayout\">\n        {invalid && <motion.div key=\"error\" initial={{ opacity: 0, y: reduced ? 0 : 2 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -2 }} transition={{ duration: reduced ? 0 : .16, ease: [.2, .75, .25, 1] }}>\n          <ErrorContent error={error}/>\n        </motion.div>}\n      </AnimatePresence>\n    </AnimatedHeight>\n  </div>;\n}\n",
+      "sha256": "91b0aa0dcdb56c7d7e4a4923a1ac4ba946de997ab1d233e364d75f36f1a00056",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 283,
+          "end": 332
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/input.tsx",
+      "content": "'use client';\n\nimport type { AriaAttributes, ReactNode, Ref } from 'react';\nimport { TextField, Label, Input as AriaInput, type TextFieldProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type InputProps = Omit<TextFieldProps, 'children' | 'className'> & {\n  'aria-busy'?: AriaAttributes['aria-busy'];\n  label: string;\n  placeholder?: string;\n  hint?: string;\n  error?: string;\n  leading?: ReactNode;\n  trailing?: ReactNode;\n  trailingAction?: ReactNode;\n  leadingAction?: ReactNode;\n  blockStart?: ReactNode;\n  blockEnd?: ReactNode;\n  className?: string;\n  hideLabel?: boolean;\n  inputRef?: Ref<HTMLInputElement>;\n  variant?: 'default' | 'plain' | 'soft';\n  size?: 'small' | 'medium' | 'large';\n  maxLength?: number;\n};\n\nexport function Input({ label, placeholder, hint, error, leading, trailing, trailingAction, leadingAction, blockStart, blockEnd, className, isInvalid, hideLabel = false, inputRef, variant = 'default', size = 'medium', maxLength, ...props }: InputProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  const stacked = blockStart !== undefined || blockEnd !== undefined;\n  const control = <>{leadingAction && <span className=\"ui-input-field__action\">{leadingAction}</span>}{leading && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{leading}</span>}<AriaInput ref={inputRef} maxLength={maxLength} aria-busy={props['aria-busy']} className=\"ui-input-field__input\" placeholder={placeholder} />{trailing && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{trailing}</span>}{trailingAction && <span className=\"ui-input-field__action\">{trailingAction}</span>}</>;\n  return <TextField {...props} isDisabled={isDisabled} data-variant={variant} data-size={size} isInvalid={error ? true : isInvalid} className={cx('ui-input-field', className)}>\n    <Label className={cx('ui-input-field__label', hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden=\"true\">*</span>}</Label>\n    <div className={cx('ui-input-field__control', stacked && 'ui-input-field__control--stacked')}>{blockStart !== undefined && <div className=\"ui-input-group__block\" data-align=\"start\">{blockStart}</div>}{stacked ? <div className=\"ui-input-field__row\">{control}</div> : control}{blockEnd !== undefined && <div className=\"ui-input-group__block\" data-align=\"end\">{blockEnd}</div>}</div>\n    <FieldFeedback hint={hint} error={error}/>\n  </TextField>;\n}\n",
+      "sha256": "9fcddd095a0972e70cb391de936dfddd3beaff3e4243d459cef4f9e8e721d87c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 195,
+          "end": 205
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 239,
+          "end": 277
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 314,
+          "end": 351
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/textarea/textarea.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, useState, type ReactNode } from 'react';\nimport { TextField, Label, TextArea as AriaTextArea, type TextFieldProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type TextareaProps = Omit<TextFieldProps, 'children' | 'className'> & {\n  label: string;\n  placeholder?: string;\n  hint?: string;\n  error?: string;\n  rows?: number;\n  maxLength?: number;\n  showCount?: boolean;\n  autoResize?: boolean;\n  className?: string;\n  hideLabel?: boolean;\n  variant?: 'default' | 'plain';\n  blockStart?: ReactNode;\n  blockEnd?: ReactNode;\n};\n\nexport function Textarea({ label, placeholder, hint, error, rows = 4, maxLength, showCount = false, autoResize = false, className, isInvalid, value, defaultValue, onChange, hideLabel = false, variant = 'default', blockStart, blockEnd, ...props }: TextareaProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  const ref = useRef<HTMLTextAreaElement>(null);\n  const [count, setCount] = useState(String(value ?? defaultValue ?? '').length);\n  useLayoutEffect(() => {\n    if (!autoResize || !ref.current) return;\n    ref.current.style.height = 'auto';\n    ref.current.style.height = `${ref.current.scrollHeight}px`;\n  }, [autoResize, value, count]);\n  const stacked = blockStart !== undefined || blockEnd !== undefined;\n  const control = <AriaTextArea ref={ref} className=\"ui-textarea-field__control\" placeholder={placeholder} rows={rows} maxLength={maxLength} />;\n  return <TextField {...props} isDisabled={isDisabled} data-variant={variant} value={value} defaultValue={defaultValue} onChange={next => { setCount(next.length); onChange?.(next); }} isInvalid={error ? true : isInvalid} className={cx('ui-textarea-field', className)}>\n    <Label className={cx('ui-input-field__label', hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden=\"true\">*</span>}</Label>\n    {stacked ? <div className=\"ui-textarea-field__surface\">{blockStart !== undefined && <div className=\"ui-input-group__block\" data-align=\"start\">{blockStart}</div>}{control}{blockEnd !== undefined && <div className=\"ui-input-group__block\" data-align=\"end\">{blockEnd}</div>}</div> : control}\n    {showCount ? <div className=\"ui-textarea-field__foot\"><FieldFeedback hint={hint} error={error}/><output aria-label=\"Character count\">{count}{maxLength !== undefined && ` / ${maxLength}`}</output></div> : <FieldFeedback hint={hint} error={error}/>}\n  </TextField>;\n}\n",
+      "sha256": "43bbb6e0c7f8162bcc232f69c42d822ed3c942e2f9bace8ef5f8888a8b2fdcf3",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 215,
+          "end": 225
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 259,
+          "end": 297
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 334,
+          "end": 371
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-field-feedback",
+      "ui-field-feedback__error",
+      "ui-input-field",
+      "ui-input-field__action",
+      "ui-input-field__adornment",
+      "ui-input-field__control",
+      "ui-input-field__control--stacked",
+      "ui-input-field__input",
+      "ui-input-field__label",
+      "ui-input-field__message",
+      "ui-input-field__row",
+      "ui-input-group",
+      "ui-input-group__block",
+      "ui-textarea-field",
+      "ui-textarea-field__control",
+      "ui-textarea-field__foot",
+      "ui-textarea-field__surface"
+    ],
+    "prefixes": []
+  }
+}

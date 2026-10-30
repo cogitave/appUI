@@ -1,0 +1,112 @@
+{
+  "name": "segmented-control",
+  "title": "Segmented Control",
+  "group": "Base",
+  "type": "component",
+  "description": "A persistent configuration choice with soft, outlined and underlined surfaces, two sizes, equal-width or vertical layout and directional keyboard navigation.",
+  "sections": [
+    "Preview",
+    "Controlled selection",
+    "With icons",
+    "Surfaces",
+    "Sizes",
+    "Equal width and vertical",
+    "Disabled choices",
+    "Right to left"
+  ],
+  "example": "<SegmentedControl aria-label=\"Period\" options={periods}\n  value={period} onValueChange={setPeriod} />",
+  "entryFiles": [
+    "components/base/segmented-control/segmented-control.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/segmented-control/segmented-control.tsx",
+      "names": [
+        "SegmentOption",
+        "SegmentedControl",
+        "SegmentedControlProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/segmented-control/segmented-control.tsx",
+      "content": "'use client';\n\nimport {useId,useLayoutEffect,useRef,useState,type CSSProperties,type KeyboardEvent,type ReactNode} from 'react';\nimport {motion} from 'motion/react';\nimport {useMediaQuery} from '@/hooks/use-media-query';\nimport {useLocale} from 'react-aria-components';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport {useFieldDisabled} from '@/components/base/field/field-context';\nimport {cx} from '@/utils/cx';\n\nexport type SegmentOption={value:string;label:string;icon?:ReactNode;isDisabled?:boolean};\nexport type SegmentedControlProps={\n options:SegmentOption[];value?:string;defaultValue?:string;onValueChange?:(value:string)=>void;\n variant?:'soft'|'outline'|'underline';size?:'small'|'medium';orientation?:'horizontal'|'vertical';fit?:'content'|'equal';isDisabled?:boolean;\n id?:string;'aria-label':string;'aria-describedby'?:string;className?:string;style?:CSSProperties;\n};\n\n/** A compact configuration choice. Native RadioGroup is preferred for form fields. */\nexport function SegmentedControl({options,value,defaultValue,onValueChange,variant='soft',size='medium',orientation='horizontal',fit='content',isDisabled:disabled,id:domId,'aria-label':ariaLabel,'aria-describedby':descriptionId,className,style}:SegmentedControlProps){\n const {direction}=useLocale(),isDisabled=useFieldDisabled(disabled);\n const [internal,setInternal]=useState(defaultValue??options.find(option=>!option.isDisabled)?.value??'');\n const selected=value??internal;\n const tabStop=options.find(option=>!option.isDisabled&&option.value===selected)?.value??options.find(option=>!option.isDisabled)?.value;\n const id=useId(),root=useRef<HTMLDivElement>(null),reduced=useMediaQuery('(prefers-reduced-motion: reduce)'),tokens=useMotionTokens(root);\n function reveal(target:HTMLElement){\n  const group=root.current;if(!group)return;\n  const frame=group.getBoundingClientRect(),item=target.getBoundingClientRect();\n  if(orientation==='vertical'){\n   const scale=frame.height/group.clientHeight||1,delta=item.top<frame.top?item.top-frame.top:item.bottom>frame.bottom?item.bottom-frame.bottom:0;\n   if(group.scrollHeight>group.clientHeight)group.scrollTop+=delta/scale;\n  }else{\n   const scale=frame.width/group.clientWidth||1,delta=item.left<frame.left?item.left-frame.left:item.right>frame.right?item.right-frame.right:0;\n   if(group.scrollWidth>group.clientWidth)group.scrollLeft+=delta/scale;\n  }\n }\n useLayoutEffect(()=>{\n  const target=root.current?.querySelector<HTMLElement>(`[data-value=\"${CSS.escape(selected)}\"]`);if(target)reveal(target);\n },[selected,orientation]);\n function choose(next:string){if(isDisabled)return;if(value===undefined)setInternal(next);onValueChange?.(next);}\n function onKeyDown(event:KeyboardEvent<HTMLDivElement>){\n  if(isDisabled||event.altKey||event.ctrlKey||event.metaKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;\n  event.preventDefault();\n  const enabled=options.filter(option=>!option.isDisabled);if(!enabled.length)return;\n  // Follow actual focus, preserving every key even when a controlled value lags.\n  const focused=event.target instanceof Element?event.target.closest<HTMLElement>('[data-value]')?.dataset.value:undefined;\n  const current=enabled.findIndex(option=>option.value===(focused??selected));\n  const forward=event.key==='ArrowDown'||event.key===(direction==='rtl'?'ArrowLeft':'ArrowRight');\n  const next=event.key==='Home'?0:event.key==='End'?enabled.length-1:forward?(current+1)%enabled.length:(current-1+enabled.length)%enabled.length;\n  const target=enabled[next];if(!target)return;choose(target.value);\n  event.currentTarget.querySelector<HTMLElement>(`[data-value=\"${CSS.escape(target.value)}\"]`)?.focus({preventScroll:true});\n }\n return <div id={domId} ref={root} style={style} className={cx('ui-segmented',className)} role=\"radiogroup\" aria-label={ariaLabel} aria-describedby={descriptionId} aria-orientation={orientation} aria-disabled={isDisabled||undefined} data-variant={variant} data-size={size} data-orientation={orientation} data-fit={fit} onKeyDown={onKeyDown} onFocus={event=>{const target=event.target.closest<HTMLElement>('[data-value]');if(target)reveal(target);}}>{options.map(option=><button key={option.value} type=\"button\" role=\"radio\" data-value={option.value} aria-checked={selected===option.value} tabIndex={tabStop===option.value?0:-1} disabled={isDisabled||option.isDisabled} onClick={()=>choose(option.value)}>{selected===option.value&&<motion.span layoutId={`${id}-segment`} className=\"ui-segmented__indicator\" transition={{duration:reduced?0:tokens.standard,ease:tokens.ease}}/>}<span className=\"ui-segmented__content\">{option.icon}<span className=\"ui-segmented__label\">{option.label}</span></span></button>)}</div>;\n}\n",
+      "sha256": "02730c16d81e67d56c7684c219707f9237158b50bcd0f0fd3b315503fb033c47",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 195,
+          "end": 218
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 301,
+          "end": 326
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 361,
+          "end": 398
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 419,
+          "end": 429
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-segmented",
+      "ui-segmented__content",
+      "ui-segmented__indicator",
+      "ui-segmented__label"
+    ],
+    "prefixes": []
+  }
+}

@@ -1,0 +1,275 @@
+{
+  "name": "color-swatch",
+  "title": "Color Swatch",
+  "group": "Base",
+  "type": "component",
+  "description": "Color previews and accessible named palette choices, with transparency, three sizes, circular or square shapes, flat or gloss surfaces and native keyboard selection.",
+  "sections": [
+    "Preview",
+    "Controlled palette",
+    "Sizes and shapes",
+    "Appearance options",
+    "Named choices",
+    "Disabled choices",
+    "Scrollable palettes",
+    "Empty palette",
+    "Right to left"
+  ],
+  "example": "<ColorSwatch color=\"#47bea7\" colorName=\"Teal\" />\n<ColorSwatchPicker aria-label=\"Accent color\" options={colors}\n  value={color} onValueChange={setColor} layout=\"row\" />",
+  "entryFiles": [
+    "components/base/color-swatch/color-swatch.tsx",
+    "components/base/color-swatch/color-swatch-picker.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/color-swatch/color-swatch.tsx",
+      "names": [
+        "ColorSwatch",
+        "ColorSwatchProps",
+        "SwatchAppearance",
+        "SwatchShape",
+        "SwatchSize"
+      ]
+    },
+    {
+      "path": "components/base/color-swatch/color-swatch-picker.tsx",
+      "names": [
+        "ColorOption",
+        "ColorSwatchPicker",
+        "ColorSwatchPickerProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/color-swatch/color-swatch-picker.tsx",
+      "content": "'use client';\n\nimport {useId,useMemo,useRef,useState,type CSSProperties} from 'react';\nimport {ListBox,ListBoxItem,parseColor} from 'react-aria-components';\nimport {motion,useReducedMotion} from 'motion/react';\nimport {AnimatedHeight} from '@/components/base/animated-height/animated-height';\nimport {ScrollArea} from '@/components/base/scroll-area/scroll-area';\nimport {useFieldDisabled} from '@/components/base/field/field-context';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport {ColorSwatch,type SwatchAppearance,type SwatchShape,type SwatchSize} from './color-swatch';\nimport {cx} from '@/utils/cx';\n\nexport type ColorOption={color:string;label:string;isDisabled?:boolean};\nexport type ColorSwatchPickerProps={\n options:ColorOption[];value?:string;defaultValue?:string;onValueChange?:(color:string)=>void;\n size?:SwatchSize;shape?:SwatchShape;appearance?:SwatchAppearance;\n layout?:'grid'|'row'|'list';isDisabled?:boolean;maxHeight?:number|string;emptyLabel?:string;\n id?:string;'aria-label':string;'aria-describedby'?:string;className?:string;style?:CSSProperties;\n};\nconst colorKey=(color:string)=>parseColor(color).toString('hexa').toLowerCase();\n\n/** A named native single-selection collection. Equivalent colors must be unique. */\nexport function ColorSwatchPicker({options,value,defaultValue,onValueChange,size='medium',shape='circle',appearance='flat',layout='grid',isDisabled:disabled,maxHeight,emptyLabel='No colors available',id:domId,'aria-label':ariaLabel,'aria-describedby':descriptionId,className,style}:ColorSwatchPickerProps){\n const isDisabled=useFieldDisabled(disabled),id=useId(),root=useRef<HTMLDivElement>(null),reduced=useReducedMotion(),tokens=useMotionTokens(root);\n const colors=useMemo(()=>{const seen=new Set<string>();return options.map(option=>{const key=colorKey(option.color);if(seen.has(key))throw new Error(`ColorSwatchPicker requires unique colors: ${option.color}`);seen.add(key);return {...option,key};})},[options]);\n const [internal,setInternal]=useState(()=>defaultValue??options.find(option=>!option.isDisabled)?.color);\n const current=value??internal,selected=current?[colorKey(current)]:[];\n return <div ref={root} className={cx('ui-color-picker',className)} style={{'--color-picker-max-height':typeof maxHeight==='number'?`${maxHeight}px`:maxHeight,...style} as CSSProperties} data-layout={layout} data-size={size} data-constrained={maxHeight!==undefined||undefined} data-disabled={isDisabled||undefined}>\n  <AnimatedHeight>{!colors.length&&<span id={`${id}-empty`} className=\"ui-color-picker__empty\" role=\"status\">{emptyLabel}</span>}\n  <ScrollArea label={ariaLabel} orientation={layout==='row'?'horizontal':'vertical'} className=\"ui-color-picker__scroll\" renderViewport={({ref,className:viewportClassName})=><ListBox ref={ref} id={domId} aria-label={ariaLabel} aria-describedby={[descriptionId,!colors.length?`${id}-empty`:undefined].filter(Boolean).join(' ')||undefined} className={cx('ui-color-picker__list',viewportClassName)} items={colors} dependencies={[size,shape,appearance,isDisabled,layout]} layout={layout==='list'?'stack':'grid'} orientation={layout==='list'?'vertical':'horizontal'} selectionMode=\"single\" selectionBehavior=\"replace\" disallowEmptySelection selectedKeys={selected} onSelectionChange={keys=>{if(isDisabled||keys==='all')return;const key=[...keys][0],option=colors.find(option=>option.key===key);if(!option||option.isDisabled)return;if(value===undefined)setInternal(option.color);onValueChange?.(option.color);}}>\n    {option=><ListBoxItem id={option.key} textValue={option.label} aria-label={option.label} isDisabled={isDisabled||option.isDisabled} className=\"ui-color-picker__option\" data-color={option.color}>{({isSelected})=><><span className=\"ui-color-picker__visual\"><ColorSwatch color={option.color} aria-hidden size={size} shape={shape} appearance={appearance}/>{isSelected&&<motion.span layoutId={`${id}-color`} className=\"ui-color-picker__selection\" data-shape={shape} transition={{duration:reduced?0:tokens.standard,ease:tokens.ease}}/>}</span>{layout==='list'&&<span className=\"ui-color-picker__label\">{option.label}</span>}</>}</ListBoxItem>}\n   </ListBox>}/></AnimatedHeight>\n </div>;\n}\n",
+      "sha256": "781e90a667db1377b7c273bb74d39abc46f627ecf9664372573164beb469bf06",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 241,
+          "end": 290
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 319,
+          "end": 360
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 395,
+          "end": 432
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 466,
+          "end": 491
+        },
+        {
+          "kind": "module",
+          "value": "./color-swatch",
+          "target": "components/base/color-swatch/color-swatch.tsx",
+          "start": 576,
+          "end": 590
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 611,
+          "end": 621
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/color-swatch/color-swatch.tsx",
+      "content": "'use client';\n\nimport {ColorSwatch as AriaColorSwatch,type ColorSwatchProps as AriaColorSwatchProps} from 'react-aria-components';\nimport {cx} from '@/utils/cx';\n\nexport type SwatchSize='small'|'medium'|'large';\nexport type SwatchShape='circle'|'square';\nexport type SwatchAppearance='flat'|'gloss';\nexport type ColorSwatchProps=Omit<AriaColorSwatchProps,'className'|'style'> & {\n size?:SwatchSize;shape?:SwatchShape;appearance?:SwatchAppearance;className?:string;\n};\n\n/** The native swatch supplies a localized color name; transparency reveals a checkerboard. */\nexport function ColorSwatch({size='medium',shape='circle',appearance='flat',className,...props}:ColorSwatchProps){\n return <div className={cx('ui-color-swatch',className)} data-size={size} data-shape={shape} data-appearance={appearance}><AriaColorSwatch {...props} className=\"ui-color-swatch__color\"/></div>;\n}\n",
+      "sha256": "e5ce066f5a70deab0c3e686edffb5e531d5987a2b711d1dce67fdef119eff340",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 149,
+          "end": 159
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/scroll-area/scroll-area.tsx",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type Ref, type RefObject } from 'react';\nimport { RiArrowDownSLine, RiArrowUpSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type ScrollAreaViewportProps = { ref: Ref<HTMLDivElement>; className: string; children: ReactNode };\nexport type ScrollAreaProps = {\n  children?: ReactNode;\n  label: string;\n  className?: string;\n  viewportClassName?: string;\n  orientation?: 'vertical' | 'horizontal' | 'both';\n  /** Let a collection own the scroll viewport, keeping its keyboard scrolling native. */\n  renderViewport?: (props: ScrollAreaViewportProps) => ReactElement;\n  /** Keep a pointer action in a searchable input without stealing its focus. */\n  preservePointerFocus?: boolean;\n  /** Restore a virtual collection's input when a focused edge disappears. */\n  focusRef?: RefObject<HTMLElement | null>;\n  /** Keep arrow controls outside the item viewport in constrained collections. */\n  indicatorPlacement?: 'overlay' | 'gutter';\n};\n\n/** Keep native scrolling, with directional controls only when content overflows. */\nexport function ScrollArea({ children, label, className, viewportClassName, renderViewport, orientation = 'vertical', preservePointerFocus = false, focusRef, indicatorPlacement='overlay' }: ScrollAreaProps) {\n  const viewport = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);\n  const [mountedViewport, setMountedViewport] = useState<HTMLDivElement | null>(null);\n  const setViewport = useCallback((element: HTMLDivElement | null) => {\n    viewport.current = element;\n    setMountedViewport(element);\n  }, []);\n  const [edges, setEdges] = useState({ up: false, down: false, left: false, right: false });\n  const measuredEdges = useRef(edges);\n  useLayoutEffect(() => {\n    const el = mountedViewport;\n    if (!el) return;\n    function measure() {\n      if (!el) return;\n      const up = orientation !== 'horizontal' && el.scrollTop > 1, down = orientation !== 'horizontal' && el.scrollHeight - el.clientHeight - el.scrollTop > 1;\n      const rtl = getComputedStyle(el).direction === 'rtl', maximum = el.scrollWidth - el.clientWidth;\n      const left = orientation !== 'vertical' && (rtl ? maximum + el.scrollLeft : el.scrollLeft) > 1;\n      const right = orientation !== 'vertical' && (rtl ? -el.scrollLeft : maximum - el.scrollLeft) > 1;\n      const next = { up, down, left, right };\n      const focusedEdge = document.activeElement?.closest('.ui-scroll-area__edge');\n      const direction = focusedEdge?.getAttribute('data-direction') as keyof typeof next | undefined;\n      if (focusedEdge && el.parentElement?.contains(focusedEdge) && direction && !next[direction]) (focusRef?.current ?? el).focus({ preventScroll: true });\n      if (Object.keys(next).some(key => measuredEdges.current[key as keyof typeof next] !== next[key as keyof typeof next])) {\n        measuredEdges.current = next;\n        setEdges(measuredEdges.current);\n      }\n    }\n    const observer = new ResizeObserver(measure);\n    const observed = new Set<Element>();\n    function observeContent() {\n      if (!el) return;\n      // A collection may not allow a wrapper between itself and its sections.\n      // Observe those sections directly so filtering and density changes are measured.\n      const next = new Set<Element>([el, ...el.children]);\n      for (const child of observed) if (!next.has(child)) { observer.unobserve(child); observed.delete(child); }\n      for (const child of next) if (!observed.has(child)) { observer.observe(child); observed.add(child); }\n      measure();\n    }\n    const mutations = new MutationObserver(observeContent);\n    mutations.observe(el, { childList: true, subtree: true });\n    observeContent();\n    el.addEventListener('scroll', measure, { passive: true });\n    return () => { observer.disconnect(); mutations.disconnect(); el.removeEventListener('scroll', measure); };\n  }, [focusRef, mountedViewport, orientation]);\n  function scroll(direction: number, horizontal = false) {\n    const el = viewport.current;\n    if (!el) return;\n    el.scrollBy({ [horizontal ? 'left' : 'top']: direction * Math.max(80, (horizontal ? el.clientWidth : el.clientHeight) * .7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });\n  }\n  return <div className={cx('ui-scroll-area', className)} data-orientation={orientation} data-indicator-placement={indicatorPlacement} data-overflow-y={edges.up || edges.down || undefined}>\n    {renderViewport ? renderViewport({ ref: setViewport, className: cx('ui-scroll-area__viewport', viewportClassName), children }) : <div ref={setViewport} className={cx('ui-scroll-area__viewport', viewportClassName)} role=\"region\" aria-label={label} tabIndex={0}><div ref={content} className=\"ui-scroll-area__content\">{children}</div></div>}\n    <div className=\"ui-scroll-area__edge\" data-direction=\"up\" data-visible={edges.up || undefined} aria-hidden={!edges.up}><IconButton icon={RiArrowUpSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} up`} disabled={!edges.up} tabIndex={edges.up ? 0 : -1} onClick={() => scroll(-1)}/></div>\n    <div className=\"ui-scroll-area__edge\" data-direction=\"down\" data-visible={edges.down || undefined} aria-hidden={!edges.down}><IconButton icon={RiArrowDownSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} down`} disabled={!edges.down} tabIndex={edges.down ? 0 : -1} onClick={() => scroll(1)}/></div>\n    {orientation !== 'vertical' && <>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"left\" data-visible={edges.left || undefined} aria-hidden={!edges.left}><IconButton icon={RiArrowLeftSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} left`} disabled={!edges.left} tabIndex={edges.left ? 0 : -1} onClick={() => scroll(-1, true)}/></div>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"right\" data-visible={edges.right || undefined} aria-hidden={!edges.right}><IconButton icon={RiArrowRightSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} right`} disabled={!edges.right} tabIndex={edges.right ? 0 : -1} onClick={() => scroll(1, true)}/></div>\n    </>}\n  </div>;\n}\n",
+      "sha256": "6a0b95325225bbeb5dbcfb3fc4d3069c72e5d022d897f9e6bee1e96c34243bcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 282,
+          "end": 319
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 342,
+          "end": 352
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-color-picker",
+      "ui-color-picker__empty",
+      "ui-color-picker__label",
+      "ui-color-picker__list",
+      "ui-color-picker__option",
+      "ui-color-picker__scroll",
+      "ui-color-picker__selection",
+      "ui-color-picker__visual",
+      "ui-color-swatch",
+      "ui-color-swatch__color",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-scroll-area",
+      "ui-scroll-area__content",
+      "ui-scroll-area__edge",
+      "ui-scroll-area__viewport",
+      "ui-spinner"
+    ],
+    "prefixes": []
+  }
+}

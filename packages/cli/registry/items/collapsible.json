@@ -1,0 +1,61 @@
+{
+  "name": "collapsible",
+  "title": "Collapsible",
+  "group": "Base",
+  "type": "component",
+  "description": "An animated content region that preserves child state while removing hidden content from keyboard navigation and the accessibility tree.",
+  "sections": [
+    "Preview",
+    "Preserved content",
+    "Layout flow"
+  ],
+  "example": "<Button aria-expanded={open} aria-controls=\"details\" onClick={() => setOpen(!open)}>\n  Details\n</Button>\n<Collapsible id=\"details\" isOpen={open}>\n  <Input label=\"Project name\" defaultValue=\"Studio\" />\n</Collapsible>",
+  "entryFiles": [
+    "components/base/collapsible/collapsible.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/collapsible/collapsible.tsx",
+      "names": [
+        "Collapsible",
+        "CollapsibleProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/collapsible/collapsible.tsx",
+      "content": "import type { HTMLAttributes, ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CollapsibleProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & { isOpen: boolean; children: ReactNode };\n\n/** Keep descendants mounted while hiding their focus targets and animating flow. */\nexport function Collapsible({ isOpen, children, className, ...props }: CollapsibleProps) {\n  return <div {...props} className={cx('ui-collapsible', className)} data-open={isOpen || undefined} aria-hidden={!isOpen} inert={!isOpen}>\n    <div className=\"ui-collapsible__inner\"><div className=\"ui-collapsible__content\">{children}</div></div>\n  </div>;\n}\n",
+      "sha256": "639642d279efcb03d280423ca16442c74c8d97c0a83d3692047ac43d0748fa3c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-collapsible",
+      "ui-collapsible__content",
+      "ui-collapsible__inner"
+    ],
+    "prefixes": []
+  }
+}

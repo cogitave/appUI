@@ -1,0 +1,186 @@
+{
+  "families": [
+    {
+      "id": "workspace",
+      "label": "Workspace",
+      "rootSlug": "ai-chat",
+      "selectionLabel": "Preset",
+      "kind": "preset",
+      "api": "WorkspaceTemplate",
+      "description": "Conversation workspaces with typed screen presets for chat, tabbed agents, multiple agents, a starter screen and image generation.",
+      "shared": [
+        "Composer",
+        "Message",
+        "MessageActions",
+        "CommandPalette",
+        "Sidebar"
+      ],
+      "configuration": "Choose a preset for the screen composition. Pass its typed data and callbacks as props; use child components for visual variants such as tabVariant or selectionVariant.",
+      "members": [
+        {
+          "slug": "ai-chat",
+          "label": "Chat",
+          "value": "chat"
+        },
+        {
+          "slug": "agent-workspace",
+          "label": "Agent",
+          "value": "agent"
+        },
+        {
+          "slug": "multi-agent-chat",
+          "label": "Multi-agent",
+          "value": "multi-agent"
+        },
+        {
+          "slug": "chat-starter",
+          "label": "Starter",
+          "value": "starter"
+        },
+        {
+          "slug": "ai-image-generation",
+          "label": "Image generation",
+          "value": "image-generation"
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "rootSlug": "home-dashboard",
+      "selectionLabel": "Preset",
+      "kind": "preset",
+      "api": "DashboardTemplate",
+      "description": "Overview, finance and marketing layouts composed from shared metrics, typed charts and collection controls.",
+      "shared": [
+        "Sidebar",
+        "StatCards",
+        "DataTable",
+        "Chart cards"
+      ],
+      "configuration": "Choose a preset for the dashboard composition. Supply the matching metrics and collections through typed props. Each chart retains its own data model.",
+      "members": [
+        {
+          "slug": "home-dashboard",
+          "label": "Overview",
+          "value": "overview"
+        },
+        {
+          "slug": "finance-dashboard",
+          "label": "Finance",
+          "value": "finance"
+        },
+        {
+          "slug": "marketing-dashboard",
+          "label": "Marketing",
+          "value": "marketing"
+        }
+      ]
+    },
+    {
+      "id": "profile",
+      "label": "Profile",
+      "rootSlug": "ai-profile",
+      "selectionLabel": "Preset",
+      "kind": "preset",
+      "api": "ProfileTemplate",
+      "description": "Account and medical profile layouts with shared identity and navigation, while retaining their separate domain data.",
+      "shared": [
+        "Sidebar",
+        "Avatar",
+        "Chart cards"
+      ],
+      "configuration": "Choose account or medical, then supply that preset\u2019s profile schema. Medical details and account usage keep separate typed fields.",
+      "members": [
+        {
+          "slug": "ai-profile",
+          "label": "Account",
+          "navigationLabel": "Account profile",
+          "value": "account"
+        },
+        {
+          "slug": "medical-profile",
+          "label": "Medical",
+          "navigationLabel": "Medical profile",
+          "value": "medical"
+        }
+      ]
+    },
+    {
+      "id": "composer",
+      "label": "Composer",
+      "rootSlug": "composer",
+      "selectionLabel": "Composition",
+      "kind": "composition",
+      "api": "Composer",
+      "description": "One composer family: the base input, a model and permission panel, attachments and an animated loading edge.",
+      "shared": [
+        "Composer",
+        "ComposerAttachments",
+        "ComposerPanel",
+        "ComposerLoader"
+      ],
+      "configuration": "Configure Composer with model, attachments, isWorking and slots. ComposerPanel composes provider and permission controls; ComposerLoader decorates the input with an animated edge. These compositions use their own exported components.",
+      "members": [
+        {
+          "slug": "composer",
+          "label": "Standard",
+          "value": "standard"
+        },
+        {
+          "slug": "composer-panel",
+          "label": "Panel",
+          "value": "panel"
+        },
+        {
+          "slug": "composer-attachments",
+          "label": "Attachments",
+          "value": "attachments"
+        },
+        {
+          "slug": "composer-loader",
+          "label": "Loading edge",
+          "value": "loader"
+        }
+      ]
+    },
+    {
+      "id": "button",
+      "label": "Button",
+      "rootSlug": "button",
+      "selectionLabel": "Component",
+      "kind": "component",
+      "api": "Button",
+      "description": "Related action controls in one family: text buttons, icon actions, navigation links and provider sign-in buttons.",
+      "shared": [
+        "Button",
+        "IconButton",
+        "LinkButton",
+        "SocialButton"
+      ],
+      "configuration": "Use variant for visual emphasis, size for geometry and props for loading or icons. Use LinkButton for navigation and SocialButton for provider identity; preserve their native semantics. ButtonGroup remains a separate composition.",
+      "members": [
+        {
+          "slug": "button",
+          "label": "Text button",
+          "value": "text"
+        },
+        {
+          "slug": "icon-button",
+          "label": "Icon button",
+          "value": "icon"
+        },
+        {
+          "slug": "link-button",
+          "label": "Link button",
+          "value": "link"
+        },
+        {
+          "slug": "social-button",
+          "label": "Social button",
+          "value": "social"
+        }
+      ]
+    }
+  ]
+}

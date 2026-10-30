@@ -1,0 +1,296 @@
+{
+  "name": "workspace-tabs",
+  "title": "Workspace Tabs",
+  "group": "Blocks",
+  "type": "block",
+  "description": "Open documents and conversations in shared accessible tabs. Custom leading content, toolbar/footer slots, separate close buttons, unsaved indicators, contained scrolling and three surfaces work with ordinary keyboard navigation.",
+  "sections": [
+    "Preview",
+    "Surfaces",
+    "Density",
+    "Manual activation",
+    "Unsaved work",
+    "Right to left"
+  ],
+  "example": "<WorkspaceTabs\n  items={openDocuments}\n  selectedId={activeId}\n  onSelectionChange={setActiveId}\n  onClose={closeDocument}\n  onNewTab={createDocument}\n  renderPanel={document => <DocumentEditor id={document.id} />}\n/>",
+  "entryFiles": [
+    "components/blocks/workspace-tabs/workspace-tabs.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/workspace-tabs/workspace-tabs.tsx",
+      "names": [
+        "WorkspaceTab",
+        "WorkspaceTabs",
+        "WorkspaceTabsProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/buttons/close-button.tsx",
+      "content": "import type { ButtonHTMLAttributes, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CloseButtonSize = '2xs' | 'xs' | 'sm' | 'md';\n\nexport type CloseButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'> & {\n  size?: CloseButtonSize;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nconst glyphSizes: Record<CloseButtonSize, number> = { '2xs': 8, xs: 11, sm: 13, md: 17 };\nconst strokes: Record<CloseButtonSize, number> = { '2xs': 1.6, xs: 2, sm: 2, md: 2.5 };\n\nexport function CloseButton({ size = 'xs', className, type = 'button', ...props }: CloseButtonProps) {\n  const glyph = glyphSizes[size];\n  const inset = size === '2xs' ? 1.4 : 2;\n  return (\n    <button type={type} data-size={size} className={cx('ui-close-button', className)} {...props}>\n      <svg width={glyph} height={glyph} viewBox={`0 0 ${glyph} ${glyph}`} fill=\"none\" aria-hidden=\"true\">\n        <path d={`M${inset} ${inset}L${glyph - inset} ${glyph - inset}M${glyph - inset} ${inset}L${inset} ${glyph - inset}`} stroke=\"currentColor\" strokeWidth={strokes[size]} strokeLinecap=\"round\" />\n      </svg>\n    </button>\n  );\n}\n",
+      "sha256": "c670608d6b5b2e2c1d8d50bb37efbca9c38463fd0fecc5b3525464bff6cbed78",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/scroll-area/scroll-area.tsx",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type Ref, type RefObject } from 'react';\nimport { RiArrowDownSLine, RiArrowUpSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type ScrollAreaViewportProps = { ref: Ref<HTMLDivElement>; className: string; children: ReactNode };\nexport type ScrollAreaProps = {\n  children?: ReactNode;\n  label: string;\n  className?: string;\n  viewportClassName?: string;\n  orientation?: 'vertical' | 'horizontal' | 'both';\n  /** Let a collection own the scroll viewport, keeping its keyboard scrolling native. */\n  renderViewport?: (props: ScrollAreaViewportProps) => ReactElement;\n  /** Keep a pointer action in a searchable input without stealing its focus. */\n  preservePointerFocus?: boolean;\n  /** Restore a virtual collection's input when a focused edge disappears. */\n  focusRef?: RefObject<HTMLElement | null>;\n  /** Keep arrow controls outside the item viewport in constrained collections. */\n  indicatorPlacement?: 'overlay' | 'gutter';\n};\n\n/** Keep native scrolling, with directional controls only when content overflows. */\nexport function ScrollArea({ children, label, className, viewportClassName, renderViewport, orientation = 'vertical', preservePointerFocus = false, focusRef, indicatorPlacement='overlay' }: ScrollAreaProps) {\n  const viewport = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);\n  const [mountedViewport, setMountedViewport] = useState<HTMLDivElement | null>(null);\n  const setViewport = useCallback((element: HTMLDivElement | null) => {\n    viewport.current = element;\n    setMountedViewport(element);\n  }, []);\n  const [edges, setEdges] = useState({ up: false, down: false, left: false, right: false });\n  const measuredEdges = useRef(edges);\n  useLayoutEffect(() => {\n    const el = mountedViewport;\n    if (!el) return;\n    function measure() {\n      if (!el) return;\n      const up = orientation !== 'horizontal' && el.scrollTop > 1, down = orientation !== 'horizontal' && el.scrollHeight - el.clientHeight - el.scrollTop > 1;\n      const rtl = getComputedStyle(el).direction === 'rtl', maximum = el.scrollWidth - el.clientWidth;\n      const left = orientation !== 'vertical' && (rtl ? maximum + el.scrollLeft : el.scrollLeft) > 1;\n      const right = orientation !== 'vertical' && (rtl ? -el.scrollLeft : maximum - el.scrollLeft) > 1;\n      const next = { up, down, left, right };\n      const focusedEdge = document.activeElement?.closest('.ui-scroll-area__edge');\n      const direction = focusedEdge?.getAttribute('data-direction') as keyof typeof next | undefined;\n      if (focusedEdge && el.parentElement?.contains(focusedEdge) && direction && !next[direction]) (focusRef?.current ?? el).focus({ preventScroll: true });\n      if (Object.keys(next).some(key => measuredEdges.current[key as keyof typeof next] !== next[key as keyof typeof next])) {\n        measuredEdges.current = next;\n        setEdges(measuredEdges.current);\n      }\n    }\n    const observer = new ResizeObserver(measure);\n    const observed = new Set<Element>();\n    function observeContent() {\n      if (!el) return;\n      // A collection may not allow a wrapper between itself and its sections.\n      // Observe those sections directly so filtering and density changes are measured.\n      const next = new Set<Element>([el, ...el.children]);\n      for (const child of observed) if (!next.has(child)) { observer.unobserve(child); observed.delete(child); }\n      for (const child of next) if (!observed.has(child)) { observer.observe(child); observed.add(child); }\n      measure();\n    }\n    const mutations = new MutationObserver(observeContent);\n    mutations.observe(el, { childList: true, subtree: true });\n    observeContent();\n    el.addEventListener('scroll', measure, { passive: true });\n    return () => { observer.disconnect(); mutations.disconnect(); el.removeEventListener('scroll', measure); };\n  }, [focusRef, mountedViewport, orientation]);\n  function scroll(direction: number, horizontal = false) {\n    const el = viewport.current;\n    if (!el) return;\n    el.scrollBy({ [horizontal ? 'left' : 'top']: direction * Math.max(80, (horizontal ? el.clientWidth : el.clientHeight) * .7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });\n  }\n  return <div className={cx('ui-scroll-area', className)} data-orientation={orientation} data-indicator-placement={indicatorPlacement} data-overflow-y={edges.up || edges.down || undefined}>\n    {renderViewport ? renderViewport({ ref: setViewport, className: cx('ui-scroll-area__viewport', viewportClassName), children }) : <div ref={setViewport} className={cx('ui-scroll-area__viewport', viewportClassName)} role=\"region\" aria-label={label} tabIndex={0}><div ref={content} className=\"ui-scroll-area__content\">{children}</div></div>}\n    <div className=\"ui-scroll-area__edge\" data-direction=\"up\" data-visible={edges.up || undefined} aria-hidden={!edges.up}><IconButton icon={RiArrowUpSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} up`} disabled={!edges.up} tabIndex={edges.up ? 0 : -1} onClick={() => scroll(-1)}/></div>\n    <div className=\"ui-scroll-area__edge\" data-direction=\"down\" data-visible={edges.down || undefined} aria-hidden={!edges.down}><IconButton icon={RiArrowDownSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} down`} disabled={!edges.down} tabIndex={edges.down ? 0 : -1} onClick={() => scroll(1)}/></div>\n    {orientation !== 'vertical' && <>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"left\" data-visible={edges.left || undefined} aria-hidden={!edges.left}><IconButton icon={RiArrowLeftSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} left`} disabled={!edges.left} tabIndex={edges.left ? 0 : -1} onClick={() => scroll(-1, true)}/></div>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"right\" data-visible={edges.right || undefined} aria-hidden={!edges.right}><IconButton icon={RiArrowRightSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} right`} disabled={!edges.right} tabIndex={edges.right ? 0 : -1} onClick={() => scroll(1, true)}/></div>\n    </>}\n  </div>;\n}\n",
+      "sha256": "6a0b95325225bbeb5dbcfb3fc4d3069c72e5d022d897f9e6bee1e96c34243bcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 282,
+          "end": 319
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 342,
+          "end": 352
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/tabs/tabs.tsx",
+      "content": "'use client';\n\nimport { Tabs as AriaTabs, TabList as AriaTabList, Tab as AriaTab, TabPanel as AriaTabPanel, type TabsProps as AriaTabsProps, type TabListProps as AriaTabListProps, type TabProps as AriaTabProps, type TabPanelProps as AriaTabPanelProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport type { Ref } from 'react';\n\nexport type TabsProps = AriaTabsProps & { variant?: 'underline' | 'pill'; className?: string; ref?:Ref<HTMLDivElement> };\nexport function Tabs({ variant = 'underline', className, ...props }: TabsProps) { return <AriaTabs {...props} data-variant={variant} className={cx('ui-tabs', className)} />; }\nexport function TabList<T extends object>({ className, ...props }: AriaTabListProps<T> & {ref?:Ref<HTMLDivElement>}) { return <AriaTabList {...props} className={typeof className === 'function' ? values => cx('ui-tabs__list', className(values)) : cx('ui-tabs__list', className)} />; }\nexport function Tab({ className, ...props }: AriaTabProps) { return <AriaTab {...props} className={typeof className === 'function' ? values => cx('ui-tabs__tab', className(values)) : cx('ui-tabs__tab', className)} />; }\nexport function TabPanel({ className, ...props }: AriaTabPanelProps) { return <AriaTabPanel {...props} className={typeof className === 'function' ? values => cx('ui-tabs__panel', className(values)) : cx('ui-tabs__panel', className)} />; }\n",
+      "sha256": "244f92a34cc0d1bb51dc519c2398c69b8c88fe9e3c509f8d587dc011a2150dc6",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 303,
+          "end": 313
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/tooltip/tooltip.tsx",
+      "content": "'use client';\n\nimport { isValidElement, type ComponentProps, type ReactNode } from 'react';\nimport { Button as AriaButton, Link as AriaLink, Focusable, TooltipTrigger, Tooltip as AriaTooltip, OverlayArrow, type TooltipProps as AriaTooltipProps } from 'react-aria-components';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type TooltipProps = { children: ComponentProps<typeof Focusable>['children']; content: ReactNode; placement?: AriaTooltipProps['placement']; delay?: number; closeDelay?: number; showArrow?: boolean; isDisabled?: boolean; className?: string; /** Aria triggers already consume TooltipTrigger's public focus context. */ triggerType?:'auto'|'native'|'aria' };\nexport function Tooltip({ children, content, placement = 'top', delay = 350, closeDelay = 100, showArrow = true, isDisabled, className, triggerType='auto' }: TooltipProps) {\n  const childDisabled = isValidElement<{disabled?: boolean;isDisabled?: boolean}>(children) && (children.props.disabled || children.props.isDisabled);\n  const disabled = isDisabled ?? Boolean(childDisabled);\n  const triggerComponent:unknown=isValidElement(children)?children.type:null;\n  const ariaTrigger=triggerType==='aria'||triggerType==='auto'&&isValidElement(children)&&[IconButton,AriaButton,AriaLink].some(type=>triggerComponent===type);\n  return <TooltipTrigger delay={delay} closeDelay={closeDelay} isDisabled={disabled}>{ariaTrigger?children:<Focusable isDisabled={disabled}>{children}</Focusable>}<AriaTooltip placement={placement} offset={7} className={cx('ui-tooltip', className)}>{showArrow && <OverlayArrow className=\"ui-tooltip__arrow\"><svg width=\"10\" height=\"6\" viewBox=\"0 0 10 6\" aria-hidden=\"true\"><path d=\"M0 0 5 5 10 0\" /></svg></OverlayArrow>}{content}</AriaTooltip></TooltipTrigger>;\n}\n",
+      "sha256": "39c01ab628a2f9f61af439cbed85804847f0fa6d0bb3261ad1a29bb00b08bd55",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 304,
+          "end": 341
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 364,
+          "end": 374
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/workspace-tabs/workspace-tabs.tsx",
+      "content": "'use client';\n\nimport { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';\nimport { RiAddLine } from '@remixicon/react';\nimport { Tabs, TabList, Tab, TabPanel } from '@/components/base/tabs/tabs';\nimport { CloseButton } from '@/components/base/buttons/close-button';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { ScrollArea } from '@/components/base/scroll-area/scroll-area';\nimport { Tooltip } from '@/components/base/tooltip/tooltip';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type WorkspaceTab = { id:string; title:string; icon?:IconComponent; leading?:ReactNode; isDirty?:boolean; isDisabled?:boolean; isClosable?:boolean };\nexport type WorkspaceTabsProps = {\n  items:WorkspaceTab[];\n  label?:string;\n  selectedId?:string|null;\n  defaultSelectedId?:string;\n  onSelectionChange?:(id:string)=>void;\n  /** The application owns removal and any unsaved-change confirmation. */\n  onClose?:(id:string)=>void;\n  onNewTab?:()=>void;\n  newTabLabel?:string;\n  renderPanel:(tab:WorkspaceTab)=>ReactNode;\n  empty?:ReactNode;\n  variant?:'card'|'line'|'soft';\n  density?:'comfortable'|'compact';\n  keyboardActivation?:'automatic'|'manual';\n  /** Shared top bar actions and persistent side/content surfaces. */\n  toolbarLeading?:ReactNode;\n  toolbarTrailing?:ReactNode;\n  footer?:ReactNode;\n  className?:string;\n};\n\n/** Accessible application tabs composed from the same Tabs used throughout appUI. */\nexport function WorkspaceTabs({items,label='Open work',selectedId,defaultSelectedId,onSelectionChange,onClose,onNewTab,newTabLabel='New tab',renderPanel,empty,variant='card',density='comfortable',keyboardActivation='automatic',toolbarLeading,toolbarTrailing,footer,className}:WorkspaceTabsProps) {\n  const [internal,setInternal]=useState(defaultSelectedId??items.find(item=>!item.isDisabled)?.id??null);\n  const requested=selectedId===undefined?internal:selectedId;\n  const root=useRef<HTMLDivElement>(null),previousItems=useRef(items);\n  const interaction=useRef(0);\n  const pendingClose=useRef<{id:string;next:string|null;owned:boolean;activate:boolean;selected:string|null;interaction:number}|null>(null);\n  const available=items.filter(item=>!item.isDisabled);\n  const previousIndex=previousItems.current.filter(item=>!item.isDisabled).findIndex(item=>item.id===requested);\n  const closed=pendingClose.current;\n  const desired=closed?.activate&&closed.selected===requested&&!items.some(item=>item.id===closed.id)?closed.next:requested;\n  const active=available.find(item=>item.id===desired)?.id??available[Math.max(0,Math.min(previousIndex,available.length-1))]?.id??null;\n  function select(id:string){if(selectedId===undefined)setInternal(id);onSelectionChange?.(id);}\n  function close(item:WorkspaceTab,focusAdjacent=false) {\n    if(!onClose||item.isDisabled||item.isClosable===false)return;\n    const target=document.activeElement;\n    const owned=target instanceof Element&&target.closest('[data-workspace-tab]')?.getAttribute('data-workspace-tab')===item.id;\n    const remaining=available.filter(tab=>tab.id!==item.id);\n    const next=item.id===active||focusAdjacent?remaining[Math.min(available.findIndex(tab=>tab.id===item.id),remaining.length-1)]?.id:active;\n    pendingClose.current={id:item.id,next:next??null,owned,activate:focusAdjacent&&keyboardActivation==='automatic',selected:active,interaction:interaction.current};\n    onClose(item.id);\n  }\n  useLayoutEffect(()=>{\n    previousItems.current=items;\n    if(active&&active!==requested)select(active);\n  },[items,active,requested]);\n  useEffect(()=>{\n    const request=pendingClose.current;\n    if(!request||items.some(item=>item.id===request.id))return;\n    if(!request.owned){pendingClose.current=null;return;}\n    const focusTargetId=request.next;\n    const focusInteraction=request.interaction;\n    let frame=0;\n    function restore(){\n      if(pendingClose.current!==request)return;\n      if(interaction.current!==focusInteraction){pendingClose.current=null;return;}\n      // A confirmation dialog releases its focus scope at the end of its exit.\n      const overlay=document.querySelector('.ui-modal-overlay');\n      if(overlay){if(overlay.hasAttribute('data-exiting'))frame=requestAnimationFrame(restore);else pendingClose.current=null;return;}\n      pendingClose.current=null;\n      const focused=document.activeElement;\n      if(focused!==document.body&&focused instanceof HTMLElement&&focused.isConnected&&!root.current?.contains(focused))return;\n      const focusId=items.some(item=>item.id===focusTargetId&&!item.isDisabled)?focusTargetId:active;\n      const target=focusId?root.current?.querySelector<HTMLElement>(`[role=\"tab\"][data-key=\"${CSS.escape(focusId)}\"]`):root.current?.querySelector<HTMLButtonElement>('.ui-workspace-tabs__new');\n      target?.focus({preventScroll:true});\n    }\n    frame=requestAnimationFrame(restore);\n    return()=>cancelAnimationFrame(frame);\n  },[items,active]);\n  return <Tabs ref={root} selectedKey={active} onSelectionChange={key=>select(String(key))} keyboardActivation={keyboardActivation} className={cx('ui-workspace-tabs',className)} data-appearance={variant} data-density={density}>\n    <div className=\"ui-workspace-tabs__toolbar\" onKeyDownCapture={()=>{interaction.current+=1;}} onPointerDownCapture={()=>{interaction.current+=1;}}>\n      {toolbarLeading}\n      <ScrollArea label={label} orientation=\"horizontal\" className=\"ui-workspace-tabs__scroll\" renderViewport={({ref,className})=><TabList ref={ref} aria-label={label} className={cx(className,'ui-workspace-tabs__list')} items={items}>{item=>{\n        const Icon=item.icon,closable=Boolean(onClose&&item.isClosable!==false&&!item.isDisabled);\n        return <Tab id={item.id} isDisabled={item.isDisabled} className=\"ui-workspace-tabs__tab\" aria-label={`${item.title}${item.isDirty?' (unsaved changes)':''}`} render={(domProps,state)=><div className=\"ui-workspace-tabs__entry\" data-workspace-tab={item.id} data-selected={state.isSelected||undefined} data-disabled={state.isDisabled||undefined} onKeyDownCapture={event=>{if(event.key==='Delete'&&closable&&(event.target as Element).closest('[role=\"tab\"]')){event.preventDefault();event.stopPropagation();close(item,true);}}}>\n          {'href' in domProps?<a {...domProps}/>:<div {...domProps}/>}{closable&&<CloseButton className=\"ui-workspace-tabs__close\" size=\"xs\" aria-label={`Close ${item.title}`} tabIndex={state.isSelected?0:-1} onClick={()=>close(item)}/>}\n        </div>}>\n          {item.leading?<span className=\"ui-workspace-tabs__leading\">{item.leading}</span>:Icon&&<Icon aria-hidden/>}<span className=\"ui-workspace-tabs__title\">{item.title}</span>{item.isDirty&&<span className=\"ui-workspace-tabs__dirty\" aria-hidden/>}\n        </Tab>;\n      }}</TabList>}/>\n      {onNewTab&&<Tooltip content={newTabLabel}><IconButton className=\"ui-workspace-tabs__new\" icon={RiAddLine} variant=\"ghost\" size=\"small\" aria-label={newTabLabel} onClick={onNewTab}/></Tooltip>}\n      {toolbarTrailing}\n    </div>\n    <div className=\"ui-workspace-tabs__body\">\n      <div className=\"ui-workspace-tabs__content\">\n    <div className=\"ui-workspace-tabs__panels\" onKeyDownCapture={()=>{interaction.current+=1;}} onPointerDownCapture={()=>{interaction.current+=1;}}>\n      {items.map(item=><TabPanel key={item.id} id={item.id} className=\"ui-workspace-tabs__panel\">{({isExiting})=><div className=\"ui-workspace-tabs__panel-content\" inert={isExiting} aria-hidden={isExiting||undefined}>{renderPanel(item)}</div>}</TabPanel>)}\n      {!active&&<div className=\"ui-workspace-tabs__empty\">{empty}</div>}\n    </div>\n      {footer}\n      </div>\n    </div>\n  </Tabs>;\n}\n",
+      "sha256": "b5d4a3f52f8a11558b8e4c07dca90bd68568bb1ffe320181df9f676032845237",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/tabs/tabs",
+          "target": "components/base/tabs/tabs.tsx",
+          "start": 193,
+          "end": 220
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 252,
+          "end": 290
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 321,
+          "end": 358
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 389,
+          "end": 430
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/tooltip/tooltip",
+          "target": "components/base/tooltip/tooltip.tsx",
+          "start": 458,
+          "end": 491
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 530,
+          "end": 565
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 588,
+          "end": 598
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-close-button",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-modal-overlay",
+      "ui-scroll-area",
+      "ui-scroll-area__content",
+      "ui-scroll-area__edge",
+      "ui-scroll-area__viewport",
+      "ui-spinner",
+      "ui-tabs",
+      "ui-tabs__list",
+      "ui-tabs__panel",
+      "ui-tabs__tab",
+      "ui-tooltip",
+      "ui-tooltip__arrow",
+      "ui-workspace-tabs",
+      "ui-workspace-tabs__body",
+      "ui-workspace-tabs__close",
+      "ui-workspace-tabs__content",
+      "ui-workspace-tabs__dirty",
+      "ui-workspace-tabs__empty",
+      "ui-workspace-tabs__entry",
+      "ui-workspace-tabs__leading",
+      "ui-workspace-tabs__list",
+      "ui-workspace-tabs__new",
+      "ui-workspace-tabs__panel",
+      "ui-workspace-tabs__panel-content",
+      "ui-workspace-tabs__panels",
+      "ui-workspace-tabs__scroll",
+      "ui-workspace-tabs__tab",
+      "ui-workspace-tabs__title",
+      "ui-workspace-tabs__toolbar"
+    ],
+    "prefixes": []
+  }
+}

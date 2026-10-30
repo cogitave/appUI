@@ -1,0 +1,30 @@
+.ui-color-swatch { position:relative; display:inline-block; flex:none; width:28px; height:28px; overflow:hidden; border-radius:50%; background:conic-gradient(var(--surface-base) 25%,var(--border-control) 0 50%,var(--surface-base) 0 75%,var(--border-control) 0) 0 0/8px 8px; box-shadow:inset 0 0 0 1px var(--border-control); transition:width var(--motion-standard) var(--motion-ease),height var(--motion-standard) var(--motion-ease),border-radius var(--motion-standard) var(--motion-ease); }
+.ui-color-swatch[data-size='small'] { width:20px; height:20px; }
+.ui-color-swatch[data-size='large'] { width:36px; height:36px; }
+.ui-color-swatch[data-shape='square'] { border-radius:6px; }
+.ui-color-swatch__color { width:100%; height:100%; border-radius:inherit; transition:background-color var(--motion-fast) var(--motion-ease); }
+.ui-color-swatch::after { position:absolute; inset:0; border-radius:inherit; background:radial-gradient(ellipse at 30% 0%,rgb(255 255 255 / .7),transparent 58%),linear-gradient(15deg,transparent 40%,rgb(255 255 255 / .15) 50%,transparent 60%); opacity:0; pointer-events:none; content:''; transition:opacity var(--motion-fast) var(--motion-ease); }
+.ui-color-swatch[data-appearance='gloss']::after { opacity:1; }
+.ui-color-picker { min-width:0; max-width:100%; }
+.ui-color-picker__scroll { min-width:0; max-width:100%; }
+.ui-color-picker__list { max-height:var(--color-picker-max-height,none); display:flex; flex-wrap:wrap; align-items:center; gap:6px; min-width:0; padding:4px; outline:none; }
+.ui-color-picker[data-layout='row'] .ui-color-picker__list { flex-wrap:nowrap; width:max-content; min-width:100%; padding-inline:30px; }
+.ui-color-picker[data-constrained] .ui-color-picker__list { padding-block:30px; }
+.ui-color-picker[data-layout='list'] .ui-color-picker__list { flex-direction:column; flex-wrap:nowrap; align-items:stretch; }
+.ui-color-picker__option { display:flex; align-items:center; justify-content:center; flex:none; gap:12px; min-width:36px; min-height:36px; padding:4px; border-radius:8px; cursor:pointer; outline:none; transition:min-width var(--motion-standard) var(--motion-ease),min-height var(--motion-standard) var(--motion-ease),padding var(--motion-standard) var(--motion-ease),background-color var(--motion-fast) var(--motion-ease),opacity var(--motion-fast) var(--motion-ease); scroll-margin:4px; }
+.ui-color-picker[data-size='small'] .ui-color-picker__option { min-width:28px; min-height:28px; }
+.ui-color-picker[data-size='large'] .ui-color-picker__option { min-width:44px; min-height:44px; }
+.ui-color-picker[data-layout='list'] .ui-color-picker__option { justify-content:flex-start; }
+.ui-color-picker[data-layout='list'] .ui-color-picker__list { padding-inline:8px; }
+.ui-color-picker__visual { position:relative; display:flex; align-items:center; justify-content:center; flex:none; transition:transform var(--motion-fast) var(--motion-ease); }
+.ui-color-picker__option[data-hovered]:not([data-disabled]) .ui-color-picker__visual { transform:scale(1.06); }
+.ui-color-picker__option[data-pressed]:not([data-disabled]) .ui-color-picker__visual { transform:scale(.94); }
+.ui-color-picker__option[data-focus-visible] { outline:2px solid var(--focus-ring); outline-offset:-2px; }
+.ui-color-picker__list[data-focus-visible] { outline:2px solid var(--focus-ring); outline-offset:-2px; border-radius:8px; }
+.ui-color-picker__option[data-disabled] { opacity:.42; cursor:not-allowed; }
+.ui-color-picker__selection { position:absolute; inset:-3px; border:1.5px solid var(--text-strong); border-radius:50%; pointer-events:none; transition:border-radius var(--motion-standard) var(--motion-ease); }
+.ui-color-picker__selection[data-shape='square'] { border-radius:8px; }
+.ui-color-picker__label,.ui-color-picker__empty { min-width:0; color:var(--text-strong); font-family:var(--font-sans); font-size:var(--text-body-regular); font-weight:var(--text-body-regular--font-weight); line-height:var(--text-body-regular--line-height); letter-spacing:var(--text-body-regular--letter-spacing); overflow-wrap:anywhere; }
+.ui-color-picker__option[data-selected] .ui-color-picker__label,.ui-color-picker__empty { font-weight:var(--text-body-medium--font-weight); }
+@media (pointer:coarse) { .ui-color-picker__option,.ui-color-picker[data-size='small'] .ui-color-picker__option { min-width:44px; min-height:44px; } }
+@media (prefers-reduced-motion:reduce) { .ui-color-swatch,.ui-color-swatch::after,.ui-color-swatch__color,.ui-color-picker__option,.ui-color-picker__visual,.ui-color-picker__selection { transition:none; } }

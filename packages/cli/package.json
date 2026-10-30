@@ -1,0 +1,27 @@
+{
+  "name": "appui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local source installer for appUI React components, blocks and charts",
+  "bin": {
+    "appui": "./bin/appui.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin",
+    "src",
+    "registry",
+    "README.md",
+    "skill"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "zod": "^4.6.5"
+  }
+}

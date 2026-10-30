@@ -1,0 +1,617 @@
+{
+  "name": "agent-creator",
+  "title": "Agent Creator",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A configurable identity panel for an agent: shape, color, name, voice, language, and notification preferences.",
+  "sections": [
+    "Preview",
+    "Identity options",
+    "Save action"
+  ],
+  "example": "<AgentCreator defaultValue={agent} onChange={setAgent} onSave={saveAgent} />",
+  "entryFiles": [
+    "components/blocks/agent-creator/agent-creator.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/agent-creator/agent-creator.tsx",
+      "names": [
+        "AgentCreator",
+        "AgentCreatorProps",
+        "AgentIdentity"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/button.tsx",
+      "content": "'use client';\n\nimport type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\nimport { Spinner } from '@/components/base/spinner/spinner';\n\nexport type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline' | 'solid' | 'quiet';\nexport type ButtonSize = 'medium' | 'small' | 'xs';\n\ntype NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;\ntype ContentProps =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonProps = NativeButtonProps & ContentProps & {\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  trailingIcon?: IconComponent;\n  isLoading?: boolean;\n  loadingLabel?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\nconst base = 'ui-button inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none outline-none';\nconst sizes: Record<ButtonSize, string> = {\n  medium: 'h-9 rounded-[10px] px-2 gap-0.5',\n  small: 'h-8 rounded-lg px-2 gap-0.5',\n  xs: 'h-6 rounded-[5px] px-2 gap-0.5',\n};\nexport const buttonIconClassNames: Record<ButtonSize, string> = { medium: 'size-5', small: 'size-[18px]', xs: 'size-3.5' };\nexport function buttonClassNames(size: ButtonSize, iconOnly = false, className?: string) {\n  return cx(base, sizes[size], iconOnly && 'ui-button--icon-only !p-0', className);\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'medium',\n  iconOnly = false,\n  leadingIcon: LeadingIcon,\n  trailingIcon: TrailingIcon,\n  children,\n  className,\n  type = 'button',\n  isLoading = false,\n  loadingLabel,\n  disabled,\n  onClick,\n  onKeyDown,\n  ...props\n}: ButtonProps) {\n  return (\n    <button\n      {...props}\n      type={isLoading && type === 'submit' ? 'button' : type}\n      disabled={disabled}\n      aria-disabled={isLoading || props['aria-disabled'] || undefined}\n      aria-busy={isLoading || undefined}\n      aria-description={isLoading && loadingLabel ? loadingLabel : props['aria-description']}\n      data-variant={variant}\n      data-size={size}\n      data-icon-only={iconOnly || undefined}\n      data-loading={isLoading || undefined}\n      data-loading-label={loadingLabel !== undefined || undefined}\n      className={buttonClassNames(size, iconOnly, className)}\n      onClick={event => { if (isLoading || props['aria-disabled'] === true || props['aria-disabled'] === 'true') { event.preventDefault(); event.stopPropagation(); return; } onClick?.(event); }}\n      onKeyDown={event => { if (isLoading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); return; } onKeyDown?.(event); }}\n    >\n      {LeadingIcon && <span className=\"ui-button__leading-slot\" aria-hidden><LeadingIcon className={cx(buttonIconClassNames[size], 'ui-button__leading-icon')}/></span>}\n      {!iconOnly && <span className=\"ui-button__label\">{children}</span>}\n      {!iconOnly && TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n      <Spinner className=\"ui-button__busy-spinner\" size={size === 'xs' ? 'xs' : size === 'small' ? 'sm' : 'md'}/>\n    </button>\n  );\n}\n",
+      "sha256": "bcfc2d2db4debfd2c11dd8ba8b23a167c705ad3bf7d9151571e501ed195fe158",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 118,
+          "end": 153
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 176,
+          "end": 186
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 214,
+          "end": 247
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/color-swatch/color-swatch-picker.tsx",
+      "content": "'use client';\n\nimport {useId,useMemo,useRef,useState,type CSSProperties} from 'react';\nimport {ListBox,ListBoxItem,parseColor} from 'react-aria-components';\nimport {motion,useReducedMotion} from 'motion/react';\nimport {AnimatedHeight} from '@/components/base/animated-height/animated-height';\nimport {ScrollArea} from '@/components/base/scroll-area/scroll-area';\nimport {useFieldDisabled} from '@/components/base/field/field-context';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport {ColorSwatch,type SwatchAppearance,type SwatchShape,type SwatchSize} from './color-swatch';\nimport {cx} from '@/utils/cx';\n\nexport type ColorOption={color:string;label:string;isDisabled?:boolean};\nexport type ColorSwatchPickerProps={\n options:ColorOption[];value?:string;defaultValue?:string;onValueChange?:(color:string)=>void;\n size?:SwatchSize;shape?:SwatchShape;appearance?:SwatchAppearance;\n layout?:'grid'|'row'|'list';isDisabled?:boolean;maxHeight?:number|string;emptyLabel?:string;\n id?:string;'aria-label':string;'aria-describedby'?:string;className?:string;style?:CSSProperties;\n};\nconst colorKey=(color:string)=>parseColor(color).toString('hexa').toLowerCase();\n\n/** A named native single-selection collection. Equivalent colors must be unique. */\nexport function ColorSwatchPicker({options,value,defaultValue,onValueChange,size='medium',shape='circle',appearance='flat',layout='grid',isDisabled:disabled,maxHeight,emptyLabel='No colors available',id:domId,'aria-label':ariaLabel,'aria-describedby':descriptionId,className,style}:ColorSwatchPickerProps){\n const isDisabled=useFieldDisabled(disabled),id=useId(),root=useRef<HTMLDivElement>(null),reduced=useReducedMotion(),tokens=useMotionTokens(root);\n const colors=useMemo(()=>{const seen=new Set<string>();return options.map(option=>{const key=colorKey(option.color);if(seen.has(key))throw new Error(`ColorSwatchPicker requires unique colors: ${option.color}`);seen.add(key);return {...option,key};})},[options]);\n const [internal,setInternal]=useState(()=>defaultValue??options.find(option=>!option.isDisabled)?.color);\n const current=value??internal,selected=current?[colorKey(current)]:[];\n return <div ref={root} className={cx('ui-color-picker',className)} style={{'--color-picker-max-height':typeof maxHeight==='number'?`${maxHeight}px`:maxHeight,...style} as CSSProperties} data-layout={layout} data-size={size} data-constrained={maxHeight!==undefined||undefined} data-disabled={isDisabled||undefined}>\n  <AnimatedHeight>{!colors.length&&<span id={`${id}-empty`} className=\"ui-color-picker__empty\" role=\"status\">{emptyLabel}</span>}\n  <ScrollArea label={ariaLabel} orientation={layout==='row'?'horizontal':'vertical'} className=\"ui-color-picker__scroll\" renderViewport={({ref,className:viewportClassName})=><ListBox ref={ref} id={domId} aria-label={ariaLabel} aria-describedby={[descriptionId,!colors.length?`${id}-empty`:undefined].filter(Boolean).join(' ')||undefined} className={cx('ui-color-picker__list',viewportClassName)} items={colors} dependencies={[size,shape,appearance,isDisabled,layout]} layout={layout==='list'?'stack':'grid'} orientation={layout==='list'?'vertical':'horizontal'} selectionMode=\"single\" selectionBehavior=\"replace\" disallowEmptySelection selectedKeys={selected} onSelectionChange={keys=>{if(isDisabled||keys==='all')return;const key=[...keys][0],option=colors.find(option=>option.key===key);if(!option||option.isDisabled)return;if(value===undefined)setInternal(option.color);onValueChange?.(option.color);}}>\n    {option=><ListBoxItem id={option.key} textValue={option.label} aria-label={option.label} isDisabled={isDisabled||option.isDisabled} className=\"ui-color-picker__option\" data-color={option.color}>{({isSelected})=><><span className=\"ui-color-picker__visual\"><ColorSwatch color={option.color} aria-hidden size={size} shape={shape} appearance={appearance}/>{isSelected&&<motion.span layoutId={`${id}-color`} className=\"ui-color-picker__selection\" data-shape={shape} transition={{duration:reduced?0:tokens.standard,ease:tokens.ease}}/>}</span>{layout==='list'&&<span className=\"ui-color-picker__label\">{option.label}</span>}</>}</ListBoxItem>}\n   </ListBox>}/></AnimatedHeight>\n </div>;\n}\n",
+      "sha256": "781e90a667db1377b7c273bb74d39abc46f627ecf9664372573164beb469bf06",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 241,
+          "end": 290
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 319,
+          "end": 360
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 395,
+          "end": 432
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 466,
+          "end": 491
+        },
+        {
+          "kind": "module",
+          "value": "./color-swatch",
+          "target": "components/base/color-swatch/color-swatch.tsx",
+          "start": 576,
+          "end": 590
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 611,
+          "end": 621
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/color-swatch/color-swatch.tsx",
+      "content": "'use client';\n\nimport {ColorSwatch as AriaColorSwatch,type ColorSwatchProps as AriaColorSwatchProps} from 'react-aria-components';\nimport {cx} from '@/utils/cx';\n\nexport type SwatchSize='small'|'medium'|'large';\nexport type SwatchShape='circle'|'square';\nexport type SwatchAppearance='flat'|'gloss';\nexport type ColorSwatchProps=Omit<AriaColorSwatchProps,'className'|'style'> & {\n size?:SwatchSize;shape?:SwatchShape;appearance?:SwatchAppearance;className?:string;\n};\n\n/** The native swatch supplies a localized color name; transparency reveals a checkerboard. */\nexport function ColorSwatch({size='medium',shape='circle',appearance='flat',className,...props}:ColorSwatchProps){\n return <div className={cx('ui-color-swatch',className)} data-size={size} data-shape={shape} data-appearance={appearance}><AriaColorSwatch {...props} className=\"ui-color-swatch__color\"/></div>;\n}\n",
+      "sha256": "e5ce066f5a70deab0c3e686edffb5e531d5987a2b711d1dce67fdef119eff340",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 149,
+          "end": 159
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/field-feedback.tsx",
+      "content": "'use client';\n\nimport { useContext, useLayoutEffect, useRef, useState } from 'react';\nimport { FieldError, FieldErrorContext, Text } from 'react-aria-components';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\n\nfunction ErrorContent({ error }: { error?: string }) {\n  const present = useIsPresent();\n  const element = useRef<HTMLElement>(null);\n  const [snapshot, setSnapshot] = useState(error ?? '');\n  useLayoutEffect(() => {\n    if (present && element.current) {\n      const text = element.current.textContent ?? '';\n      setSnapshot(previous => previous === text ? previous : text);\n    }\n  });\n  return <div className=\"ui-field-feedback__error\" inert={!present} aria-hidden={!present || undefined}>\n    {present ? <FieldError ref={element} className=\"ui-input-field__message\">{error}</FieldError> : <span className=\"ui-input-field__message\">{snapshot}</span>}\n  </div>;\n}\n\n/** Keep native validation messages associated while animating their actual layout. */\nexport function FieldFeedback({ hint, error }: { hint?: string; error?: string }) {\n  const validation = useContext(FieldErrorContext);\n  const reduced = useReducedMotion();\n  const invalid = validation?.isInvalid ?? Boolean(error);\n  const showHint = Boolean(hint && !error);\n  return <div className=\"ui-field-feedback\" data-content={invalid || showHint || undefined}>\n    <AnimatedHeight>\n      {showHint && <Text slot=\"description\" className=\"ui-input-field__message\">{hint}</Text>}\n      <AnimatePresence initial={false} mode=\"popLayout\">\n        {invalid && <motion.div key=\"error\" initial={{ opacity: 0, y: reduced ? 0 : 2 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -2 }} transition={{ duration: reduced ? 0 : .16, ease: [.2, .75, .25, 1] }}>\n          <ErrorContent error={error}/>\n        </motion.div>}\n      </AnimatePresence>\n    </AnimatedHeight>\n  </div>;\n}\n",
+      "sha256": "91b0aa0dcdb56c7d7e4a4923a1ac4ba946de997ab1d233e364d75f36f1a00056",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 283,
+          "end": 332
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/input.tsx",
+      "content": "'use client';\n\nimport type { AriaAttributes, ReactNode, Ref } from 'react';\nimport { TextField, Label, Input as AriaInput, type TextFieldProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type InputProps = Omit<TextFieldProps, 'children' | 'className'> & {\n  'aria-busy'?: AriaAttributes['aria-busy'];\n  label: string;\n  placeholder?: string;\n  hint?: string;\n  error?: string;\n  leading?: ReactNode;\n  trailing?: ReactNode;\n  trailingAction?: ReactNode;\n  leadingAction?: ReactNode;\n  blockStart?: ReactNode;\n  blockEnd?: ReactNode;\n  className?: string;\n  hideLabel?: boolean;\n  inputRef?: Ref<HTMLInputElement>;\n  variant?: 'default' | 'plain' | 'soft';\n  size?: 'small' | 'medium' | 'large';\n  maxLength?: number;\n};\n\nexport function Input({ label, placeholder, hint, error, leading, trailing, trailingAction, leadingAction, blockStart, blockEnd, className, isInvalid, hideLabel = false, inputRef, variant = 'default', size = 'medium', maxLength, ...props }: InputProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  const stacked = blockStart !== undefined || blockEnd !== undefined;\n  const control = <>{leadingAction && <span className=\"ui-input-field__action\">{leadingAction}</span>}{leading && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{leading}</span>}<AriaInput ref={inputRef} maxLength={maxLength} aria-busy={props['aria-busy']} className=\"ui-input-field__input\" placeholder={placeholder} />{trailing && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{trailing}</span>}{trailingAction && <span className=\"ui-input-field__action\">{trailingAction}</span>}</>;\n  return <TextField {...props} isDisabled={isDisabled} data-variant={variant} data-size={size} isInvalid={error ? true : isInvalid} className={cx('ui-input-field', className)}>\n    <Label className={cx('ui-input-field__label', hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden=\"true\">*</span>}</Label>\n    <div className={cx('ui-input-field__control', stacked && 'ui-input-field__control--stacked')}>{blockStart !== undefined && <div className=\"ui-input-group__block\" data-align=\"start\">{blockStart}</div>}{stacked ? <div className=\"ui-input-field__row\">{control}</div> : control}{blockEnd !== undefined && <div className=\"ui-input-group__block\" data-align=\"end\">{blockEnd}</div>}</div>\n    <FieldFeedback hint={hint} error={error}/>\n  </TextField>;\n}\n",
+      "sha256": "9fcddd095a0972e70cb391de936dfddd3beaff3e4243d459cef4f9e8e721d87c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 195,
+          "end": 205
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 239,
+          "end": 277
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 314,
+          "end": 351
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/scroll-area/scroll-area.tsx",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type Ref, type RefObject } from 'react';\nimport { RiArrowDownSLine, RiArrowUpSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type ScrollAreaViewportProps = { ref: Ref<HTMLDivElement>; className: string; children: ReactNode };\nexport type ScrollAreaProps = {\n  children?: ReactNode;\n  label: string;\n  className?: string;\n  viewportClassName?: string;\n  orientation?: 'vertical' | 'horizontal' | 'both';\n  /** Let a collection own the scroll viewport, keeping its keyboard scrolling native. */\n  renderViewport?: (props: ScrollAreaViewportProps) => ReactElement;\n  /** Keep a pointer action in a searchable input without stealing its focus. */\n  preservePointerFocus?: boolean;\n  /** Restore a virtual collection's input when a focused edge disappears. */\n  focusRef?: RefObject<HTMLElement | null>;\n  /** Keep arrow controls outside the item viewport in constrained collections. */\n  indicatorPlacement?: 'overlay' | 'gutter';\n};\n\n/** Keep native scrolling, with directional controls only when content overflows. */\nexport function ScrollArea({ children, label, className, viewportClassName, renderViewport, orientation = 'vertical', preservePointerFocus = false, focusRef, indicatorPlacement='overlay' }: ScrollAreaProps) {\n  const viewport = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);\n  const [mountedViewport, setMountedViewport] = useState<HTMLDivElement | null>(null);\n  const setViewport = useCallback((element: HTMLDivElement | null) => {\n    viewport.current = element;\n    setMountedViewport(element);\n  }, []);\n  const [edges, setEdges] = useState({ up: false, down: false, left: false, right: false });\n  const measuredEdges = useRef(edges);\n  useLayoutEffect(() => {\n    const el = mountedViewport;\n    if (!el) return;\n    function measure() {\n      if (!el) return;\n      const up = orientation !== 'horizontal' && el.scrollTop > 1, down = orientation !== 'horizontal' && el.scrollHeight - el.clientHeight - el.scrollTop > 1;\n      const rtl = getComputedStyle(el).direction === 'rtl', maximum = el.scrollWidth - el.clientWidth;\n      const left = orientation !== 'vertical' && (rtl ? maximum + el.scrollLeft : el.scrollLeft) > 1;\n      const right = orientation !== 'vertical' && (rtl ? -el.scrollLeft : maximum - el.scrollLeft) > 1;\n      const next = { up, down, left, right };\n      const focusedEdge = document.activeElement?.closest('.ui-scroll-area__edge');\n      const direction = focusedEdge?.getAttribute('data-direction') as keyof typeof next | undefined;\n      if (focusedEdge && el.parentElement?.contains(focusedEdge) && direction && !next[direction]) (focusRef?.current ?? el).focus({ preventScroll: true });\n      if (Object.keys(next).some(key => measuredEdges.current[key as keyof typeof next] !== next[key as keyof typeof next])) {\n        measuredEdges.current = next;\n        setEdges(measuredEdges.current);\n      }\n    }\n    const observer = new ResizeObserver(measure);\n    const observed = new Set<Element>();\n    function observeContent() {\n      if (!el) return;\n      // A collection may not allow a wrapper between itself and its sections.\n      // Observe those sections directly so filtering and density changes are measured.\n      const next = new Set<Element>([el, ...el.children]);\n      for (const child of observed) if (!next.has(child)) { observer.unobserve(child); observed.delete(child); }\n      for (const child of next) if (!observed.has(child)) { observer.observe(child); observed.add(child); }\n      measure();\n    }\n    const mutations = new MutationObserver(observeContent);\n    mutations.observe(el, { childList: true, subtree: true });\n    observeContent();\n    el.addEventListener('scroll', measure, { passive: true });\n    return () => { observer.disconnect(); mutations.disconnect(); el.removeEventListener('scroll', measure); };\n  }, [focusRef, mountedViewport, orientation]);\n  function scroll(direction: number, horizontal = false) {\n    const el = viewport.current;\n    if (!el) return;\n    el.scrollBy({ [horizontal ? 'left' : 'top']: direction * Math.max(80, (horizontal ? el.clientWidth : el.clientHeight) * .7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });\n  }\n  return <div className={cx('ui-scroll-area', className)} data-orientation={orientation} data-indicator-placement={indicatorPlacement} data-overflow-y={edges.up || edges.down || undefined}>\n    {renderViewport ? renderViewport({ ref: setViewport, className: cx('ui-scroll-area__viewport', viewportClassName), children }) : <div ref={setViewport} className={cx('ui-scroll-area__viewport', viewportClassName)} role=\"region\" aria-label={label} tabIndex={0}><div ref={content} className=\"ui-scroll-area__content\">{children}</div></div>}\n    <div className=\"ui-scroll-area__edge\" data-direction=\"up\" data-visible={edges.up || undefined} aria-hidden={!edges.up}><IconButton icon={RiArrowUpSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} up`} disabled={!edges.up} tabIndex={edges.up ? 0 : -1} onClick={() => scroll(-1)}/></div>\n    <div className=\"ui-scroll-area__edge\" data-direction=\"down\" data-visible={edges.down || undefined} aria-hidden={!edges.down}><IconButton icon={RiArrowDownSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} down`} disabled={!edges.down} tabIndex={edges.down ? 0 : -1} onClick={() => scroll(1)}/></div>\n    {orientation !== 'vertical' && <>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"left\" data-visible={edges.left || undefined} aria-hidden={!edges.left}><IconButton icon={RiArrowLeftSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} left`} disabled={!edges.left} tabIndex={edges.left ? 0 : -1} onClick={() => scroll(-1, true)}/></div>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"right\" data-visible={edges.right || undefined} aria-hidden={!edges.right}><IconButton icon={RiArrowRightSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} right`} disabled={!edges.right} tabIndex={edges.right ? 0 : -1} onClick={() => scroll(1, true)}/></div>\n    </>}\n  </div>;\n}\n",
+      "sha256": "6a0b95325225bbeb5dbcfb3fc4d3069c72e5d022d897f9e6bee1e96c34243bcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 282,
+          "end": 319
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 342,
+          "end": 352
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/segmented-control/segmented-control.tsx",
+      "content": "'use client';\n\nimport {useId,useLayoutEffect,useRef,useState,type CSSProperties,type KeyboardEvent,type ReactNode} from 'react';\nimport {motion} from 'motion/react';\nimport {useMediaQuery} from '@/hooks/use-media-query';\nimport {useLocale} from 'react-aria-components';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport {useFieldDisabled} from '@/components/base/field/field-context';\nimport {cx} from '@/utils/cx';\n\nexport type SegmentOption={value:string;label:string;icon?:ReactNode;isDisabled?:boolean};\nexport type SegmentedControlProps={\n options:SegmentOption[];value?:string;defaultValue?:string;onValueChange?:(value:string)=>void;\n variant?:'soft'|'outline'|'underline';size?:'small'|'medium';orientation?:'horizontal'|'vertical';fit?:'content'|'equal';isDisabled?:boolean;\n id?:string;'aria-label':string;'aria-describedby'?:string;className?:string;style?:CSSProperties;\n};\n\n/** A compact configuration choice. Native RadioGroup is preferred for form fields. */\nexport function SegmentedControl({options,value,defaultValue,onValueChange,variant='soft',size='medium',orientation='horizontal',fit='content',isDisabled:disabled,id:domId,'aria-label':ariaLabel,'aria-describedby':descriptionId,className,style}:SegmentedControlProps){\n const {direction}=useLocale(),isDisabled=useFieldDisabled(disabled);\n const [internal,setInternal]=useState(defaultValue??options.find(option=>!option.isDisabled)?.value??'');\n const selected=value??internal;\n const tabStop=options.find(option=>!option.isDisabled&&option.value===selected)?.value??options.find(option=>!option.isDisabled)?.value;\n const id=useId(),root=useRef<HTMLDivElement>(null),reduced=useMediaQuery('(prefers-reduced-motion: reduce)'),tokens=useMotionTokens(root);\n function reveal(target:HTMLElement){\n  const group=root.current;if(!group)return;\n  const frame=group.getBoundingClientRect(),item=target.getBoundingClientRect();\n  if(orientation==='vertical'){\n   const scale=frame.height/group.clientHeight||1,delta=item.top<frame.top?item.top-frame.top:item.bottom>frame.bottom?item.bottom-frame.bottom:0;\n   if(group.scrollHeight>group.clientHeight)group.scrollTop+=delta/scale;\n  }else{\n   const scale=frame.width/group.clientWidth||1,delta=item.left<frame.left?item.left-frame.left:item.right>frame.right?item.right-frame.right:0;\n   if(group.scrollWidth>group.clientWidth)group.scrollLeft+=delta/scale;\n  }\n }\n useLayoutEffect(()=>{\n  const target=root.current?.querySelector<HTMLElement>(`[data-value=\"${CSS.escape(selected)}\"]`);if(target)reveal(target);\n },[selected,orientation]);\n function choose(next:string){if(isDisabled)return;if(value===undefined)setInternal(next);onValueChange?.(next);}\n function onKeyDown(event:KeyboardEvent<HTMLDivElement>){\n  if(isDisabled||event.altKey||event.ctrlKey||event.metaKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;\n  event.preventDefault();\n  const enabled=options.filter(option=>!option.isDisabled);if(!enabled.length)return;\n  // Follow actual focus, preserving every key even when a controlled value lags.\n  const focused=event.target instanceof Element?event.target.closest<HTMLElement>('[data-value]')?.dataset.value:undefined;\n  const current=enabled.findIndex(option=>option.value===(focused??selected));\n  const forward=event.key==='ArrowDown'||event.key===(direction==='rtl'?'ArrowLeft':'ArrowRight');\n  const next=event.key==='Home'?0:event.key==='End'?enabled.length-1:forward?(current+1)%enabled.length:(current-1+enabled.length)%enabled.length;\n  const target=enabled[next];if(!target)return;choose(target.value);\n  event.currentTarget.querySelector<HTMLElement>(`[data-value=\"${CSS.escape(target.value)}\"]`)?.focus({preventScroll:true});\n }\n return <div id={domId} ref={root} style={style} className={cx('ui-segmented',className)} role=\"radiogroup\" aria-label={ariaLabel} aria-describedby={descriptionId} aria-orientation={orientation} aria-disabled={isDisabled||undefined} data-variant={variant} data-size={size} data-orientation={orientation} data-fit={fit} onKeyDown={onKeyDown} onFocus={event=>{const target=event.target.closest<HTMLElement>('[data-value]');if(target)reveal(target);}}>{options.map(option=><button key={option.value} type=\"button\" role=\"radio\" data-value={option.value} aria-checked={selected===option.value} tabIndex={tabStop===option.value?0:-1} disabled={isDisabled||option.isDisabled} onClick={()=>choose(option.value)}>{selected===option.value&&<motion.span layoutId={`${id}-segment`} className=\"ui-segmented__indicator\" transition={{duration:reduced?0:tokens.standard,ease:tokens.ease}}/>}<span className=\"ui-segmented__content\">{option.icon}<span className=\"ui-segmented__label\">{option.label}</span></span></button>)}</div>;\n}\n",
+      "sha256": "02730c16d81e67d56c7684c219707f9237158b50bcd0f0fd3b315503fb033c47",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 195,
+          "end": 218
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 301,
+          "end": 326
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 361,
+          "end": 398
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 419,
+          "end": 429
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/select/select.tsx",
+      "content": "'use client';\n\nimport { Select as AriaSelect, Label, Button, SelectValue, Popover, ListBox, ListBoxItem, SelectStateContext, type SelectProps as AriaSelectProps } from 'react-aria-components';\nimport { RiArrowDownSLine, RiCheckLine } from '@remixicon/react';\nimport {useOverlayPosition,usePreventScroll} from 'react-aria';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { useCallback, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';\nimport { ScrollArea } from '@/components/base/scroll-area/scroll-area';\nimport {useAnchorScrollGuard} from '@/hooks/use-anchor-scroll-guard';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\n\nfunction DisabledSelectCloser({isDisabled}:{isDisabled?:boolean}) {\n  const state=useContext(SelectStateContext);\n  usePreventScroll({isDisabled:!state?.isOpen});\n  useEffect(()=>{if(isDisabled&&state?.isOpen)state.close();},[isDisabled,state]);\n  return null;\n}\n\nfunction SelectTrigger({trigger,className,children}:{trigger:RefObject<HTMLButtonElement|null>;className?:string;children:ReactNode}) {\n  const state=useContext(SelectStateContext);\n  const dismissPress=useRef(false);\n  return <Button ref={trigger} render={domProps=><button {...domProps} aria-invalid={state?.displayValidation.isInvalid || undefined} onPointerDownCapture={event=>{\n    // Native select-style mouse presses open on down. A second press closes\n    // through the public state, before the native opening handler can run.\n    dismissPress.current=Boolean(state?.isOpen)&&event.button===0;\n    if(dismissPress.current){event.preventDefault();event.stopPropagation();state?.close();trigger.current?.focus({preventScroll:true});}\n  }} onClickCapture={event=>{if(dismissPress.current){event.preventDefault();event.stopPropagation();dismissPress.current=false;}}}/>} className={className}>{children}</Button>;\n}\n\nfunction SelectExitFocus({isExiting,trigger,surface,restore,children}:{isExiting:boolean;trigger:RefObject<HTMLButtonElement|null>;surface:RefObject<HTMLElement|null>;restore:RefObject<boolean>;children:ReactNode}) {\n  const state=useContext(SelectStateContext);\n  useEffect(()=>{\n    if(!state?.isOpen||isExiting)return;\n    const focusOnOpening=()=>{\n      const list=surface.current?.querySelector<HTMLElement>('[role=\"listbox\"]');\n      if(!list||list.contains(document.activeElement))return;\n      const options=[...list.querySelectorAll<HTMLElement>('.ui-select__option:not([data-disabled])')];\n      const selected=options.find(option=>option.hasAttribute('data-selected'));\n      const target=selected??(state.focusStrategy==='last'?options.at(-1):options[0])??list;\n      target.focus({preventScroll:true});\n    };\n    // A reversal keeps the collection mounted. Restore its focus only after\n    // containment resumes, without overwriting navigation already inside it.\n    const frame=requestAnimationFrame(focusOnOpening);\n    return()=>cancelAnimationFrame(frame);\n  },[isExiting,state?.isOpen,state?.collection.size,state?.focusStrategy,surface]);\n  useEffect(()=>{\n    if(!isExiting){\n      const element=surface.current;\n      const remember=()=>{restore.current=!!element?.contains(document.activeElement);};\n      remember();element?.addEventListener('focusin',remember);\n      return()=>element?.removeEventListener('focusin',remember);\n    }\n    if(!restore.current)return;\n    const active=document.activeElement,dialog=trigger.current?.closest('[role=\"dialog\"], [role=\"alertdialog\"]');\n    // The popover releases containment during exit. Its inert option may have\n    // blurred into the enclosing dialog; preserve deliberate focus elsewhere.\n    if(active===document.body||active===dialog||surface.current?.contains(active))trigger.current?.focus({preventScroll:true});\n    restore.current=false;\n  },[isExiting,restore,surface,trigger]);\n  return children;\n}\n\nexport type SelectOption = { id: string; label: string; detail?: string; leading?: ReactNode; isDisabled?: boolean };\nexport type SelectProps = Omit<AriaSelectProps<SelectOption>, 'children' | 'className' | 'items' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {\n  options: SelectOption[];\n  label?: string;\n  name?: string;\n  placeholder?: string;\n  selectedKey?: string | null;\n  defaultSelectedKey?: string;\n  onSelectionChange?: (key: string | null) => void;\n  isDisabled?: boolean;\n  className?: string;\n  triggerClassName?: string;\n  popoverClassName?: string;\n  hideIndicator?: boolean;\n  hideLabel?: boolean;\n  hint?: string;\n  error?: string;\n  size?: 'small' | 'medium' | 'large';\n  density?: 'comfortable' | 'compact' | 'touch';\n  isOpen?: boolean;\n  onOpenChange?: (isOpen: boolean) => void;\n  'aria-label'?: string;\n  'aria-describedby'?: string;\n};\n\nexport function Select({ options, label, name, placeholder = 'Select an option', selectedKey, defaultSelectedKey, onSelectionChange, isDisabled: disabled, className, triggerClassName, popoverClassName, hideIndicator = false, hideLabel = false, hint, error, isInvalid, size = 'medium', density = 'comfortable', isOpen, onOpenChange, 'aria-label': ariaLabel, 'aria-describedby': descriptionId, ...props }: SelectProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const trigger=useRef<HTMLButtonElement>(null),surface=useRef<HTMLElement>(null);\n  const [surfaceMounted,setSurfaceMounted]=useState(false);\n  const setSurface=useCallback((element:HTMLElement|null)=>{surface.current=element;setSurfaceMounted(Boolean(element));},[]);\n  const restoreOnExit=useRef(false);\n  const [internalOpen,setInternalOpen]=useState(false);\n  const open=isOpen??internalOpen;\n  const ignoreScrollClose=useAnchorScrollGuard(open,trigger);\n  const position=useOverlayPosition({targetRef:trigger,overlayRef:surface,isOpen:open||surfaceMounted,placement:'bottom start',offset:6,maxHeight:312,onClose:null});\n  useEffect(()=>{\n    if(!open&&!surfaceMounted)return;let frame=0,previous='';\n    // An ancestor can move during a height/grid transition without resizing\n    // the trigger. Follow its actual rectangle through the public position hook.\n    // Keep following during exit: the surface is painted until it unmounts.\n    function follow(){const rect=trigger.current?.getBoundingClientRect();if(rect){const next=[rect.x,rect.y,rect.width,rect.height].join(':');if(next!==previous){previous=next;position.updatePosition();}}frame=requestAnimationFrame(follow);}\n    frame=requestAnimationFrame(follow);return()=>cancelAnimationFrame(frame);\n  },[open,surfaceMounted,position.updatePosition]);\n  function changeOpen(open:boolean){\n    if(!open&&ignoreScrollClose())return;\n    if(isOpen===undefined)setInternalOpen(open);\n    restoreOnExit.current=!open&&!!surface.current?.contains(document.activeElement);\n    onOpenChange?.(open);\n  }\n  return <AriaSelect {...props} name={name} selectedKey={selectedKey} defaultSelectedKey={defaultSelectedKey} onSelectionChange={key => onSelectionChange?.(key == null ? null : String(key))} isDisabled={isDisabled} isInvalid={error ? true : isInvalid} isOpen={open} onOpenChange={changeOpen} aria-describedby={descriptionId} aria-label={ariaLabel ?? (label ? undefined : placeholder)} data-size={size} className={cx('ui-select', className)}>\n    <DisabledSelectCloser isDisabled={isDisabled}/>\n    {label && <Label className={cx('ui-select__label',hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden>*</span>}</Label>}\n    <SelectTrigger trigger={trigger} className={cx('ui-select__trigger', triggerClassName)}><SelectValue<SelectOption>>{({ selectedItem, selectedText }) => <span className=\"ui-select__value\">{selectedItem?.leading}<span>{selectedText || placeholder}</span></span>}</SelectValue>{!hideIndicator && <RiArrowDownSLine size={16} aria-hidden />}</SelectTrigger>\n    <Popover isNonModal style={position.overlayProps.style} ref={setSurface} data-density={density} className={cx('ui-select__popover', popoverClassName)} placement=\"bottom start\" offset={6} maxHeight={312}>{({isExiting})=><SelectExitFocus isExiting={isExiting} trigger={trigger} surface={surface} restore={restoreOnExit}><div className=\"ui-select__surface\" inert={isExiting || Boolean(isDisabled)}><ScrollArea indicatorPlacement=\"gutter\" label={`${label ?? ariaLabel ?? 'Select'} options`} className=\"ui-select__scroll\" renderViewport={({ref,className:viewportClassName})=><ListBox ref={ref} className={cx('ui-select__list',viewportClassName)} items={options}>{item => <ListBoxItem id={item.id} textValue={item.label} isDisabled={item.isDisabled} className=\"ui-select__option\"><span><strong>{item.leading && <span className=\"ui-select__leading\">{item.leading}</span>}{item.label}</strong>{item.detail && <small>{item.detail}</small>}</span><RiCheckLine size={16} aria-hidden /></ListBoxItem>}</ListBox>}/></div></SelectExitFocus>}</Popover>\n    <FieldFeedback hint={hint} error={error}/>\n  </AriaSelect>;\n}\n",
+      "sha256": "5ed12c96b0129996fd858fa720369c41e772da54ae1604e8c7453fc4b44c55c3",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 343,
+          "end": 353
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 390,
+          "end": 427
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 568,
+          "end": 609
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-anchor-scroll-guard",
+          "target": "hooks/use-anchor-scroll-guard.ts",
+          "start": 648,
+          "end": 679
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 713,
+          "end": 751
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/switch/switch.tsx",
+      "content": "'use client';\n\nimport type { ReactNode } from 'react';\nimport { Switch as AriaSwitch, type SwitchProps as AriaSwitchProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type SwitchProps = AriaSwitchProps & { children?: ReactNode; size?: 'sm' | 'md' | 'lg'; shape?: 'pill' | 'rectangle'; className?: string };\nexport function Switch({ children, size = 'md', shape = 'pill', className, ...props }: SwitchProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaSwitch {...props} isDisabled={isDisabled} data-size={size} data-shape={shape} className={cx('ui-switch', className)}><span className=\"ui-switch__track\" aria-hidden=\"true\"><span className=\"ui-switch__thumb\" /></span>{children && <span className=\"ui-switch__label\">{children}</span>}</AriaSwitch>;\n}\n",
+      "sha256": "7ea8568d227056327af66529fa0d57b1e9f3727858baed9a0bf7ca9d7484ba1a",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 174,
+          "end": 184
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 221,
+          "end": 258
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/textarea/textarea.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, useState, type ReactNode } from 'react';\nimport { TextField, Label, TextArea as AriaTextArea, type TextFieldProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type TextareaProps = Omit<TextFieldProps, 'children' | 'className'> & {\n  label: string;\n  placeholder?: string;\n  hint?: string;\n  error?: string;\n  rows?: number;\n  maxLength?: number;\n  showCount?: boolean;\n  autoResize?: boolean;\n  className?: string;\n  hideLabel?: boolean;\n  variant?: 'default' | 'plain';\n  blockStart?: ReactNode;\n  blockEnd?: ReactNode;\n};\n\nexport function Textarea({ label, placeholder, hint, error, rows = 4, maxLength, showCount = false, autoResize = false, className, isInvalid, value, defaultValue, onChange, hideLabel = false, variant = 'default', blockStart, blockEnd, ...props }: TextareaProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  const ref = useRef<HTMLTextAreaElement>(null);\n  const [count, setCount] = useState(String(value ?? defaultValue ?? '').length);\n  useLayoutEffect(() => {\n    if (!autoResize || !ref.current) return;\n    ref.current.style.height = 'auto';\n    ref.current.style.height = `${ref.current.scrollHeight}px`;\n  }, [autoResize, value, count]);\n  const stacked = blockStart !== undefined || blockEnd !== undefined;\n  const control = <AriaTextArea ref={ref} className=\"ui-textarea-field__control\" placeholder={placeholder} rows={rows} maxLength={maxLength} />;\n  return <TextField {...props} isDisabled={isDisabled} data-variant={variant} value={value} defaultValue={defaultValue} onChange={next => { setCount(next.length); onChange?.(next); }} isInvalid={error ? true : isInvalid} className={cx('ui-textarea-field', className)}>\n    <Label className={cx('ui-input-field__label', hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden=\"true\">*</span>}</Label>\n    {stacked ? <div className=\"ui-textarea-field__surface\">{blockStart !== undefined && <div className=\"ui-input-group__block\" data-align=\"start\">{blockStart}</div>}{control}{blockEnd !== undefined && <div className=\"ui-input-group__block\" data-align=\"end\">{blockEnd}</div>}</div> : control}\n    {showCount ? <div className=\"ui-textarea-field__foot\"><FieldFeedback hint={hint} error={error}/><output aria-label=\"Character count\">{count}{maxLength !== undefined && ` / ${maxLength}`}</output></div> : <FieldFeedback hint={hint} error={error}/>}\n  </TextField>;\n}\n",
+      "sha256": "43bbb6e0c7f8162bcc232f69c42d822ed3c942e2f9bace8ef5f8888a8b2fdcf3",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 215,
+          "end": 225
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 259,
+          "end": 297
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 334,
+          "end": 371
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/agent-creator/agent-avatar.tsx",
+      "content": "'use client';\n\nimport { useId } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport const agentShapes = ['petal', 'flower', 'star', 'heart', 'cloud', 'diamond', 'shield', 'slender', 'pocket'] as const;\nexport type AgentShape = typeof agentShapes[number] | 'spark';\nexport const agentEmotions = ['Neutral', 'Happy', 'Angry', 'Thinking', 'Shook', 'Curious', 'Wink', 'Sleepy', 'Sad', 'Worried', 'Skeptical', 'Focused', 'Excited', 'Calm', 'Shy', 'Confused'] as const;\nexport type AgentEmotion = typeof agentEmotions[number];\n\nconst paths: Record<AgentShape, string> = {\n  cloud: 'M25 80C8 80 4 67 9 57C12 50 18 48 24 48C22 36 30 25 43 28C47 12 66 14 69 35C85 29 95 41 92 55C106 73 90 83 76 81Z',\n  heart: 'M50 88C41 79 10 58 8 37C5 12 36 8 50 31C64 8 95 12 92 37C90 58 59 79 50 88Z',\n  star: 'M44 13Q50 2 56 13L65 33L87 35Q100 36 91 46L76 61L80 85Q82 98 70 91L50 79L30 91Q18 98 20 85L24 61L9 46Q0 36 13 35L35 33Z',\n  spark: 'M50 5Q56 37 94 50Q57 58 50 95Q39 60 6 50Q42 39 50 5Z',\n  diamond: 'M44 9Q50 2 56 9L91 44Q98 50 91 56L56 91Q50 98 44 91L9 56Q2 50 9 44Z',\n  shield: 'M50 6Q69 20 91 24L88 58Q84 81 50 94Q16 81 12 58L9 24Q31 20 50 6Z',\n  petal: 'M50 8C69 0 84 21 73 37C101 35 105 61 80 68C88 96 60 105 50 80C36 104 12 90 20 67C-4 59 0 34 27 37C15 16 33 0 50 8Z',\n  flower: 'M39 13C42 0 61 0 63 14C77 3 93 18 83 32C103 33 105 55 86 59C101 76 85 94 70 84C66 105 43 103 40 87C24 100 7 85 17 71C-3 69-3 45 14 41C1 26 18 8 32 19Z',\n  slender: 'M43 7Q50 2 57 7L72 31L83 75Q88 96 69 94L50 85L31 94Q12 96 17 75L28 31Z',\n  pocket: 'M17 12Q50 6 83 12L88 62Q88 83 50 94Q12 83 12 62Z',\n};\n\nexport function AgentFace({ emotion = 'Thinking', className }: { emotion?: AgentEmotion; className?: string }) {\n  const squint = ['Happy', 'Sleepy', 'Calm', 'Excited'].includes(emotion);\n  const eyes = ['Shook', 'Curious', 'Worried', 'Confused'].includes(emotion) ? 16 : 14;\n  const frown = ['Sad', 'Worried', 'Angry'].includes(emotion);\n  return <svg className={cx('ui-agent-face', className)} viewBox=\"0 0 100 100\" aria-hidden=\"true\" fill=\"#202125\" stroke=\"#202125\" strokeLinecap=\"round\">\n    {squint ? <path d=\"M24 51Q31 43 38 51M60 51Q67 43 74 51\" fill=\"none\" strokeWidth=\"7\" /> : <><ellipse cx=\"31\" cy=\"49\" rx=\"7\" ry={eyes} stroke=\"none\" /><ellipse cx=\"67\" cy=\"49\" rx=\"7\" ry={emotion === 'Wink' ? 2 : eyes} stroke=\"none\" /></>}\n    {!['Neutral', 'Happy', 'Calm', 'Shy'].includes(emotion) && <path d={emotion === 'Angry' || emotion === 'Focused' ? 'M22 30L40 36M59 36L77 30' : emotion === 'Thinking' || emotion === 'Skeptical' ? 'M23 30Q32 27 40 30M59 31L77 35' : 'M23 33Q31 23 40 30M59 30Q68 23 77 33'} fill=\"none\" strokeWidth=\"3\" opacity=\".75\" />}\n    {emotion === 'Shook' || emotion === 'Excited' ? <ellipse cx=\"50\" cy=\"73\" rx=\"5\" ry=\"7\" stroke=\"none\" /> : emotion !== 'Thinking' && emotion !== 'Focused' && <path d={frown ? 'M41 74Q50 67 59 74' : 'M42 71Q50 78 58 71'} fill=\"none\" strokeWidth=\"3\" />}\n  </svg>;\n}\n\n/** Code-native paper avatar shared by the editor, shape chooser and agent tabs. */\nexport function AgentAvatar({ shape = 'cloud', emotion = 'Thinking', color = '#f3bca5', showFace = true, className }: { shape?: AgentShape; emotion?: AgentEmotion; color?: string; showFace?: boolean; className?: string }) {\n  const id = useId().replaceAll(':', '');\n  const path = paths[shape];\n  return <span className={cx('ui-agent-avatar', className)} style={{ '--agent-color': color } as React.CSSProperties}>\n    <svg viewBox=\"0 0 108 108\" aria-hidden=\"true\">\n      <defs><filter id={`${id}-paper`} x=\"0\" y=\"0\" width=\"100%\" height=\"100%\"><feTurbulence type=\"fractalNoise\" baseFrequency=\".75\" numOctaves=\"3\" seed=\"7\" result=\"noise\" /><feColorMatrix in=\"noise\" type=\"saturate\" values=\"0\" /><feComposite in2=\"SourceGraphic\" operator=\"in\" /><feBlend in=\"SourceGraphic\" mode=\"soft-light\" /></filter></defs>\n      <path d={path} transform=\"translate(5 5)\" fill=\"color-mix(in srgb, var(--agent-color) 72%, #844221)\" />\n      <path d={path} transform=\"translate(2 2)\" fill=\"var(--agent-color)\" stroke=\"color-mix(in srgb, var(--agent-color) 75%, #844221)\" strokeWidth=\".7\" />\n      <path d={path} transform=\"translate(2 2)\" fill=\"var(--agent-color)\" filter={`url(#${id}-paper)`} opacity=\".24\" />\n    </svg>\n    {showFace && <AgentFace emotion={emotion} />}\n  </span>;\n}\n",
+      "sha256": "12c762e0ae21ef335c41fd773075049b09c5748a0f2856d41a901b8c137bed6a",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 66,
+          "end": 76
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/agent-creator/agent-creator.tsx",
+      "content": "'use client';\n\nimport { useRef, useState, type CSSProperties, type PointerEvent } from 'react';\nimport { AnimatePresence, motion, useReducedMotion } from 'motion/react';\nimport { RiGlobalLine, RiNotification3Line, RiPlayLine, RiVolumeUpLine } from '@remixicon/react';\nimport { Input } from '@/components/base/input/input';\nimport { Textarea } from '@/components/base/textarea/textarea';\nimport { Select } from '@/components/base/select/select';\nimport { Switch } from '@/components/base/switch/switch';\nimport { Button } from '@/components/base/buttons/button';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport {ColorSwatchPicker} from '@/components/base/color-swatch/color-swatch-picker';\nimport { SegmentedControl } from '@/components/base/segmented-control/segmented-control';\nimport { AgentAvatar, AgentFace, agentEmotions, agentShapes, type AgentShape, type AgentEmotion } from './agent-avatar';\nimport { cx } from '@/utils/cx';\n\nexport type AgentIdentity = { name: string; label: string; color: string; shape: AgentShape; voice: string; language: string; notifications: boolean; description?: string; emotion?: AgentEmotion; voiceSpeed?: number };\nexport type AgentCreatorProps = { value?: AgentIdentity; defaultValue?: AgentIdentity; onChange?: (identity: AgentIdentity) => void; onSave?: (identity: AgentIdentity) => void; onPreviewVoice?: (identity: AgentIdentity) => void; className?: string };\nconst defaults: AgentIdentity = { name: 'Cloud engineer', label: 'Cloud', description: 'Helps with server architecture, cloud infrastructure, deployments, and reliable services.', color: '#f3bca5', shape: 'cloud', emotion: 'Thinking', voice: 'System voice', voiceSpeed: 1, language: 'Auto-detect', notifications: true };\nconst colors = [{ name: 'Blue', color: '#6092ee' }, { name: 'Teal', color: '#47bea7' }, { name: 'Violet', color: '#9c6ee7' }, { name: 'Pink', color: '#eb64a2' }, { name: 'Red', color: '#f17b74' }, { name: 'Orange', color: '#f3bca5' }, { name: 'Cyan', color: '#65bdd0' }, { name: 'Lime', color: '#adc96b' }, { name: 'Green', color: '#75c481' }];\n\nexport function AgentCreator({ value, defaultValue = defaults, onChange, onSave, onPreviewVoice, className }: AgentCreatorProps) {\n  const [internal, setInternal] = useState(defaultValue);\n  const current = value ?? internal;\n  const reducedMotion = useReducedMotion();\n  const [orbitAngle, setOrbitAngle] = useState(0);\n  const drag = useRef<{ x: number; y: number; angle: number; kind: 'emotion' | 'shape'; moved: boolean } | null>(null);\n  const dragged = useRef(false);\n  const emotion = current.emotion ?? 'Thinking';\n  const selectedShape = current.shape === 'spark' ? 'star' : current.shape;\n  const shapeIndex = agentShapes.indexOf(selectedShape);\n  function update(patch: Partial<AgentIdentity>) { const next = { ...current, ...patch }; if (!value) setInternal(next); onChange?.(next); }\n  function chooseShape(index: number) { update({ shape: agentShapes[(index + agentShapes.length) % agentShapes.length] }); }\n  function startDrag(event: PointerEvent<HTMLDivElement>, kind: 'emotion' | 'shape') { if (event.button !== 0) return; dragged.current = false; drag.current = { x: event.clientX, y: event.clientY, angle: orbitAngle, kind, moved: false }; }\n  function moveDrag(event: PointerEvent<HTMLDivElement>) { const start = drag.current; if (!start) return; const dx = event.clientX - start.x; const dy = event.clientY - start.y; if (Math.hypot(dx, dy) < 7 && !start.moved) return; start.moved = true; dragged.current = true; event.currentTarget.setPointerCapture(event.pointerId); if (start.kind === 'emotion') setOrbitAngle(start.angle + dx * .65); }\n  function endDrag(event: PointerEvent<HTMLDivElement>) { const start = drag.current; if (!start) return; if (start.moved && start.kind === 'shape') chooseShape(shapeIndex - Math.round((event.clientX - start.x) / 48)); drag.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }\n  function previewVoice() { if (onPreviewVoice) { onPreviewVoice(current); return; } if (typeof speechSynthesis !== 'undefined' && current.voice !== 'Off') { speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(`Hello, I'm ${current.name || 'your assistant'}. How can I help?`); utterance.rate = current.voiceSpeed ?? 1; utterance.lang = ({ English: 'en', Türkçe: 'tr', Deutsch: 'de' } as Record<string, string>)[current.language] ?? navigator.language; speechSynthesis.speak(utterance); } }\n  return <section aria-label=\"Agent editor\" className={cx('ui-agent-creator', className)} style={{ '--agent-color': current.color } as CSSProperties}>\n    <header className=\"ui-agent-creator__header\"><h2>{current.name || 'New agent'}</h2></header>\n    <div className=\"ui-agent-creator__scroll\" aria-label=\"Agent appearance and details\" tabIndex={0}>\n      <div className=\"ui-agent-creator__appearance\">\n        <div className=\"ui-agent-creator__emotions\" role=\"group\" aria-label=\"Agent emotion\" onPointerDown={event => startDrag(event, 'emotion')} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={() => { drag.current = null; }}>\n          {agentEmotions.map((name, index) => { const angle = (index * 22.5 + orbitAngle) * Math.PI / 180; return <button type=\"button\" key={name} aria-label={name} aria-pressed={emotion === name} style={{ '--face-x': `${Math.sin(angle) * 116}px`, '--face-y': `${-Math.cos(angle) * 116}px` } as CSSProperties} onClick={event => { if (!dragged.current || event.detail === 0) update({ emotion: name }); }}><AgentFace emotion={name} /></button>; })}\n        </div>\n        <div className=\"ui-agent-creator__portrait\" role=\"img\" aria-label={`${emotion} ${current.shape} avatar`}>{<AnimatePresence mode=\"wait\" initial={false}><motion.div key={current.shape} initial={reducedMotion ? false : { opacity: 0, scale: .85, rotate: -5 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={reducedMotion ? undefined : { opacity: 0, scale: .9, rotate: 5 }} transition={{ duration: reducedMotion ? 0 : .18 }}><AgentAvatar shape={current.shape} emotion={emotion} color={current.color} /></motion.div></AnimatePresence>}</div>\n        <div className=\"ui-agent-creator__shapes\" role=\"group\" aria-label=\"Avatar shape\" onPointerDown={event => startDrag(event, 'shape')} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={() => { drag.current = null; }} onKeyDown={event => { if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return; event.preventDefault(); const next = (shapeIndex + (event.key === 'ArrowRight' ? 1 : -1) + agentShapes.length) % agentShapes.length; chooseShape(next); event.currentTarget.querySelector<HTMLButtonElement>(`[data-shape=\"${agentShapes[next]}\"]`)?.focus(); }}>\n          {agentShapes.map((shape, index) => { const delta = (index - shapeIndex + 13) % 9 - 4; const angle = delta * .43; return <button type=\"button\" key={shape} data-shape={shape} aria-label={`${shape[0].toUpperCase() + shape.slice(1)} shape`} aria-pressed={selectedShape === shape} tabIndex={selectedShape === shape ? 0 : -1} style={{ '--shape-x': `${Math.sin(angle) * 174}px`, '--shape-y': `${-(1 - Math.cos(angle)) * 150}px` } as CSSProperties} onClick={event => { if (!dragged.current || event.detail === 0) update({ shape }); }}><AgentAvatar shape={shape} color={current.color} showFace={false} /></button>; })}\n        </div>\n      </div>\n      <div className=\"ui-agent-creator__colors\" role=\"group\" aria-label=\"Avatar colors\"><ColorSwatchPicker className=\"ui-agent-creator__palette\" aria-label=\"Avatar color\" options={colors.map(({name,color})=>({label:`${name} avatar`,color}))} value={current.color} onValueChange={color=>update({color})} layout=\"row\" size=\"small\" appearance=\"gloss\"/><label className=\"ui-agent-creator__custom-color\" title=\"Custom avatar color\"><input type=\"color\" aria-label=\"Custom avatar color\" value={current.color} onChange={event=>update({color:event.target.value})}/></label></div>\n      <div className=\"ui-agent-creator__fields\"><Input label=\"Name\" maxLength={48} value={current.name} onChange={name => update({ name })} /><Input label=\"Label\" maxLength={60} value={current.label} onChange={label => update({ label })} /><Textarea label=\"Description\" rows={2} maxLength={500} value={current.description ?? ''} placeholder=\"Details for the agent\" onChange={description => update({ description })} /></div>\n      <div className=\"ui-agent-creator__preferences\">\n        <div className=\"ui-agent-creator__preference\"><span><RiGlobalLine size={20} aria-hidden />Language</span><Select aria-label=\"Agent language\" options={['Auto-detect', 'English', 'Türkçe', 'Deutsch'].map(label => ({ id: label, label }))} selectedKey={current.language} onSelectionChange={language => language && update({ language })} /></div>\n        <Switch isSelected={current.notifications} onChange={notifications => update({ notifications })}><RiNotification3Line size={20} aria-hidden />Notifications</Switch>\n        <div className=\"ui-agent-creator__preference\"><span><RiVolumeUpLine size={20} aria-hidden />Voice</span><div><IconButton icon={RiPlayLine} aria-label=\"Preview voice\" disabled={current.voice === 'Off'} onClick={previewVoice} /><Select aria-label=\"Agent voice\" options={['Off', 'System voice', 'Calm', 'Bright', 'Focused'].map(label => ({ id: label, label }))} selectedKey={current.voice} onSelectionChange={voice => voice && update({ voice })} /></div></div>\n        <div className=\"ui-agent-creator__speed\"><span>Voice speed</span><SegmentedControl aria-label=\"Voice speed\" options={[.75, 1, 1.25, 1.5].map(rate => ({ value: String(rate), label: `${rate}×` }))} value={String(current.voiceSpeed ?? 1)} onValueChange={speed => update({ voiceSpeed: Number(speed) })} /></div>\n      </div>\n    </div>\n    {onSave && <footer><Button onClick={() => onSave(current)}>Save agent</Button></footer>}\n  </section>;\n}\n",
+      "sha256": "f246a1e96d4f33b29ba7dad8d1b560c1ac26d3532faf7749e1aa335ad545cb44",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/input/input",
+          "target": "components/base/input/input.tsx",
+          "start": 291,
+          "end": 320
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/textarea/textarea",
+          "target": "components/base/textarea/textarea.tsx",
+          "start": 349,
+          "end": 384
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/select/select",
+          "target": "components/base/select/select.tsx",
+          "start": 411,
+          "end": 442
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/switch/switch",
+          "target": "components/base/switch/switch.tsx",
+          "start": 469,
+          "end": 500
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 527,
+          "end": 559
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 590,
+          "end": 627
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/color-swatch/color-swatch-picker",
+          "target": "components/base/color-swatch/color-swatch-picker.tsx",
+          "start": 663,
+          "end": 713
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/segmented-control/segmented-control",
+          "target": "components/base/segmented-control/segmented-control.tsx",
+          "start": 750,
+          "end": 803
+        },
+        {
+          "kind": "module",
+          "value": "./agent-avatar",
+          "target": "components/blocks/agent-creator/agent-avatar.tsx",
+          "start": 910,
+          "end": 924
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 947,
+          "end": 957
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-anchor-scroll-guard.ts",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';\n\n/** Ignore only a queued scroll's dismissal when its anchor did not move. */\nexport function useAnchorScrollGuard(isOpen: boolean, anchor: RefObject<Element|null>|undefined) {\n  const guard=useRef<(()=>boolean)|null>(null);\n  useLayoutEffect(()=>{\n    const trigger=anchor?.current;if(!isOpen||!trigger)return;\n    const openedAt=trigger.getBoundingClientRect();\n    let unchanged=false,scrollEvent:Event|null=null;\n    const ignore=()=>unchanged&&scrollEvent!==null&&scrollEvent.eventPhase!==Event.NONE;\n    guard.current=ignore;\n    function onScroll(event:Event){\n      if(event.target instanceof Node&&!event.target.contains(trigger??null))return;\n      const current=trigger!.getBoundingClientRect();\n      unchanged=Math.abs(current.x-openedAt.x)<.5&&Math.abs(current.y-openedAt.y)<.5;\n      scrollEvent=event;\n    }\n    window.addEventListener('scroll',onScroll,true);\n    return()=>{window.removeEventListener('scroll',onScroll,true);if(guard.current===ignore)guard.current=null;};\n  },[isOpen,anchor]);\n  return useCallback(()=>guard.current?.()??false,[]);\n}\n",
+      "sha256": "0a69c28c08d424b9cb5b0c485c83027aee9972154e7dddc1e6e5da87b07e6594",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-agent-avatar",
+      "ui-agent-creator",
+      "ui-agent-creator__appearance",
+      "ui-agent-creator__colors",
+      "ui-agent-creator__custom-color",
+      "ui-agent-creator__emotions",
+      "ui-agent-creator__fields",
+      "ui-agent-creator__header",
+      "ui-agent-creator__palette",
+      "ui-agent-creator__portrait",
+      "ui-agent-creator__preference",
+      "ui-agent-creator__preferences",
+      "ui-agent-creator__scroll",
+      "ui-agent-creator__shapes",
+      "ui-agent-creator__speed",
+      "ui-agent-face",
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-button",
+      "ui-button--icon-only",
+      "ui-button__busy-spinner",
+      "ui-button__label",
+      "ui-button__leading-icon",
+      "ui-button__leading-slot",
+      "ui-color-picker",
+      "ui-color-picker__empty",
+      "ui-color-picker__label",
+      "ui-color-picker__list",
+      "ui-color-picker__option",
+      "ui-color-picker__scroll",
+      "ui-color-picker__selection",
+      "ui-color-picker__visual",
+      "ui-color-swatch",
+      "ui-color-swatch__color",
+      "ui-field-feedback",
+      "ui-field-feedback__error",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-input-field",
+      "ui-input-field__action",
+      "ui-input-field__adornment",
+      "ui-input-field__control",
+      "ui-input-field__control--stacked",
+      "ui-input-field__input",
+      "ui-input-field__label",
+      "ui-input-field__message",
+      "ui-input-field__row",
+      "ui-input-group__block",
+      "ui-scroll-area",
+      "ui-scroll-area__content",
+      "ui-scroll-area__edge",
+      "ui-scroll-area__viewport",
+      "ui-segmented",
+      "ui-segmented__content",
+      "ui-segmented__indicator",
+      "ui-segmented__label",
+      "ui-select",
+      "ui-select__label",
+      "ui-select__leading",
+      "ui-select__list",
+      "ui-select__option",
+      "ui-select__popover",
+      "ui-select__scroll",
+      "ui-select__surface",
+      "ui-select__trigger",
+      "ui-select__value",
+      "ui-spinner",
+      "ui-switch",
+      "ui-switch__label",
+      "ui-switch__thumb",
+      "ui-switch__track",
+      "ui-textarea-field",
+      "ui-textarea-field__control",
+      "ui-textarea-field__foot",
+      "ui-textarea-field__surface"
+    ],
+    "prefixes": []
+  }
+}

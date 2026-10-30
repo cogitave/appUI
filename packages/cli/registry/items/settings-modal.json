@@ -1,0 +1,584 @@
+{
+  "name": "settings-modal",
+  "title": "Settings Modal",
+  "group": "Blocks",
+  "type": "block",
+  "description": "An application settings dialog with page navigation, preferences, profile editing, and a save callback.",
+  "sections": [
+    "Preview",
+    "Initial page",
+    "Saving and recovery",
+    "Custom workspace fields"
+  ],
+  "example": "<SettingsModal isOpen={open} onClose={() => setOpen(false)} onSave={saveSettings} />",
+  "entryFiles": [
+    "components/blocks/settings-modal/settings-modal.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/settings-modal/settings-modal.tsx",
+      "names": [
+        "SettingsField",
+        "SettingsModal",
+        "SettingsModalProps",
+        "SettingsPage",
+        "SettingsPageDefinition",
+        "SettingsValues"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/alert/alert.tsx",
+      "content": "import type { ReactNode } from 'react';\nimport { RiCheckboxCircleLine, RiErrorWarningLine, RiInformationLine, RiCloseCircleLine } from '@remixicon/react';\nimport { CloseButton } from '@/components/base/buttons/close-button';\nimport { cx } from '@/utils/cx';\n\nexport type AlertProps = {\n  title: string;\n  description?: ReactNode;\n  tone?: 'information' | 'success' | 'warning' | 'error' | 'neutral';\n  variant?: 'soft' | 'bordered';\n  actions?: ReactNode;\n  icon?: ReactNode;\n  onDismiss?: () => void;\n  role?: 'alert' | 'status' | 'note';\n  className?: string;\n};\nconst icons = { information: RiInformationLine, success: RiCheckboxCircleLine, warning: RiErrorWarningLine, error: RiCloseCircleLine, neutral: RiInformationLine };\n\n/** Use alert/status only for a message introduced during an interaction. */\nexport function Alert({ title, description, tone = 'information', variant = 'soft', actions, icon, onDismiss, role = 'note', className }: AlertProps) {\n  const Icon = icons[tone];\n  return <div className={cx('ui-alert', className)} data-tone={tone} data-variant={variant} role={role}>\n    <div className=\"ui-alert__icon\" aria-hidden>{icon ?? <Icon size={20}/>}</div><div className=\"ui-alert__content\"><strong>{title}</strong>{description && <div className=\"ui-alert__description\">{description}</div>}{actions && <div className=\"ui-alert__actions\">{actions}</div>}</div>{onDismiss && <CloseButton size=\"xs\" aria-label={`Dismiss ${title}`} onClick={onDismiss}/>}\n  </div>;\n}\n",
+      "sha256": "43c884dc635be8c13da20d7d5ecea76340a251f7a094ce5b96dc9ad8ee6bd4c9",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 184,
+          "end": 222
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 245,
+          "end": 255
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/button.tsx",
+      "content": "'use client';\n\nimport type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\nimport { Spinner } from '@/components/base/spinner/spinner';\n\nexport type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline' | 'solid' | 'quiet';\nexport type ButtonSize = 'medium' | 'small' | 'xs';\n\ntype NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;\ntype ContentProps =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonProps = NativeButtonProps & ContentProps & {\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  trailingIcon?: IconComponent;\n  isLoading?: boolean;\n  loadingLabel?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\nconst base = 'ui-button inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none outline-none';\nconst sizes: Record<ButtonSize, string> = {\n  medium: 'h-9 rounded-[10px] px-2 gap-0.5',\n  small: 'h-8 rounded-lg px-2 gap-0.5',\n  xs: 'h-6 rounded-[5px] px-2 gap-0.5',\n};\nexport const buttonIconClassNames: Record<ButtonSize, string> = { medium: 'size-5', small: 'size-[18px]', xs: 'size-3.5' };\nexport function buttonClassNames(size: ButtonSize, iconOnly = false, className?: string) {\n  return cx(base, sizes[size], iconOnly && 'ui-button--icon-only !p-0', className);\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'medium',\n  iconOnly = false,\n  leadingIcon: LeadingIcon,\n  trailingIcon: TrailingIcon,\n  children,\n  className,\n  type = 'button',\n  isLoading = false,\n  loadingLabel,\n  disabled,\n  onClick,\n  onKeyDown,\n  ...props\n}: ButtonProps) {\n  return (\n    <button\n      {...props}\n      type={isLoading && type === 'submit' ? 'button' : type}\n      disabled={disabled}\n      aria-disabled={isLoading || props['aria-disabled'] || undefined}\n      aria-busy={isLoading || undefined}\n      aria-description={isLoading && loadingLabel ? loadingLabel : props['aria-description']}\n      data-variant={variant}\n      data-size={size}\n      data-icon-only={iconOnly || undefined}\n      data-loading={isLoading || undefined}\n      data-loading-label={loadingLabel !== undefined || undefined}\n      className={buttonClassNames(size, iconOnly, className)}\n      onClick={event => { if (isLoading || props['aria-disabled'] === true || props['aria-disabled'] === 'true') { event.preventDefault(); event.stopPropagation(); return; } onClick?.(event); }}\n      onKeyDown={event => { if (isLoading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); return; } onKeyDown?.(event); }}\n    >\n      {LeadingIcon && <span className=\"ui-button__leading-slot\" aria-hidden><LeadingIcon className={cx(buttonIconClassNames[size], 'ui-button__leading-icon')}/></span>}\n      {!iconOnly && <span className=\"ui-button__label\">{children}</span>}\n      {!iconOnly && TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n      <Spinner className=\"ui-button__busy-spinner\" size={size === 'xs' ? 'xs' : size === 'small' ? 'sm' : 'md'}/>\n    </button>\n  );\n}\n",
+      "sha256": "bcfc2d2db4debfd2c11dd8ba8b23a167c705ad3bf7d9151571e501ed195fe158",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 118,
+          "end": 153
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 176,
+          "end": 186
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 214,
+          "end": 247
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/close-button.tsx",
+      "content": "import type { ButtonHTMLAttributes, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CloseButtonSize = '2xs' | 'xs' | 'sm' | 'md';\n\nexport type CloseButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'> & {\n  size?: CloseButtonSize;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nconst glyphSizes: Record<CloseButtonSize, number> = { '2xs': 8, xs: 11, sm: 13, md: 17 };\nconst strokes: Record<CloseButtonSize, number> = { '2xs': 1.6, xs: 2, sm: 2, md: 2.5 };\n\nexport function CloseButton({ size = 'xs', className, type = 'button', ...props }: CloseButtonProps) {\n  const glyph = glyphSizes[size];\n  const inset = size === '2xs' ? 1.4 : 2;\n  return (\n    <button type={type} data-size={size} className={cx('ui-close-button', className)} {...props}>\n      <svg width={glyph} height={glyph} viewBox={`0 0 ${glyph} ${glyph}`} fill=\"none\" aria-hidden=\"true\">\n        <path d={`M${inset} ${inset}L${glyph - inset} ${glyph - inset}M${glyph - inset} ${inset}L${inset} ${glyph - inset}`} stroke=\"currentColor\" strokeWidth={strokes[size]} strokeLinecap=\"round\" />\n      </svg>\n    </button>\n  );\n}\n",
+      "sha256": "c670608d6b5b2e2c1d8d50bb37efbca9c38463fd0fecc5b3525464bff6cbed78",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/collapsible/collapsible.tsx",
+      "content": "import type { HTMLAttributes, ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CollapsibleProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & { isOpen: boolean; children: ReactNode };\n\n/** Keep descendants mounted while hiding their focus targets and animating flow. */\nexport function Collapsible({ isOpen, children, className, ...props }: CollapsibleProps) {\n  return <div {...props} className={cx('ui-collapsible', className)} data-open={isOpen || undefined} aria-hidden={!isOpen} inert={!isOpen}>\n    <div className=\"ui-collapsible__inner\"><div className=\"ui-collapsible__content\">{children}</div></div>\n  </div>;\n}\n",
+      "sha256": "639642d279efcb03d280423ca16442c74c8d97c0a83d3692047ac43d0748fa3c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/field-feedback.tsx",
+      "content": "'use client';\n\nimport { useContext, useLayoutEffect, useRef, useState } from 'react';\nimport { FieldError, FieldErrorContext, Text } from 'react-aria-components';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\n\nfunction ErrorContent({ error }: { error?: string }) {\n  const present = useIsPresent();\n  const element = useRef<HTMLElement>(null);\n  const [snapshot, setSnapshot] = useState(error ?? '');\n  useLayoutEffect(() => {\n    if (present && element.current) {\n      const text = element.current.textContent ?? '';\n      setSnapshot(previous => previous === text ? previous : text);\n    }\n  });\n  return <div className=\"ui-field-feedback__error\" inert={!present} aria-hidden={!present || undefined}>\n    {present ? <FieldError ref={element} className=\"ui-input-field__message\">{error}</FieldError> : <span className=\"ui-input-field__message\">{snapshot}</span>}\n  </div>;\n}\n\n/** Keep native validation messages associated while animating their actual layout. */\nexport function FieldFeedback({ hint, error }: { hint?: string; error?: string }) {\n  const validation = useContext(FieldErrorContext);\n  const reduced = useReducedMotion();\n  const invalid = validation?.isInvalid ?? Boolean(error);\n  const showHint = Boolean(hint && !error);\n  return <div className=\"ui-field-feedback\" data-content={invalid || showHint || undefined}>\n    <AnimatedHeight>\n      {showHint && <Text slot=\"description\" className=\"ui-input-field__message\">{hint}</Text>}\n      <AnimatePresence initial={false} mode=\"popLayout\">\n        {invalid && <motion.div key=\"error\" initial={{ opacity: 0, y: reduced ? 0 : 2 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -2 }} transition={{ duration: reduced ? 0 : .16, ease: [.2, .75, .25, 1] }}>\n          <ErrorContent error={error}/>\n        </motion.div>}\n      </AnimatePresence>\n    </AnimatedHeight>\n  </div>;\n}\n",
+      "sha256": "91b0aa0dcdb56c7d7e4a4923a1ac4ba946de997ab1d233e364d75f36f1a00056",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 283,
+          "end": 332
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/input.tsx",
+      "content": "'use client';\n\nimport type { AriaAttributes, ReactNode, Ref } from 'react';\nimport { TextField, Label, Input as AriaInput, type TextFieldProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type InputProps = Omit<TextFieldProps, 'children' | 'className'> & {\n  'aria-busy'?: AriaAttributes['aria-busy'];\n  label: string;\n  placeholder?: string;\n  hint?: string;\n  error?: string;\n  leading?: ReactNode;\n  trailing?: ReactNode;\n  trailingAction?: ReactNode;\n  leadingAction?: ReactNode;\n  blockStart?: ReactNode;\n  blockEnd?: ReactNode;\n  className?: string;\n  hideLabel?: boolean;\n  inputRef?: Ref<HTMLInputElement>;\n  variant?: 'default' | 'plain' | 'soft';\n  size?: 'small' | 'medium' | 'large';\n  maxLength?: number;\n};\n\nexport function Input({ label, placeholder, hint, error, leading, trailing, trailingAction, leadingAction, blockStart, blockEnd, className, isInvalid, hideLabel = false, inputRef, variant = 'default', size = 'medium', maxLength, ...props }: InputProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  const stacked = blockStart !== undefined || blockEnd !== undefined;\n  const control = <>{leadingAction && <span className=\"ui-input-field__action\">{leadingAction}</span>}{leading && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{leading}</span>}<AriaInput ref={inputRef} maxLength={maxLength} aria-busy={props['aria-busy']} className=\"ui-input-field__input\" placeholder={placeholder} />{trailing && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{trailing}</span>}{trailingAction && <span className=\"ui-input-field__action\">{trailingAction}</span>}</>;\n  return <TextField {...props} isDisabled={isDisabled} data-variant={variant} data-size={size} isInvalid={error ? true : isInvalid} className={cx('ui-input-field', className)}>\n    <Label className={cx('ui-input-field__label', hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden=\"true\">*</span>}</Label>\n    <div className={cx('ui-input-field__control', stacked && 'ui-input-field__control--stacked')}>{blockStart !== undefined && <div className=\"ui-input-group__block\" data-align=\"start\">{blockStart}</div>}{stacked ? <div className=\"ui-input-field__row\">{control}</div> : control}{blockEnd !== undefined && <div className=\"ui-input-group__block\" data-align=\"end\">{blockEnd}</div>}</div>\n    <FieldFeedback hint={hint} error={error}/>\n  </TextField>;\n}\n",
+      "sha256": "9fcddd095a0972e70cb391de936dfddd3beaff3e4243d459cef4f9e8e721d87c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 195,
+          "end": 205
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 239,
+          "end": 277
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 314,
+          "end": 351
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/meter/meter.tsx",
+      "content": "'use client';\n\nimport { useId, useMemo } from 'react';\nimport { Label, Meter as AriaMeter, useLocale, type MeterProps as AriaMeterProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\n\nexport type MeterSegment = { id: string; label: string; value: number; color?: string };\nexport type MeterProps = Omit<AriaMeterProps, 'children' | 'className'> & {\n  label: string;\n  hideLabel?: boolean;\n  showValue?: boolean;\n  size?: 'small' | 'medium' | 'large';\n  tone?: 'accent' | 'success' | 'warning' | 'danger';\n  /** Quantities within the displayed amount; remaining usage keeps the base tone. */\n  segments?: MeterSegment[];\n  className?: string;\n};\n\n/** A bounded quantity, with optional parts that share the same value scale. */\nexport function Meter({ label, hideLabel = false, showValue = true, size = 'medium', tone = 'accent', segments, className, value = 0, minValue = 0, maxValue = 100, 'aria-describedby': describedBy, ...props }: MeterProps) {\n  const detailsId = useId();\n  const { locale } = useLocale();\n  const partFormatter = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }), [locale]);\n  const minimum = Number.isFinite(minValue) ? minValue : 0;\n  const maximum = Number.isFinite(maxValue) && maxValue > minimum ? maxValue : minimum + 1;\n  const current = Math.min(maximum, Math.max(minimum, Number.isFinite(value) ? value : minimum));\n  const range = maximum - minimum;\n  let remaining = current - minimum;\n  const parts = segments?.map(segment => {\n    const amount = Math.min(remaining, Math.max(0, Number.isFinite(segment.value) ? segment.value : 0));\n    remaining -= amount;\n    return { ...segment, amount, width: amount / range * 100 };\n  });\n  return <AriaMeter {...props} value={current} minValue={minimum} maxValue={maximum} aria-describedby={[describedBy, parts?.length ? detailsId : undefined].filter(Boolean).join(' ') || undefined} className={cx('ui-meter', className)} data-size={size} data-tone={tone}>\n    {({ percentage, valueText }) => <>\n      <div className=\"ui-meter__heading\"><Label className={cx('ui-meter__label', hideLabel && 'sr-only')}>{label}</Label>{showValue && <span className=\"ui-meter__value\" aria-hidden>{valueText}</span>}</div>\n      <div className=\"ui-meter__track\" aria-hidden>\n        {parts?.length ? <>{parts.map(part => <span key={part.id} className=\"ui-meter__segment\" style={{ width: `${part.width}%`, background: part.color }}/>)}<span className=\"ui-meter__segment ui-meter__remainder\" style={{ width: `${remaining / range * 100}%` }}/></> : <span className=\"ui-meter__fill\" style={{ width: `${percentage}%` }}/>}\n      </div>\n      {!!parts?.length && <span id={detailsId} className=\"sr-only\">{parts.map(part => `${part.label}: ${partFormatter.format(part.amount)}`).join('; ')}{remaining > 0 ? `; Other: ${partFormatter.format(remaining)}` : ''}</span>}\n    </>}\n  </AriaMeter>;\n}\n",
+      "sha256": "0cb903eb46852126418eb413593b58a207f9018e5f4679c94647827d2b5e4ae0",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 188,
+          "end": 198
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/scroll-area/scroll-area.tsx",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type Ref, type RefObject } from 'react';\nimport { RiArrowDownSLine, RiArrowUpSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type ScrollAreaViewportProps = { ref: Ref<HTMLDivElement>; className: string; children: ReactNode };\nexport type ScrollAreaProps = {\n  children?: ReactNode;\n  label: string;\n  className?: string;\n  viewportClassName?: string;\n  orientation?: 'vertical' | 'horizontal' | 'both';\n  /** Let a collection own the scroll viewport, keeping its keyboard scrolling native. */\n  renderViewport?: (props: ScrollAreaViewportProps) => ReactElement;\n  /** Keep a pointer action in a searchable input without stealing its focus. */\n  preservePointerFocus?: boolean;\n  /** Restore a virtual collection's input when a focused edge disappears. */\n  focusRef?: RefObject<HTMLElement | null>;\n  /** Keep arrow controls outside the item viewport in constrained collections. */\n  indicatorPlacement?: 'overlay' | 'gutter';\n};\n\n/** Keep native scrolling, with directional controls only when content overflows. */\nexport function ScrollArea({ children, label, className, viewportClassName, renderViewport, orientation = 'vertical', preservePointerFocus = false, focusRef, indicatorPlacement='overlay' }: ScrollAreaProps) {\n  const viewport = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);\n  const [mountedViewport, setMountedViewport] = useState<HTMLDivElement | null>(null);\n  const setViewport = useCallback((element: HTMLDivElement | null) => {\n    viewport.current = element;\n    setMountedViewport(element);\n  }, []);\n  const [edges, setEdges] = useState({ up: false, down: false, left: false, right: false });\n  const measuredEdges = useRef(edges);\n  useLayoutEffect(() => {\n    const el = mountedViewport;\n    if (!el) return;\n    function measure() {\n      if (!el) return;\n      const up = orientation !== 'horizontal' && el.scrollTop > 1, down = orientation !== 'horizontal' && el.scrollHeight - el.clientHeight - el.scrollTop > 1;\n      const rtl = getComputedStyle(el).direction === 'rtl', maximum = el.scrollWidth - el.clientWidth;\n      const left = orientation !== 'vertical' && (rtl ? maximum + el.scrollLeft : el.scrollLeft) > 1;\n      const right = orientation !== 'vertical' && (rtl ? -el.scrollLeft : maximum - el.scrollLeft) > 1;\n      const next = { up, down, left, right };\n      const focusedEdge = document.activeElement?.closest('.ui-scroll-area__edge');\n      const direction = focusedEdge?.getAttribute('data-direction') as keyof typeof next | undefined;\n      if (focusedEdge && el.parentElement?.contains(focusedEdge) && direction && !next[direction]) (focusRef?.current ?? el).focus({ preventScroll: true });\n      if (Object.keys(next).some(key => measuredEdges.current[key as keyof typeof next] !== next[key as keyof typeof next])) {\n        measuredEdges.current = next;\n        setEdges(measuredEdges.current);\n      }\n    }\n    const observer = new ResizeObserver(measure);\n    const observed = new Set<Element>();\n    function observeContent() {\n      if (!el) return;\n      // A collection may not allow a wrapper between itself and its sections.\n      // Observe those sections directly so filtering and density changes are measured.\n      const next = new Set<Element>([el, ...el.children]);\n      for (const child of observed) if (!next.has(child)) { observer.unobserve(child); observed.delete(child); }\n      for (const child of next) if (!observed.has(child)) { observer.observe(child); observed.add(child); }\n      measure();\n    }\n    const mutations = new MutationObserver(observeContent);\n    mutations.observe(el, { childList: true, subtree: true });\n    observeContent();\n    el.addEventListener('scroll', measure, { passive: true });\n    return () => { observer.disconnect(); mutations.disconnect(); el.removeEventListener('scroll', measure); };\n  }, [focusRef, mountedViewport, orientation]);\n  function scroll(direction: number, horizontal = false) {\n    const el = viewport.current;\n    if (!el) return;\n    el.scrollBy({ [horizontal ? 'left' : 'top']: direction * Math.max(80, (horizontal ? el.clientWidth : el.clientHeight) * .7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });\n  }\n  return <div className={cx('ui-scroll-area', className)} data-orientation={orientation} data-indicator-placement={indicatorPlacement} data-overflow-y={edges.up || edges.down || undefined}>\n    {renderViewport ? renderViewport({ ref: setViewport, className: cx('ui-scroll-area__viewport', viewportClassName), children }) : <div ref={setViewport} className={cx('ui-scroll-area__viewport', viewportClassName)} role=\"region\" aria-label={label} tabIndex={0}><div ref={content} className=\"ui-scroll-area__content\">{children}</div></div>}\n    <div className=\"ui-scroll-area__edge\" data-direction=\"up\" data-visible={edges.up || undefined} aria-hidden={!edges.up}><IconButton icon={RiArrowUpSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} up`} disabled={!edges.up} tabIndex={edges.up ? 0 : -1} onClick={() => scroll(-1)}/></div>\n    <div className=\"ui-scroll-area__edge\" data-direction=\"down\" data-visible={edges.down || undefined} aria-hidden={!edges.down}><IconButton icon={RiArrowDownSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} down`} disabled={!edges.down} tabIndex={edges.down ? 0 : -1} onClick={() => scroll(1)}/></div>\n    {orientation !== 'vertical' && <>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"left\" data-visible={edges.left || undefined} aria-hidden={!edges.left}><IconButton icon={RiArrowLeftSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} left`} disabled={!edges.left} tabIndex={edges.left ? 0 : -1} onClick={() => scroll(-1, true)}/></div>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"right\" data-visible={edges.right || undefined} aria-hidden={!edges.right}><IconButton icon={RiArrowRightSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} right`} disabled={!edges.right} tabIndex={edges.right ? 0 : -1} onClick={() => scroll(1, true)}/></div>\n    </>}\n  </div>;\n}\n",
+      "sha256": "6a0b95325225bbeb5dbcfb3fc4d3069c72e5d022d897f9e6bee1e96c34243bcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 282,
+          "end": 319
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 342,
+          "end": 352
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/select/select.tsx",
+      "content": "'use client';\n\nimport { Select as AriaSelect, Label, Button, SelectValue, Popover, ListBox, ListBoxItem, SelectStateContext, type SelectProps as AriaSelectProps } from 'react-aria-components';\nimport { RiArrowDownSLine, RiCheckLine } from '@remixicon/react';\nimport {useOverlayPosition,usePreventScroll} from 'react-aria';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { useCallback, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';\nimport { ScrollArea } from '@/components/base/scroll-area/scroll-area';\nimport {useAnchorScrollGuard} from '@/hooks/use-anchor-scroll-guard';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\n\nfunction DisabledSelectCloser({isDisabled}:{isDisabled?:boolean}) {\n  const state=useContext(SelectStateContext);\n  usePreventScroll({isDisabled:!state?.isOpen});\n  useEffect(()=>{if(isDisabled&&state?.isOpen)state.close();},[isDisabled,state]);\n  return null;\n}\n\nfunction SelectTrigger({trigger,className,children}:{trigger:RefObject<HTMLButtonElement|null>;className?:string;children:ReactNode}) {\n  const state=useContext(SelectStateContext);\n  const dismissPress=useRef(false);\n  return <Button ref={trigger} render={domProps=><button {...domProps} aria-invalid={state?.displayValidation.isInvalid || undefined} onPointerDownCapture={event=>{\n    // Native select-style mouse presses open on down. A second press closes\n    // through the public state, before the native opening handler can run.\n    dismissPress.current=Boolean(state?.isOpen)&&event.button===0;\n    if(dismissPress.current){event.preventDefault();event.stopPropagation();state?.close();trigger.current?.focus({preventScroll:true});}\n  }} onClickCapture={event=>{if(dismissPress.current){event.preventDefault();event.stopPropagation();dismissPress.current=false;}}}/>} className={className}>{children}</Button>;\n}\n\nfunction SelectExitFocus({isExiting,trigger,surface,restore,children}:{isExiting:boolean;trigger:RefObject<HTMLButtonElement|null>;surface:RefObject<HTMLElement|null>;restore:RefObject<boolean>;children:ReactNode}) {\n  const state=useContext(SelectStateContext);\n  useEffect(()=>{\n    if(!state?.isOpen||isExiting)return;\n    const focusOnOpening=()=>{\n      const list=surface.current?.querySelector<HTMLElement>('[role=\"listbox\"]');\n      if(!list||list.contains(document.activeElement))return;\n      const options=[...list.querySelectorAll<HTMLElement>('.ui-select__option:not([data-disabled])')];\n      const selected=options.find(option=>option.hasAttribute('data-selected'));\n      const target=selected??(state.focusStrategy==='last'?options.at(-1):options[0])??list;\n      target.focus({preventScroll:true});\n    };\n    // A reversal keeps the collection mounted. Restore its focus only after\n    // containment resumes, without overwriting navigation already inside it.\n    const frame=requestAnimationFrame(focusOnOpening);\n    return()=>cancelAnimationFrame(frame);\n  },[isExiting,state?.isOpen,state?.collection.size,state?.focusStrategy,surface]);\n  useEffect(()=>{\n    if(!isExiting){\n      const element=surface.current;\n      const remember=()=>{restore.current=!!element?.contains(document.activeElement);};\n      remember();element?.addEventListener('focusin',remember);\n      return()=>element?.removeEventListener('focusin',remember);\n    }\n    if(!restore.current)return;\n    const active=document.activeElement,dialog=trigger.current?.closest('[role=\"dialog\"], [role=\"alertdialog\"]');\n    // The popover releases containment during exit. Its inert option may have\n    // blurred into the enclosing dialog; preserve deliberate focus elsewhere.\n    if(active===document.body||active===dialog||surface.current?.contains(active))trigger.current?.focus({preventScroll:true});\n    restore.current=false;\n  },[isExiting,restore,surface,trigger]);\n  return children;\n}\n\nexport type SelectOption = { id: string; label: string; detail?: string; leading?: ReactNode; isDisabled?: boolean };\nexport type SelectProps = Omit<AriaSelectProps<SelectOption>, 'children' | 'className' | 'items' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {\n  options: SelectOption[];\n  label?: string;\n  name?: string;\n  placeholder?: string;\n  selectedKey?: string | null;\n  defaultSelectedKey?: string;\n  onSelectionChange?: (key: string | null) => void;\n  isDisabled?: boolean;\n  className?: string;\n  triggerClassName?: string;\n  popoverClassName?: string;\n  hideIndicator?: boolean;\n  hideLabel?: boolean;\n  hint?: string;\n  error?: string;\n  size?: 'small' | 'medium' | 'large';\n  density?: 'comfortable' | 'compact' | 'touch';\n  isOpen?: boolean;\n  onOpenChange?: (isOpen: boolean) => void;\n  'aria-label'?: string;\n  'aria-describedby'?: string;\n};\n\nexport function Select({ options, label, name, placeholder = 'Select an option', selectedKey, defaultSelectedKey, onSelectionChange, isDisabled: disabled, className, triggerClassName, popoverClassName, hideIndicator = false, hideLabel = false, hint, error, isInvalid, size = 'medium', density = 'comfortable', isOpen, onOpenChange, 'aria-label': ariaLabel, 'aria-describedby': descriptionId, ...props }: SelectProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const trigger=useRef<HTMLButtonElement>(null),surface=useRef<HTMLElement>(null);\n  const [surfaceMounted,setSurfaceMounted]=useState(false);\n  const setSurface=useCallback((element:HTMLElement|null)=>{surface.current=element;setSurfaceMounted(Boolean(element));},[]);\n  const restoreOnExit=useRef(false);\n  const [internalOpen,setInternalOpen]=useState(false);\n  const open=isOpen??internalOpen;\n  const ignoreScrollClose=useAnchorScrollGuard(open,trigger);\n  const position=useOverlayPosition({targetRef:trigger,overlayRef:surface,isOpen:open||surfaceMounted,placement:'bottom start',offset:6,maxHeight:312,onClose:null});\n  useEffect(()=>{\n    if(!open&&!surfaceMounted)return;let frame=0,previous='';\n    // An ancestor can move during a height/grid transition without resizing\n    // the trigger. Follow its actual rectangle through the public position hook.\n    // Keep following during exit: the surface is painted until it unmounts.\n    function follow(){const rect=trigger.current?.getBoundingClientRect();if(rect){const next=[rect.x,rect.y,rect.width,rect.height].join(':');if(next!==previous){previous=next;position.updatePosition();}}frame=requestAnimationFrame(follow);}\n    frame=requestAnimationFrame(follow);return()=>cancelAnimationFrame(frame);\n  },[open,surfaceMounted,position.updatePosition]);\n  function changeOpen(open:boolean){\n    if(!open&&ignoreScrollClose())return;\n    if(isOpen===undefined)setInternalOpen(open);\n    restoreOnExit.current=!open&&!!surface.current?.contains(document.activeElement);\n    onOpenChange?.(open);\n  }\n  return <AriaSelect {...props} name={name} selectedKey={selectedKey} defaultSelectedKey={defaultSelectedKey} onSelectionChange={key => onSelectionChange?.(key == null ? null : String(key))} isDisabled={isDisabled} isInvalid={error ? true : isInvalid} isOpen={open} onOpenChange={changeOpen} aria-describedby={descriptionId} aria-label={ariaLabel ?? (label ? undefined : placeholder)} data-size={size} className={cx('ui-select', className)}>\n    <DisabledSelectCloser isDisabled={isDisabled}/>\n    {label && <Label className={cx('ui-select__label',hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden>*</span>}</Label>}\n    <SelectTrigger trigger={trigger} className={cx('ui-select__trigger', triggerClassName)}><SelectValue<SelectOption>>{({ selectedItem, selectedText }) => <span className=\"ui-select__value\">{selectedItem?.leading}<span>{selectedText || placeholder}</span></span>}</SelectValue>{!hideIndicator && <RiArrowDownSLine size={16} aria-hidden />}</SelectTrigger>\n    <Popover isNonModal style={position.overlayProps.style} ref={setSurface} data-density={density} className={cx('ui-select__popover', popoverClassName)} placement=\"bottom start\" offset={6} maxHeight={312}>{({isExiting})=><SelectExitFocus isExiting={isExiting} trigger={trigger} surface={surface} restore={restoreOnExit}><div className=\"ui-select__surface\" inert={isExiting || Boolean(isDisabled)}><ScrollArea indicatorPlacement=\"gutter\" label={`${label ?? ariaLabel ?? 'Select'} options`} className=\"ui-select__scroll\" renderViewport={({ref,className:viewportClassName})=><ListBox ref={ref} className={cx('ui-select__list',viewportClassName)} items={options}>{item => <ListBoxItem id={item.id} textValue={item.label} isDisabled={item.isDisabled} className=\"ui-select__option\"><span><strong>{item.leading && <span className=\"ui-select__leading\">{item.leading}</span>}{item.label}</strong>{item.detail && <small>{item.detail}</small>}</span><RiCheckLine size={16} aria-hidden /></ListBoxItem>}</ListBox>}/></div></SelectExitFocus>}</Popover>\n    <FieldFeedback hint={hint} error={error}/>\n  </AriaSelect>;\n}\n",
+      "sha256": "5ed12c96b0129996fd858fa720369c41e772da54ae1604e8c7453fc4b44c55c3",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 343,
+          "end": 353
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 390,
+          "end": 427
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 568,
+          "end": 609
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-anchor-scroll-guard",
+          "target": "hooks/use-anchor-scroll-guard.ts",
+          "start": 648,
+          "end": 679
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 713,
+          "end": 751
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/switch/switch.tsx",
+      "content": "'use client';\n\nimport type { ReactNode } from 'react';\nimport { Switch as AriaSwitch, type SwitchProps as AriaSwitchProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type SwitchProps = AriaSwitchProps & { children?: ReactNode; size?: 'sm' | 'md' | 'lg'; shape?: 'pill' | 'rectangle'; className?: string };\nexport function Switch({ children, size = 'md', shape = 'pill', className, ...props }: SwitchProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaSwitch {...props} isDisabled={isDisabled} data-size={size} data-shape={shape} className={cx('ui-switch', className)}><span className=\"ui-switch__track\" aria-hidden=\"true\"><span className=\"ui-switch__thumb\" /></span>{children && <span className=\"ui-switch__label\">{children}</span>}</AriaSwitch>;\n}\n",
+      "sha256": "7ea8568d227056327af66529fa0d57b1e9f3727858baed9a0bf7ca9d7484ba1a",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 174,
+          "end": 184
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 221,
+          "end": 258
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/agent-limits/agent-limits-card.tsx",
+      "content": "'use client';\n\nimport { useId, useState } from 'react';\nimport { RiArrowDownSLine, RiArrowRightLine } from '@remixicon/react';\nimport { Collapsible } from '@/components/base/collapsible/collapsible';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { Meter, type MeterProps } from '@/components/base/meter/meter';\nimport { cx } from '@/utils/cx';\n\ntype UsageTone = NonNullable<MeterProps['tone']>;\nexport type AgentLimit = { id: string; label: string; used: number; maximum: number; resetLabel?: string; members?: { name: string; used: number }[]; tone?: UsageTone };\nexport type AgentLimitsCardProps = {\n  contextUsed: number;\n  contextMaximum: number;\n  buckets?: { label: string; amount: number; color: string }[];\n  limits: AgentLimit[];\n  contextLabel?: string;\n  limitsLabel?: string;\n  density?: 'normal' | 'compact';\n  variant?: 'soft' | 'bordered';\n  defaultExpanded?: boolean;\n  isExpanded?: boolean;\n  onExpandedChange?: (expanded: boolean) => void;\n  defaultOpenLimit?: string | null;\n  openLimit?: string | null;\n  onOpenLimitChange?: (id: string | null) => void;\n  formatValue?: (value: number) => string;\n  onPlanClick?: () => void;\n  className?: string;\n};\nconst compactFormatter = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });\nconst formatCompact = (value: number) => compactFormatter.format(value);\nconst finiteAmount = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;\nconst percentage = (used: number, maximum: number) => maximum > 0 && Number.isFinite(maximum) ? Math.min(100, finiteAmount(used) / maximum * 100) : 0;\nconst toneFor = (value: number): UsageTone => value >= 95 ? 'danger' : value >= 80 ? 'warning' : 'accent';\n\nexport function AgentLimitsCard({ contextUsed, contextMaximum, buckets = [], limits, contextLabel = 'Context window', limitsLabel = 'Plan usage limits', density = 'normal', variant = 'soft', defaultExpanded = false, isExpanded, onExpandedChange, defaultOpenLimit = null, openLimit, onOpenLimitChange, formatValue = formatCompact, onPlanClick, className }: AgentLimitsCardProps) {\n  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);\n  const [internalLimit, setInternalLimit] = useState<string | null>(defaultOpenLimit);\n  const expanded = isExpanded ?? internalExpanded;\n  const activeLimit = openLimit === undefined ? internalLimit : openLimit;\n  const id = useId(), detailsId = `${id}-context`;\n  const used = finiteAmount(contextUsed), maximum = finiteAmount(contextMaximum);\n  const contextPercent = percentage(used, maximum);\n  function toggleExpanded() {\n    if (isExpanded === undefined) setInternalExpanded(!expanded);\n    onExpandedChange?.(!expanded);\n  }\n  function toggleLimit(limit: string) {\n    const next = activeLimit === limit ? null : limit;\n    if (openLimit === undefined) setInternalLimit(next);\n    onOpenLimitChange?.(next);\n  }\n  return <div className={cx('ui-agent-limits', className)} data-density={density} data-variant={variant}>\n    <button type=\"button\" className=\"ui-agent-limits__summary\" aria-expanded={expanded} aria-controls={detailsId} onClick={toggleExpanded}>\n      <span>{contextLabel}</span><strong>{formatValue(used)} / {maximum > 0 ? formatValue(maximum) : '—'}{maximum > 0 && ` (${Math.round(contextPercent)}%)`}</strong><RiArrowDownSLine size={16} aria-hidden/>\n    </button>\n    <Meter label={`${contextLabel} usage`} hideLabel showValue={false} value={Math.min(used, maximum)} maxValue={maximum || 1} valueLabel={maximum > 0 ? `${formatValue(used)} of ${formatValue(maximum)} used` : 'Limit not configured'} tone={toneFor(contextPercent)} className=\"ui-agent-limits__segments\" segments={buckets.map((bucket, index) => ({ id: `${index}:${bucket.label}`, label: bucket.label, value: bucket.amount, color: bucket.color }))}/>\n    {!!limits.length && <div className=\"ui-agent-limits__body\"><div className=\"ui-agent-limits__heading\"><span>{limitsLabel}</span>{onPlanClick && <IconButton icon={RiArrowRightLine} size=\"xs\" variant=\"ghost\" aria-label=\"View plan\" onClick={onPlanClick}/>}</div>\n      {limits.map((limit, index) => {\n        const limitMaximum = finiteAmount(limit.maximum), percent = percentage(limit.used, limitMaximum), hasMembers = Boolean(limit.members?.length), detailId = `${id}-limit-${index}`;\n        const heading = <><strong>{limit.label}</strong>{limit.resetLabel && <span>{limit.resetLabel}</span>}<b>{limitMaximum > 0 ? `${Math.round(percent)}%` : '—'}</b>{hasMembers && <RiArrowDownSLine size={14} aria-hidden/>}</>;\n        return <div className=\"ui-agent-limits__limit\" key={limit.id}>\n          {hasMembers ? <button type=\"button\" className=\"ui-agent-limits__limit-head\" aria-expanded={activeLimit === limit.id} aria-controls={detailId} onClick={() => toggleLimit(limit.id)}>{heading}</button> : <div className=\"ui-agent-limits__limit-head\">{heading}</div>}\n          <Meter label={limit.label} value={finiteAmount(limit.used)} maxValue={limitMaximum || 1} valueLabel={limitMaximum > 0 ? `${formatValue(finiteAmount(limit.used))} of ${formatValue(limitMaximum)} used` : 'Limit not configured'} hideLabel showValue={false} size=\"small\" tone={limit.tone ?? toneFor(percent)} className=\"ui-agent-limits__bar\"/>\n          {hasMembers && <Collapsible isOpen={activeLimit === limit.id} id={detailId}><div className=\"ui-agent-limits__members\">{limit.members!.map((member, index) => <div className=\"ui-agent-limits__member\" key={`${index}:${member.name}`}><span>{member.name}</span><span>{formatValue(finiteAmount(member.used))}</span></div>)}</div></Collapsible>}\n        </div>;\n      })}\n    </div>}\n    <Collapsible isOpen={expanded} id={detailsId}><div className=\"ui-agent-limits__details\"><strong>Usage breakdown</strong>{buckets.map((bucket, index) => <div key={`${index}:${bucket.label}`}><span><i style={{ background: bucket.color }}/>{bucket.label}</span><b>{Math.round(percentage(bucket.amount, maximum))}%</b></div>)}<div><span>Available</span><b>{maximum > 0 ? formatValue(Math.max(0, maximum - used)) : '—'}</b></div></div></Collapsible>\n  </div>;\n}\n",
+      "sha256": "a51506bd1fcca9aed04435d64de3678e2a696812d5777d08709623b0ba789fd7",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/collapsible/collapsible",
+          "target": "components/base/collapsible/collapsible.tsx",
+          "start": 156,
+          "end": 197
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 228,
+          "end": 265
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/meter/meter",
+          "target": "components/base/meter/meter.tsx",
+          "start": 308,
+          "end": 337
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 360,
+          "end": 370
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/settings-modal/settings-modal.tsx",
+      "content": "'use client';\n\nimport { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';\nimport { Dialog as AriaDialog, Modal, ModalOverlay, Form } from 'react-aria-components';\nimport { RiSettings4Line, RiUser3Line, RiToolsLine, RiHardDrive2Line, RiPaletteLine, RiBankCardLine, RiGitBranchLine, RiPuzzleLine, RiTerminalBoxLine, RiMagicLine, RiComputerLine, RiArrowRightSLine } from '@remixicon/react';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { Alert } from '@/components/base/alert/alert';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\nimport { Button } from '@/components/base/buttons/button';\nimport { Input, type InputProps } from '@/components/base/input/input';\nimport { CloseButton } from '@/components/base/buttons/close-button';\nimport { Select } from '@/components/base/select/select';\nimport { Switch } from '@/components/base/switch/switch';\nimport { AgentLimitsCard, type AgentLimitsCardProps } from '@/components/blocks/agent-limits/agent-limits-card';\nimport { cx } from '@/utils/cx';\n\nexport type SettingsPage = 'general' | 'profile' | 'appearance' | 'billing' | 'rules' | 'tools' | 'storage' | 'desktop' | 'plugins' | 'developer' | 'skills' | 'git';\nexport type SettingsField = { id: string; label: string; description?: string; kind: 'toggle' | 'select' | 'text'; defaultValue?: string | boolean; type?: InputProps['type']; placeholder?: string; isDisabled?: boolean; maxLength?: number; options?: { value: string; label: string }[] };\nexport type SettingsPageDefinition = { description?: string; fields: SettingsField[] };\nexport type SettingsValues = { workspaceName: string; name: string; email: string; notifications: boolean; compactMode: boolean; reviewProvider: string; reviewDestination: string; additional: Record<string,string | boolean> };\nexport type SettingsModalProps = { isOpen: boolean; onClose: () => void; initialPage?: SettingsPage; workspaceName?: string; name?: string; email?: string; planName?: string; planPrice?: string; planDescription?: string; pageContent?: Partial<Record<SettingsPage, ReactNode>>; extraPages?: Partial<Record<SettingsPage, SettingsPageDefinition>>; usageLimits?: AgentLimitsCardProps; onPlanClick?: () => void; onSave?: (settings: SettingsValues) => void | Promise<void>; className?: string };\nconst pageGroups = [\n  { label: '', items: [{ id: 'general', label: 'General', icon: RiSettings4Line }, { id: 'profile', label: 'Profile', icon: RiUser3Line }, { id: 'appearance', label: 'Appearance', icon: RiPaletteLine }, { id: 'billing', label: 'Billing', icon: RiBankCardLine }, { id: 'rules', label: 'Rules and workflows', icon: RiGitBranchLine }, { id: 'tools', label: 'Tools', icon: RiToolsLine }, { id: 'storage', label: 'Storage', icon: RiHardDrive2Line }] },\n  { label: 'Desktop app', items: [{ id: 'desktop', label: 'General', icon: RiComputerLine }, { id: 'plugins', label: 'Plugins', icon: RiPuzzleLine }, { id: 'developer', label: 'Developer', icon: RiTerminalBoxLine }] },\n  { label: 'Customize', items: [{ id: 'skills', label: 'Skills', icon: RiMagicLine }, { id: 'git', label: 'Git', icon: RiGitBranchLine }] },\n] as const;\nconst allPages = pageGroups.flatMap(group => group.items.map(item => ({ id: item.id as SettingsPage, label: item.label })));\nconst defaultExtraPages: Partial<Record<SettingsPage, SettingsPageDefinition>> = {\n  rules: { description: 'Set the rules your team follows when work changes.', fields: [{ id: 'review', label: 'Require review', description: 'Ask for approval before shared changes are applied.', kind: 'toggle', defaultValue: true }, { id: 'branch', label: 'Working branch', description: 'The branch used for new changes.', kind: 'text', defaultValue: 'main' }] },\n  tools: { description: 'Choose the tools available to this workspace.', fields: [{ id: 'code', label: 'Code review', description: 'Show review actions inside the workspace.', kind: 'toggle', defaultValue: true }, { id: 'design', label: 'Design files', description: 'Show linked design files with projects.', kind: 'toggle', defaultValue: false }] },\n  storage: { description: 'Manage how project files are kept.', fields: [{ id: 'cleanup', label: 'Clean temporary files', description: 'Remove temporary uploads after a completed task.', kind: 'toggle', defaultValue: true }, { id: 'retention', label: 'File retention', description: 'Choose how long temporary files are kept.', kind: 'select', defaultValue: '30', options: [{ value: '7', label: '7 days' }, { value: '30', label: '30 days' }, { value: '90', label: '90 days' }] }] },\n  desktop: { description: 'Control this app on your computer.', fields: [{ id: 'startup', label: 'Open at login', description: 'Start the app when you sign in.', kind: 'toggle', defaultValue: false }, { id: 'alerts', label: 'Desktop notifications', description: 'Show status updates on your desktop.', kind: 'toggle', defaultValue: true }] },\n  plugins: { description: 'Manage optional workspace extensions.', fields: [{ id: 'enabled', label: 'Enable installed plugins', description: 'Allow enabled plugins to run in this workspace.', kind: 'toggle', defaultValue: true }, { id: 'requests', label: 'Allow plugin requests', description: 'Let members suggest new extensions.', kind: 'toggle', defaultValue: false }] },\n  developer: { description: 'Adjust diagnostics for local development.', fields: [{ id: 'logs', label: 'Detailed logs', description: 'Include extra information in local logs.', kind: 'toggle', defaultValue: false }, { id: 'level', label: 'Log level', kind: 'select', defaultValue: 'info', options: [{ value: 'error', label: 'Errors' }, { value: 'info', label: 'Info' }, { value: 'debug', label: 'Debug' }] }] },\n  skills: { description: 'Choose how custom capabilities appear.', fields: [{ id: 'enabled', label: 'Enable custom skills', description: 'Make workspace skills available in new tasks.', kind: 'toggle', defaultValue: true }] },\n  git: { description: 'Choose defaults for version control.', fields: [{ id: 'branch', label: 'Default branch', kind: 'text', defaultValue: 'main' }, { id: 'fetch', label: 'Fetch changes automatically', description: 'Check for remote changes in the background.', kind: 'toggle', defaultValue: true }] },\n};\n\nfunction SaveFeedback({ error, notice }: { error: string; notice: string }) {\n  const present = useIsPresent();\n  return <div className=\"ui-settings-modal__save-feedback\" inert={!present} aria-hidden={!present || undefined}><Alert role={error?'alert':'status'} tone={error?'error':'success'} title={error?'Settings were not saved':'Previous changes saved'} description={error || notice}/></div>;\n}\n\nexport function SettingsModal({ isOpen, onClose, initialPage = 'general', workspaceName = '', name = '', email = '', planName = 'Studio', planPrice = '$49/mo', planDescription = 'More room for your team and projects.', pageContent, extraPages, usageLimits, onPlanClick, onSave, className }: SettingsModalProps) {\n  const [page, setPage] = useState<SettingsPage>(initialPage);\n  const [workspace, setWorkspace] = useState(workspaceName);\n  const [displayName, setDisplayName] = useState(name);\n  const [address, setAddress] = useState(email);\n  const [notifications, setNotifications] = useState(true);\n  const [compactMode, setCompactMode] = useState(false);\n  const [reviewProvider, setReviewProvider] = useState('GitHub');\n  const [reviewDestination, setReviewDestination] = useState('In this workspace');\n  const [additional, setAdditional] = useState<Record<string,string | boolean>>({});\n  const titleId = useId();\n  const emailRef = useRef<HTMLInputElement>(null);\n  const [saving,setSaving] = useState(false),[saveError,setSaveError] = useState(''),[saveNotice,setSaveNotice] = useState(''),[emailError,setEmailError] = useState('');\n  const savingRef = useRef(false), request = useRef(0), openRef = useRef(isOpen);\n  const values: SettingsValues = {workspaceName:workspace,name:displayName,email:address,notifications,compactMode,reviewProvider,reviewDestination,additional};\n  const signature = JSON.stringify(values), currentSignature = useRef(signature);\n  const reduced = useReducedMotion();\n  useLayoutEffect(()=>{currentSignature.current=signature;},[signature]);\n  useLayoutEffect(()=>{\n    openRef.current=isOpen;request.current++;savingRef.current=false;\n    if(isOpen){setSaving(false);setSaveError('');setSaveNotice('');}\n  },[isOpen]);\n  useEffect(()=>()=>{openRef.current=false;request.current++;},[]);\n  async function save() {\n    if(savingRef.current || !openRef.current)return;\n    // Validate the profile address even when a different settings page is visible.\n    const probe=document.createElement('input');probe.type='email';probe.value=address;\n    if(!probe.checkValidity()){\n      setEmailError('Enter a valid email address.');setPage('profile');\n      requestAnimationFrame(()=>emailRef.current?.focus({preventScroll:true}));return;\n    }\n    const operation=++request.current, submitted=signature;\n    savingRef.current=true;setSaving(true);setSaveError('');setSaveNotice('');\n    try{\n      await onSave?.(values);\n      if(operation!==request.current || !openRef.current)return;\n      if(currentSignature.current===submitted)onClose();\n      else setSaveNotice('Your newer edits are still here. Save again when they are ready.');\n    }catch(error){\n      if(operation===request.current && openRef.current)setSaveError(error instanceof Error?error.message:'Try saving again.');\n    }finally{\n      if(operation===request.current && openRef.current){savingRef.current=false;setSaving(false);}\n    }\n  }\n  useEffect(() => { if (isOpen) setPage(initialPage); }, [isOpen, initialPage]);\n  const pageLabel = allPages.find(item => item.id === page)?.label ?? 'Settings';\n  const extraDefinition = extraPages?.[page] ?? defaultExtraPages[page];\n  return <ModalOverlay isOpen={isOpen} onOpenChange={open => { if (!open) onClose(); }} isDismissable className=\"ui-modal-overlay ui-settings-backdrop\">\n    <Modal className=\"ui-modal-surface ui-settings-surface\">{({isExiting})=><AriaDialog inert={isExiting} aria-labelledby={titleId} className={cx('ui-settings-modal', className)}>\n      <aside><h2 id={titleId}>Settings</h2><nav aria-label=\"Settings pages\">{pageGroups.map(group => <div className=\"ui-settings-modal__nav-group\" key={group.label || 'workspace'}>{group.label && <span>{group.label}</span>}{group.items.map(item => <button key={item.id} type=\"button\" aria-current={page === item.id ? 'page' : undefined} onClick={() => setPage(item.id)}><item.icon size={17} aria-hidden />{item.label}</button>)}</div>)}</nav></aside>\n      <section><header><h3>{pageLabel}</h3><CloseButton size=\"xs\" aria-label=\"Close settings\" onClick={onClose}/></header>\n        <Form className=\"ui-settings-modal__form\" aria-label=\"Workspace settings\" validationBehavior=\"native\" onSubmit={event=>{event.preventDefault();void save();}}>\n        <div className=\"ui-settings-modal__content\">{pageContent?.[page] ?? <>\n          {page === 'general' && <>\n            <div className=\"ui-settings-modal__plan\"><div><small>Current plan</small><strong>{planName} {planPrice}</strong><span>{planDescription}</span>{onPlanClick && <Button size=\"small\" variant=\"secondary\" onClick={onPlanClick}>Manage plan</Button>}</div><div className=\"ui-settings-modal__plan-art\" aria-hidden /></div>\n            <button type=\"button\" className=\"ui-settings-modal__limit\" onClick={() => setPage('billing')}><span><strong>Limits</strong><small>Review usage across your workspace.</small></span><span>Manage limits <RiArrowRightSLine size={16} aria-hidden /></span></button>\n            <div className=\"ui-settings-modal__section-label\">Pull requests</div>\n            <div className=\"ui-settings-modal__choice\"><span><strong>Review provider</strong><small>Choose where code reviews happen.</small></span><Select aria-label=\"Review provider\" selectedKey={reviewProvider} onSelectionChange={value => { if (value) setReviewProvider(value); }} options={['GitHub','GitLab','Bitbucket'].map(value => ({ id: value, label: value }))}/></div>\n            <div className=\"ui-settings-modal__choice\"><span><strong>PR destination</strong><small>Open pull request links inside the app.</small></span><Select aria-label=\"PR destination\" selectedKey={reviewDestination} onSelectionChange={value => { if (value) setReviewDestination(value); }} options={['In this workspace','In browser'].map(value => ({ id: value, label: value }))}/></div>\n            <div className=\"ui-settings-modal__section-label\">Workspace</div>\n            <Input label=\"Workspace name\" name=\"workspaceName\" value={workspace} onChange={setWorkspace}/>\n            <div className=\"ui-settings-modal__setting\"><div><strong>Notifications</strong><small>Get updates about activity in your workspace.</small></div><Switch aria-label=\"Notifications\" isSelected={notifications} onChange={setNotifications} /></div>\n          </>}\n          {page === 'profile' && <><div className=\"ui-settings-modal__avatar\">{displayName.slice(0,1).toUpperCase() || 'U'}</div><Input label=\"Display name\" name=\"name\" value={displayName} onChange={setDisplayName}/><Input inputRef={emailRef} label=\"Email address\" name=\"email\" type=\"email\" value={address} error={emailError || undefined} onChange={value=>{setAddress(value);setEmailError('');}}/></>}\n          {page === 'appearance' && <><div className=\"ui-settings-modal__setting\"><div><strong>Compact mode</strong><small>Show more content in less space.</small></div><Switch aria-label=\"Compact mode\" isSelected={compactMode} onChange={setCompactMode} /></div><div className=\"ui-settings-modal__setting\"><div><strong>Notifications</strong><small>Show status changes as they happen.</small></div><Switch aria-label=\"Status notifications\" isSelected={notifications} onChange={setNotifications} /></div></>}\n          {page === 'billing' && <><div className=\"ui-settings-modal__plan\"><div><small>Current plan</small><strong>{planName} {planPrice}</strong><span>{planDescription}</span>{onPlanClick && <Button size=\"small\" variant=\"secondary\" onClick={onPlanClick}>Manage plan</Button>}</div><div className=\"ui-settings-modal__plan-art\" aria-hidden /></div><div className=\"ui-settings-modal__setting\"><div><strong>Usage</strong><small>Plan usage and limits for this workspace.</small></div></div>{usageLimits && <AgentLimitsCard {...usageLimits} onPlanClick={usageLimits.onPlanClick ?? onPlanClick}/>}</>}\n          {!['general','profile','appearance','billing'].includes(page) && extraDefinition && <div className=\"ui-settings-modal__extras\">{extraDefinition.description && <p>{extraDefinition.description}</p>}{extraDefinition.fields.map(field => { const key = `${page}.${field.id}`; const current = additional[key] ?? field.defaultValue ?? (field.kind === 'toggle' ? false : ''); return <div className=\"ui-settings-modal__setting\" data-kind={field.kind} key={key}><div><strong>{field.label}</strong>{field.description && <small id={`${titleId}-${key}-description`}>{field.description}</small>}</div>{field.kind === 'toggle' ? <Switch isDisabled={field.isDisabled} aria-describedby={field.description?`${titleId}-${key}-description`:undefined} aria-label={field.label} isSelected={Boolean(current)} onChange={value => setAdditional(values => ({ ...values, [key]: value }))} /> : field.kind === 'select' ? <Select isDisabled={field.isDisabled} aria-describedby={field.description?`${titleId}-${key}-description`:undefined} aria-label={field.label} selectedKey={String(current)} onSelectionChange={value => { if (value !== null) setAdditional(values => ({ ...values, [key]: value })); }} options={(field.options ?? []).map(option => ({ id: option.value, label: option.label }))}/> : <Input label={field.label} hideLabel name={key} type={field.type} placeholder={field.placeholder} maxLength={field.maxLength} isDisabled={field.isDisabled} aria-describedby={field.description?`${titleId}-${key}-description`:undefined} value={String(current)} onChange={value => setAdditional(values => ({ ...values, [key]: value }))}/>}</div>; })}</div>}\n        </>}\n        </div>\n        <AnimatedHeight className=\"ui-settings-modal__save-status\"><AnimatePresence initial={false} mode=\"popLayout\">{(saveError || saveNotice) && <motion.div key={saveError?'error':'notice'} initial={{opacity:0,y:reduced?0:3}} animate={{opacity:1,y:0}} exit={{opacity:0,y:reduced?0:-3}} transition={{duration:reduced?0:.16,ease:[.2,.75,.25,1]}}><SaveFeedback error={saveError} notice={saveNotice}/></motion.div>}</AnimatePresence></AnimatedHeight>\n        <footer><Button variant=\"secondary\" onClick={onClose}>Cancel</Button><Button type=\"submit\" isLoading={saving} loadingLabel=\"Saving\">Save changes</Button></footer>\n        </Form>\n      </section>\n    </AriaDialog>}</Modal>\n  </ModalOverlay>;\n}\n",
+      "sha256": "48946872b50db5a46e1522bc5f7ec628663817b5f4ad4aad23f871706fbf853a",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/alert/alert",
+          "target": "components/base/alert/alert.tsx",
+          "start": 533,
+          "end": 562
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 597,
+          "end": 646
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 673,
+          "end": 705
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/input",
+          "target": "components/base/input/input.tsx",
+          "start": 748,
+          "end": 777
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 809,
+          "end": 847
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/select/select",
+          "target": "components/base/select/select.tsx",
+          "start": 874,
+          "end": 905
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/switch/switch",
+          "target": "components/base/switch/switch.tsx",
+          "start": 932,
+          "end": 963
+        },
+        {
+          "kind": "module",
+          "value": "@/components/blocks/agent-limits/agent-limits-card",
+          "target": "components/blocks/agent-limits/agent-limits-card.tsx",
+          "start": 1026,
+          "end": 1076
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 1099,
+          "end": 1109
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-anchor-scroll-guard.ts",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';\n\n/** Ignore only a queued scroll's dismissal when its anchor did not move. */\nexport function useAnchorScrollGuard(isOpen: boolean, anchor: RefObject<Element|null>|undefined) {\n  const guard=useRef<(()=>boolean)|null>(null);\n  useLayoutEffect(()=>{\n    const trigger=anchor?.current;if(!isOpen||!trigger)return;\n    const openedAt=trigger.getBoundingClientRect();\n    let unchanged=false,scrollEvent:Event|null=null;\n    const ignore=()=>unchanged&&scrollEvent!==null&&scrollEvent.eventPhase!==Event.NONE;\n    guard.current=ignore;\n    function onScroll(event:Event){\n      if(event.target instanceof Node&&!event.target.contains(trigger??null))return;\n      const current=trigger!.getBoundingClientRect();\n      unchanged=Math.abs(current.x-openedAt.x)<.5&&Math.abs(current.y-openedAt.y)<.5;\n      scrollEvent=event;\n    }\n    window.addEventListener('scroll',onScroll,true);\n    return()=>{window.removeEventListener('scroll',onScroll,true);if(guard.current===ignore)guard.current=null;};\n  },[isOpen,anchor]);\n  return useCallback(()=>guard.current?.()??false,[]);\n}\n",
+      "sha256": "0a69c28c08d424b9cb5b0c485c83027aee9972154e7dddc1e6e5da87b07e6594",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-agent-limits",
+      "ui-agent-limits__bar",
+      "ui-agent-limits__body",
+      "ui-agent-limits__details",
+      "ui-agent-limits__heading",
+      "ui-agent-limits__limit",
+      "ui-agent-limits__limit-head",
+      "ui-agent-limits__member",
+      "ui-agent-limits__members",
+      "ui-agent-limits__segments",
+      "ui-agent-limits__summary",
+      "ui-alert",
+      "ui-alert__actions",
+      "ui-alert__content",
+      "ui-alert__description",
+      "ui-alert__icon",
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-button",
+      "ui-button--icon-only",
+      "ui-button__busy-spinner",
+      "ui-button__label",
+      "ui-button__leading-icon",
+      "ui-button__leading-slot",
+      "ui-close-button",
+      "ui-collapsible",
+      "ui-collapsible__content",
+      "ui-collapsible__inner",
+      "ui-field-feedback",
+      "ui-field-feedback__error",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-input-field",
+      "ui-input-field__action",
+      "ui-input-field__adornment",
+      "ui-input-field__control",
+      "ui-input-field__control--stacked",
+      "ui-input-field__input",
+      "ui-input-field__label",
+      "ui-input-field__message",
+      "ui-input-field__row",
+      "ui-input-group__block",
+      "ui-meter",
+      "ui-meter__fill",
+      "ui-meter__heading",
+      "ui-meter__label",
+      "ui-meter__remainder",
+      "ui-meter__segment",
+      "ui-meter__track",
+      "ui-meter__value",
+      "ui-modal-overlay",
+      "ui-modal-surface",
+      "ui-scroll-area",
+      "ui-scroll-area__content",
+      "ui-scroll-area__edge",
+      "ui-scroll-area__viewport",
+      "ui-select",
+      "ui-select__label",
+      "ui-select__leading",
+      "ui-select__list",
+      "ui-select__option",
+      "ui-select__popover",
+      "ui-select__scroll",
+      "ui-select__surface",
+      "ui-select__trigger",
+      "ui-select__value",
+      "ui-settings-backdrop",
+      "ui-settings-modal",
+      "ui-settings-modal__avatar",
+      "ui-settings-modal__choice",
+      "ui-settings-modal__content",
+      "ui-settings-modal__extras",
+      "ui-settings-modal__form",
+      "ui-settings-modal__limit",
+      "ui-settings-modal__nav-group",
+      "ui-settings-modal__plan",
+      "ui-settings-modal__plan-art",
+      "ui-settings-modal__save-feedback",
+      "ui-settings-modal__save-status",
+      "ui-settings-modal__section-label",
+      "ui-settings-modal__setting",
+      "ui-settings-surface",
+      "ui-spinner",
+      "ui-switch",
+      "ui-switch__label",
+      "ui-switch__thumb",
+      "ui-switch__track"
+    ],
+    "prefixes": []
+  }
+}

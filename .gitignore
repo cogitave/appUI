@@ -1,0 +1,16 @@
+node_modules/
+/.next*/
+out
+*.local
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+/artifacts/
+/AGENTS.md
+/.agents/
+/.codex/
+/.aws/
+*.tgz
+*.tar.gz
+.env*
+!.env.example

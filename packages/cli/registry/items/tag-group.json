@@ -1,0 +1,92 @@
+{
+  "name": "tag-group",
+  "title": "Tag Group",
+  "group": "Base",
+  "type": "component",
+  "description": "A keyboard-accessible group of the library’s Chips for labels, selections and removable filters.",
+  "sections": [
+    "Preview",
+    "Selection",
+    "Removal",
+    "States and sizes"
+  ],
+  "example": "<TagGroup label=\"Categories\" items={tags}\n  selectionMode=\"multiple\" selectedKeys={selected}\n  onSelectionChange={setSelected} />",
+  "entryFiles": [
+    "components/base/tag-group/tag-group.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/tag-group/tag-group.tsx",
+      "names": [
+        "TagGroup",
+        "TagGroupProps",
+        "TagItem"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/badges/chip.tsx",
+      "content": "import type { HTMLAttributes } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type ChipVariant = 'bold' | 'subtle' | 'caption' | 'outline';\nexport type ChipColor = 'lime' | 'rose' | 'yellow' | 'cyan' | 'blue' | 'purple' | 'neutral' | 'gray' | 'soft' | 'primary';\n\nexport type ChipProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & {\n  variant?: ChipVariant;\n  color?: ChipColor;\n};\n\nexport function Chip({ variant = 'bold', color = 'neutral', className, ...props }: ChipProps) {\n  return <span data-variant={variant} data-color={color} className={cx('ui-chip', className)} {...props} />;\n}\n",
+      "sha256": "6fdd36c4971d55e3438e69fd153353f6e2f259b45a47ad12122d3836f289cb0d",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 65,
+          "end": 75
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/tag-group/tag-group.tsx",
+      "content": "'use client';\n\nimport { TagGroup as AriaTagGroup, TagList, Tag, Label, Text, Button, type Selection } from 'react-aria-components';\nimport { RiCloseLine } from '@remixicon/react';\nimport { Chip, type ChipColor } from '@/components/base/badges/chip';\nimport { cx } from '@/utils/cx';\n\nexport type TagItem = {id:string;label:string;color?:ChipColor;isDisabled?:boolean;};\nexport type TagGroupProps={items:TagItem[];label:string;hideLabel?:boolean;description?:string;selectionMode?:'none'|'single'|'multiple';selectedKeys?:string[];defaultSelectedKeys?:string[];onSelectionChange?:(keys:string[])=>void;onRemove?:(keys:string[])=>void;size?:'small'|'medium';emptyMessage?:string;className?:string;};\n\nexport function TagGroup({items,label,hideLabel=false,description,selectionMode='none',selectedKeys,defaultSelectedKeys,onSelectionChange,onRemove,size='medium',emptyMessage='No tags',className}:TagGroupProps) {\n  function change(selection:Selection){onSelectionChange?.(selection==='all'?items.filter(item=>!item.isDisabled).map(item=>item.id):Array.from(selection,String));}\n  return <AriaTagGroup selectionMode={selectionMode} selectionBehavior=\"toggle\" selectedKeys={selectedKeys} defaultSelectedKeys={defaultSelectedKeys} onSelectionChange={change} onRemove={onRemove?keys=>onRemove(Array.from(keys,String)):undefined} className={cx('ui-tag-group',className)} data-size={size}>\n    <Label className={cx('ui-input-field__label',hideLabel&&'sr-only')}>{label}</Label>\n    <TagList items={items} className=\"ui-tag-group__list\" renderEmptyState={()=> <span className=\"ui-tag-group__empty\">{emptyMessage}</span>}>{item=><Tag id={item.id} textValue={item.label} isDisabled={item.isDisabled} className=\"ui-tag\">{({isSelected,allowsRemoving})=><><Chip variant=\"subtle\" color={isSelected?'primary':item.color??'neutral'}>{item.label}</Chip>{allowsRemoving&&<Button slot=\"remove\" className=\"ui-tag__remove\" aria-label={`Remove ${item.label}`}><RiCloseLine size={13} aria-hidden/></Button>}</>}</Tag>}</TagList>\n    {description&&<Text slot=\"description\" className=\"ui-input-field__message\">{description}</Text>}\n  </AriaTagGroup>;\n}\n",
+      "sha256": "97584d79cd37f26a395ae640f26d496634c39824ef1a54bb85e56b72a507e305",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/badges/chip",
+          "target": "components/base/badges/chip.tsx",
+          "start": 218,
+          "end": 247
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 270,
+          "end": 280
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-chip",
+      "ui-input-field__label",
+      "ui-input-field__message",
+      "ui-tag",
+      "ui-tag-group",
+      "ui-tag-group__empty",
+      "ui-tag-group__list",
+      "ui-tag__remove"
+    ],
+    "prefixes": []
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "name": "split-pane",
+  "title": "Split Pane",
+  "group": "Base",
+  "type": "component",
+  "description": "Two panels with a shared, accessible resize handle. Dragging follows the pointer; keyboard resizing, collapse and restore use the library motion tokens. Content stays mounted when the layout changes direction.",
+  "sections": [
+    "Preview",
+    "Vertical layout",
+    "Direction and limits",
+    "Disabled"
+  ],
+  "example": "<SplitPane primary={<ProjectFiles />} secondary={<CodePreview />}\n  primaryLabel=\"Project files\" secondaryLabel=\"Code preview\"\n  value={size} onValueChange={setSize} minValue={22} maxValue={65}\n  collapsible stackAt={520} height={340} />",
+  "entryFiles": [
+    "components/base/split-pane/split-pane.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/split-pane/split-pane.tsx",
+      "names": [
+        "ResizeHandle",
+        "ResizeHandleProps",
+        "SplitPane",
+        "SplitPaneProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/split-pane/split-pane.tsx",
+      "content": "'use client';\n\nimport { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject, type Ref } from 'react';\nimport { useElementSize } from '@/hooks/use-element-size';\nimport { cx } from '@/utils/cx';\n\nexport type ResizeHandleProps = {\n  value: number;\n  minValue?: number;\n  maxValue?: number;\n  minExpandedValue?: number;\n  onChange: (value: number) => void;\n  onResizeStart?: () => void;\n  onResizeEnd?: (value: number) => void;\n  onToggle?: () => void;\n  onReset?: () => void;\n  orientation?: 'horizontal' | 'vertical';\n  unit?: 'percent' | 'pixel';\n  edge?: 'start' | 'end';\n  step?: number;\n  isDisabled?: boolean;\n  controls: string;\n  primaryRef?: RefObject<HTMLElement | null>;\n  ref?: Ref<HTMLDivElement>;\n  className?: string;\n  'aria-label': string;\n};\nconst finite = (value: number | undefined, fallback: number) => Number.isFinite(value) ? value! : fallback;\nconst clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));\n\n/** A focusable window splitter. Orientation describes the direction of resizing. */\nexport function ResizeHandle({ value, minValue = 0, maxValue = 100, minExpandedValue, onChange, onResizeStart, onResizeEnd, onToggle, onReset, orientation = 'horizontal', unit = 'percent', edge = 'start', step = 1, isDisabled = false, controls, primaryRef, ref, className, 'aria-label': label }: ResizeHandleProps) {\n  const minimum = finite(minValue, 0), maximum = Math.max(minimum, finite(maxValue, minimum + 100));\n  const current = clamp(finite(value, minimum), minimum, maximum), increment = Math.max(.01, finite(step, 1));\n  const expandedMinimum = clamp(finite(minExpandedValue, minimum), minimum, maximum);\n  const currentValue = useRef(current);\n  const gesture = useRef<{pointer: number; coordinate: number; original: number; start: number; factor: number; element: HTMLDivElement; orientation: string; unit: string; edge: string; minimum: number; maximum: number} | null>(null);\n  const [dragging, setDragging] = useState(false);\n  const instructions = useId();\n  const disabled = isDisabled || minimum === maximum;\n  useLayoutEffect(() => { currentValue.current = current; }, [current]);\n  function emit(candidate: number, mode: 'pointer'|'arrow'|'edge'|'settle' = 'pointer') {\n    let next = clamp(finite(candidate, minimum), minimum, maximum);\n    if (mode === 'arrow' && next > minimum && next < expandedMinimum) next = expandedMinimum;\n    if (mode === 'settle' && next < expandedMinimum) next = next < (minimum + expandedMinimum) / 2 ? minimum : expandedMinimum;\n    const changed = next !== currentValue.current;\n    currentValue.current = next;\n    if (changed) onChange(next);\n    return next;\n  }\n  useLayoutEffect(() => {\n    const active = gesture.current;\n    if (active && (disabled || active.orientation !== orientation || active.unit !== unit || active.edge !== edge || active.minimum !== minimum || active.maximum !== maximum)) finish(active.element, true);\n  }, [orientation, unit, edge, disabled, minimum, maximum]);\n  useLayoutEffect(() => () => {\n    const active = gesture.current;\n    gesture.current = null;\n    if (active?.element.hasPointerCapture(active.pointer)) active.element.releasePointerCapture(active.pointer);\n  }, []);\n  function finish(element: HTMLDivElement, cancel = false) {\n    const active = gesture.current;\n    if (!active) return;\n    gesture.current = null; setDragging(false);\n    const next = emit(cancel ? active.original : currentValue.current, cancel ? 'edge' : 'settle');\n    if (element.hasPointerCapture(active.pointer)) element.releasePointerCapture(active.pointer);\n    onResizeEnd?.(next);\n  }\n  const hint = `${orientation === 'horizontal' ? 'Left and right' : 'Up and down'} arrows resize; Shift moves farther. Home and End move to the boundaries.${onToggle ? ' Enter collapses or restores the panel.' : ''}${onReset ? ' Double click resets its size.' : ''} Escape cancels a drag.`;\n  return <div ref={ref} role=\"separator\" tabIndex={disabled ? -1 : 0} aria-label={label} aria-describedby={instructions} aria-controls={controls} aria-orientation={orientation === 'horizontal' ? 'vertical' : 'horizontal'} aria-valuemin={minimum} aria-valuemax={maximum} aria-valuenow={current} aria-valuetext={`${Math.round(current * 100) / 100}${unit === 'percent' ? '%' : ' pixels'}`} aria-disabled={disabled || undefined} className={cx('ui-resize-handle', className)} data-orientation={orientation} data-resizing={dragging || undefined}\n    onPointerDown={event => {\n      if (disabled || event.button !== 0 || gesture.current) return;\n      const element = event.currentTarget, container = element.parentElement;\n      if (!container) return;\n      event.preventDefault(); element.focus({preventScroll:true});\n      const horizontal = orientation === 'horizontal', rect = container.getBoundingClientRect();\n      const scale = (horizontal ? rect.width / container.offsetWidth : rect.height / container.offsetHeight) || 1;\n      const style = getComputedStyle(container);\n      const padding = horizontal ? parseFloat(style.paddingLeft)+parseFloat(style.paddingRight) : parseFloat(style.paddingTop)+parseFloat(style.paddingBottom);\n      const available = Math.max(1, (horizontal ? container.clientWidth-element.offsetWidth : container.clientHeight-element.offsetHeight) - padding);\n      const sign = (horizontal && style.direction === 'rtl' ? -1 : 1) * (edge === 'end' ? -1 : 1);\n      const factor = sign * (unit === 'percent' ? 100 / (available * scale) : 1 / scale);\n      const pane = primaryRef?.current?.getBoundingClientRect();\n      const measured = pane ? (horizontal ? pane.width : pane.height) / scale : undefined;\n      const start = measured === undefined ? currentValue.current : clamp(unit === 'percent' ? measured * 100 / available : measured, minimum, maximum);\n      gesture.current = {pointer:event.pointerId,coordinate:horizontal?event.clientX:event.clientY,original:currentValue.current,start,factor,element,orientation,unit,edge,minimum,maximum};\n      element.setPointerCapture(event.pointerId); setDragging(true); onResizeStart?.(); emit(start);\n    }}\n    onPointerMove={event=>{const active=gesture.current;if(!active || active.pointer!==event.pointerId)return;emit(active.start+((orientation==='horizontal'?event.clientX:event.clientY)-active.coordinate)*active.factor);}}\n    onPointerUp={event=>{const active=gesture.current;if(active?.pointer===event.pointerId){emit(active.start+((orientation==='horizontal'?event.clientX:event.clientY)-active.coordinate)*active.factor);finish(event.currentTarget);}}}\n    onPointerCancel={event=>{if(gesture.current?.pointer===event.pointerId)finish(event.currentTarget,true);}}\n    onLostPointerCapture={event=>{if(gesture.current?.pointer===event.pointerId)finish(event.currentTarget,true);}}\n    onDoubleClick={event=>{if(disabled || !onReset)return;event.preventDefault();onReset();}}\n    onKeyDown={event=>{\n      if(disabled)return;\n      if(event.key==='Escape' && gesture.current){event.preventDefault();event.stopPropagation();finish(event.currentTarget,true);return;}\n      if(gesture.current)return;\n      if(event.key==='Enter' && onToggle){event.preventDefault();onToggle();return;}\n      const horizontal=orientation==='horizontal', negative=horizontal?'ArrowLeft':'ArrowUp',positive=horizontal?'ArrowRight':'ArrowDown';\n      if(![negative,positive,'Home','End'].includes(event.key))return;\n      event.preventDefault();\n      const rtl=horizontal && getComputedStyle(event.currentTarget.parentElement!).direction==='rtl';\n      const sign=(rtl?-1:1)*(edge==='end'?-1:1);\n      const candidate=event.key==='Home'?minimum:event.key==='End'?maximum:currentValue.current+(event.key===positive?1:-1)*sign*increment*(event.shiftKey?10:1);\n      onResizeEnd?.(emit(candidate,event.key==='Home'||event.key==='End'?'edge':'arrow'));\n    }}><span className=\"ui-resize-handle__grip\" aria-hidden/><span className=\"sr-only\" id={instructions}>{hint}</span></div>;\n}\n\nexport type SplitPaneProps = {\n  primary: ReactNode;\n  secondary: ReactNode;\n  primaryLabel: string;\n  secondaryLabel: string;\n  primaryId?: string;\n  value?: number;\n  defaultValue?: number;\n  onValueChange?: (value: number) => void;\n  onResizeEnd?: (value: number) => void;\n  minValue?: number;\n  maxValue?: number;\n  orientation?: 'horizontal' | 'vertical';\n  /** Logical edge occupied by the primary panel. */\n  primaryEdge?: 'start' | 'end';\n  /** Switch to vertical panes at this container width without remounting content. */\n  stackAt?: number;\n  height?: number | string;\n  collapsible?: boolean;\n  isDisabled?: boolean;\n  className?: string;\n};\nexport function SplitPane({ primary, secondary, primaryLabel, secondaryLabel, primaryId:providedPrimaryId, value, defaultValue = 35, onValueChange, onResizeEnd, minValue = 20, maxValue = 80, orientation = 'horizontal', primaryEdge='start', stackAt, height = 360, collapsible = false, isDisabled, className }: SplitPaneProps) {\n  const [internal,setInternal] = useState(finite(defaultValue,35));\n  const [resizing,setResizing] = useState(false);\n  const minimum=clamp(finite(minValue,20),0,100), maximum=clamp(finite(maxValue,80),minimum,100);\n  const raw=finite(value??internal,minimum), current=collapsible && resizing?clamp(raw,0,maximum):collapsible && raw<=0?0:clamp(raw,minimum,maximum);\n  const previous=useRef(clamp(finite(defaultValue,35),minimum,maximum));\n  const primaryRef=useRef<HTMLDivElement>(null),secondaryRef=useRef<HTMLDivElement>(null),handleRef=useRef<HTMLDivElement>(null);\n  const {ref,width}=useElementSize<HTMLDivElement>(640,360);\n  const id=useId(), primaryId=providedPrimaryId??`${id}-primary`,secondaryId=`${id}-secondary`;\n  const direction=orientation==='horizontal' && stackAt!==undefined && width<=stackAt?'vertical':orientation;\n  function change(next:number){if((next===0 && primaryRef.current?.contains(document.activeElement)) || (next===100 && secondaryRef.current?.contains(document.activeElement)))handleRef.current?.focus({preventScroll:true});if(next>0)previous.current=next;if(value===undefined)setInternal(next);onValueChange?.(next);}\n  function toggle(){change(current===0?clamp(previous.current,minimum,maximum):0);}\n  return <div ref={ref} className={cx('ui-split-pane',className)} data-orientation={direction} data-primary-edge={primaryEdge} style={{'--split-primary':`${current}fr`,'--split-secondary':`${100-current}fr`,'--split-height':typeof height==='number'?`${Math.max(0,finite(height,360))}px`:height} as CSSProperties}>\n    <div ref={primaryRef} id={primaryId} role=\"region\" aria-label={primaryLabel} className=\"ui-split-pane__panel\" inert={current===0} aria-hidden={current===0 || undefined} data-collapsed={current===0 || undefined}>{primary}</div>\n    <ResizeHandle ref={handleRef} value={current} minValue={collapsible?0:minimum} minExpandedValue={minimum} maxValue={maximum} onChange={change} onResizeStart={()=>setResizing(true)} onResizeEnd={next=>{setResizing(false);onResizeEnd?.(next);}} onToggle={collapsible?toggle:undefined} onReset={()=>change(clamp(finite(defaultValue,35),minimum,maximum))} orientation={direction} edge={primaryEdge} controls={primaryId} primaryRef={primaryRef} aria-label={primaryLabel} isDisabled={isDisabled}/>\n    <div ref={secondaryRef} id={secondaryId} role=\"region\" aria-label={secondaryLabel} className=\"ui-split-pane__panel\" inert={current===100} aria-hidden={current===100 || undefined} data-collapsed={current===100 || undefined}>{secondary}</div>\n  </div>;\n}\n",
+      "sha256": "c815c1a535f44c1c87a3e18c99f2e6ee1238788a08dab61563d42846bc4e6077",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-element-size",
+          "target": "hooks/use-element-size.ts",
+          "start": 175,
+          "end": 199
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 222,
+          "end": 232
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-element-size.ts",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, useState } from 'react';\n\n/** Keep chart coordinates in CSS pixels so text and markers never stretch. */\nexport function useElementSize<T extends HTMLElement>(initialWidth: number, initialHeight: number) {\n  const ref = useRef<T>(null);\n  const [size, setSize] = useState({ width: initialWidth, height: initialHeight });\n\n  useLayoutEffect(() => {\n    const element = ref.current;\n    if (!element) return;\n    function update(width: number, height: number) {\n      if (width <= 0 || height <= 0) return;\n      setSize(current => current.width === width && current.height === height ? current : { width, height });\n    }\n    update(element.clientWidth, element.clientHeight);\n    const observer = new ResizeObserver(([entry]) => update(entry.contentRect.width, entry.contentRect.height));\n    observer.observe(element);\n    return () => observer.disconnect();\n  }, []);\n\n  return { ref, ...size };\n}\n",
+      "sha256": "a8ccbf55acfb20ce4f9a17df7467849f2b1d4310686a866ef88031ab7b2ded5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-resize-handle",
+      "ui-resize-handle__grip",
+      "ui-split-pane",
+      "ui-split-pane__panel"
+    ],
+    "prefixes": []
+  }
+}

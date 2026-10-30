@@ -1,0 +1,1092 @@
+{
+  "entries": [
+    {
+      "group": "Getting Started",
+      "label": "Let's begin",
+      "slug": "getting-started",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Getting Started",
+      "label": "Installation",
+      "slug": "installation",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Getting Started",
+      "label": "MCP Server",
+      "slug": "mcp",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Getting Started",
+      "label": "Agent Skills",
+      "slug": "skill",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Getting Started",
+      "label": "Components",
+      "slug": "components",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Getting Started",
+      "label": "Theme Setup",
+      "slug": "theme-setup",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Getting Started",
+      "label": "Template Access",
+      "slug": "template-access",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Foundations",
+      "label": "Color",
+      "slug": "color",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Foundations",
+      "label": "Typography",
+      "slug": "typography",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Accordion",
+      "slug": "accordion",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Alert",
+      "slug": "alert",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Announcement",
+      "slug": "announcement",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Avatar",
+      "slug": "avatar",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Badge",
+      "slug": "badge",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Breadcrumb",
+      "slug": "breadcrumb",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Button",
+      "slug": "button",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Button Group",
+      "slug": "button-group",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Card",
+      "slug": "card",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Carousel",
+      "slug": "carousel",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Checkbox",
+      "slug": "checkbox",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Chip",
+      "slug": "chip",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Close Button",
+      "slug": "close-button",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Code Block",
+      "slug": "code-block",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Collapsible",
+      "slug": "collapsible",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "ComboBox",
+      "slug": "combobox",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Date Picker",
+      "slug": "date-picker",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Dialog",
+      "slug": "dialog",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Divider",
+      "slug": "divider",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Drawer",
+      "slug": "drawer",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Dropdown",
+      "slug": "dropdown",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Empty State",
+      "slug": "empty-state",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Field",
+      "slug": "field",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "File Upload",
+      "slug": "file-upload",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Hover Card",
+      "slug": "hover-card",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Icon Button",
+      "slug": "icon-button",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Input",
+      "slug": "input",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Input OTP",
+      "slug": "input-otp",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Item",
+      "slug": "item",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Link Button",
+      "slug": "link-button",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Notification",
+      "slug": "notification",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Number Field",
+      "slug": "number-field",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Pagination",
+      "slug": "pagination",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Popover",
+      "slug": "popover",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Meter",
+      "slug": "meter",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Progress",
+      "slug": "progress",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Radio",
+      "slug": "radio",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Scroll Area",
+      "slug": "scroll-area",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Search Field",
+      "slug": "search-field",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Segmented Control",
+      "slug": "segmented-control",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Select",
+      "slug": "select",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Skeleton",
+      "slug": "skeleton",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Slider",
+      "slug": "slider",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Social Button",
+      "slug": "social-button",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Split Pane",
+      "slug": "split-pane",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Spinner",
+      "slug": "spinner",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Streaming Text",
+      "slug": "streaming-text",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Switch",
+      "slug": "switch",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Table",
+      "slug": "table",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Tabs",
+      "slug": "tabs",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Tag Group",
+      "slug": "tag-group",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Textarea",
+      "slug": "textarea",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Tooltip",
+      "slug": "tooltip",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Command Menu",
+      "slug": "command-menu",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Stepper",
+      "slug": "stepper",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Tree",
+      "slug": "tree",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Agent Creator",
+      "slug": "agent-creator",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Agent Limits",
+      "slug": "agent-limits-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Agent Progress",
+      "slug": "agent-progress",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Agent Thinking",
+      "slug": "agent-thinking",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Auth Card",
+      "slug": "auth-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Calendar",
+      "slug": "calendar",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Composer",
+      "slug": "composer",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Composer Attachments",
+      "slug": "composer-attachments",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Composer Loader",
+      "slug": "composer-loader",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Composer Panel",
+      "slug": "composer-panel",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Conversation",
+      "slug": "conversation",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Data Table",
+      "slug": "data-table",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Filter Bar",
+      "slug": "filter-bar",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Message",
+      "slug": "message",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Message Actions",
+      "slug": "message-actions",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Notification Center",
+      "slug": "notification-center",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Questionnaire",
+      "slug": "questionnaire",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Settings Modal",
+      "slug": "settings-modal",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Sidebar",
+      "slug": "sidebar",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Sources",
+      "slug": "sources",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Stat Cards",
+      "slug": "stat-cards",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Task List",
+      "slug": "task-list",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Tool Call",
+      "slug": "tool-call",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Web Search",
+      "slug": "web-search",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Command Palette",
+      "slug": "command-palette",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Activity Feed",
+      "slug": "activity-feed",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Onboarding Checklist",
+      "slug": "onboarding-checklist",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "File Explorer",
+      "slug": "file-explorer",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Activity Rings",
+      "slug": "activity-rings-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Area Chart",
+      "slug": "area-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Bar List",
+      "slug": "bar-list-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Combo Chart",
+      "slug": "combo-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Contributions",
+      "slug": "contributions-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Earnings Chart",
+      "slug": "earnings-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Funnel Chart",
+      "slug": "funnel-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Heatmap Chart",
+      "slug": "heatmap-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Line Chart",
+      "slug": "line-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Most Active Days",
+      "slug": "most-active-days-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Orders Chart",
+      "slug": "orders-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Radar Chart",
+      "slug": "radar-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Radial Chart",
+      "slug": "radial-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Revenue Chart",
+      "slug": "revenue-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Sankey Chart",
+      "slug": "sankey-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Scatter Chart",
+      "slug": "scatter-chart-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Sleep Score",
+      "slug": "sleep-score-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Stage Bars",
+      "slug": "stage-bars-card",
+      "tier": "free",
+      "isNew": false,
+      "category": null
+    },
+    {
+      "group": "Charts",
+      "label": "Steps Chart",
+      "slug": "steps-card",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Templates",
+      "label": "AI Chat",
+      "slug": "ai-chat",
+      "tier": "pro",
+      "isNew": false,
+      "category": "AI & Chat"
+    },
+    {
+      "group": "Templates",
+      "label": "AI Image Generation",
+      "slug": "ai-image-generation",
+      "tier": "pro",
+      "isNew": false,
+      "category": "AI & Chat"
+    },
+    {
+      "group": "Templates",
+      "label": "AI Profile",
+      "slug": "ai-profile",
+      "tier": "pro",
+      "isNew": false,
+      "category": "Workspace"
+    },
+    {
+      "group": "Templates",
+      "label": "Chat Starter",
+      "slug": "chat-starter",
+      "tier": "pro",
+      "isNew": false,
+      "category": "AI & Chat"
+    },
+    {
+      "group": "Templates",
+      "label": "Finance Dashboard",
+      "slug": "finance-dashboard",
+      "tier": "pro",
+      "isNew": false,
+      "category": "Dashboards"
+    },
+    {
+      "group": "Templates",
+      "label": "Home Dashboard",
+      "slug": "home-dashboard",
+      "tier": "pro",
+      "isNew": false,
+      "category": "Dashboards"
+    },
+    {
+      "group": "Templates",
+      "label": "Marketing Dashboard",
+      "slug": "marketing-dashboard",
+      "tier": "pro",
+      "isNew": false,
+      "category": "Dashboards"
+    },
+    {
+      "group": "Templates",
+      "label": "Medical Profile",
+      "slug": "medical-profile",
+      "tier": "pro",
+      "isNew": false,
+      "category": "Workspace"
+    },
+    {
+      "group": "Templates",
+      "label": "Multi-agent Chat",
+      "slug": "multi-agent-chat",
+      "tier": "pro",
+      "isNew": false,
+      "category": "AI & Chat"
+    },
+    {
+      "group": "Templates",
+      "label": "Project Board",
+      "slug": "project-board",
+      "tier": "pro",
+      "isNew": true,
+      "category": "Workspace"
+    },
+    {
+      "group": "Templates",
+      "category": "Monetization",
+      "label": "Paywall",
+      "slug": "paywall",
+      "tier": "pro",
+      "isNew": true
+    },
+    {
+      "group": "Base",
+      "label": "Aspect Ratio",
+      "slug": "aspect-ratio",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Input Group",
+      "slug": "input-group",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Kbd",
+      "slug": "kbd",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Toggle",
+      "slug": "toggle",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Toggle Group",
+      "slug": "toggle-group",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Context Menu",
+      "slug": "context-menu",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Menubar",
+      "slug": "menubar",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Direction",
+      "slug": "direction",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Base",
+      "label": "Navigation Menu",
+      "slug": "navigation-menu",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    },
+    {
+      "group": "Blocks",
+      "label": "Workspace Tabs",
+      "slug": "workspace-tabs",
+      "tier": "free",
+      "isNew": true,
+      "category": "Navigation"
+    },
+    {
+      "group": "Templates",
+      "label": "Agent Workspace",
+      "slug": "agent-workspace",
+      "tier": "pro",
+      "isNew": true,
+      "category": "AI & Chat"
+    },
+    {
+      "group": "Blocks",
+      "label": "Team Members",
+      "slug": "team-members",
+      "tier": "free",
+      "isNew": true,
+      "category": "Management"
+    },
+    {
+      "group": "Base",
+      "label": "Color Swatch",
+      "slug": "color-swatch",
+      "tier": "free",
+      "isNew": true,
+      "category": null
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+/* Generated from config/colors.json. Run npm run colors:generate. */
+
+@theme static {
+  --color-accent-50: #edf4ff;
+  --color-accent-100: #dceaff;
+  --color-accent-200: #b9d5ff;
+  --color-accent-300: #88b8ff;
+  --color-accent-400: #3392ff;
+  --color-accent-500: lab(54.1736% 13.3369 -74.6839);
+  --color-accent-600: lab(44.0605% 29.0279 -86.0352);
+  --color-accent-700: lab(36.9089% 35.0961 -85.6872);
+  --color-accent-800: #16448d;
+  --color-accent-900: #173a6d;
+  --color-accent-950: #112747;
+}
+
+:root[data-accent='violet'] {
+  --color-accent-50: #f6f2ff;
+  --color-accent-100: #ece4ff;
+  --color-accent-200: #d8c9ff;
+  --color-accent-300: #bda4fb;
+  --color-accent-400: #9b7aee;
+  --color-accent-500: #7a59d9;
+  --color-accent-600: #6947c3;
+  --color-accent-700: #5735a6;
+  --color-accent-800: #462e80;
+  --color-accent-900: #392967;
+  --color-accent-950: #251b43;
+}
+
+:root[data-accent='copper'] {
+  --color-accent-50: #fff6ee;
+  --color-accent-100: #fce9d8;
+  --color-accent-200: #f8cfaa;
+  --color-accent-300: #edae76;
+  --color-accent-400: #da8750;
+  --color-accent-500: #ba683b;
+  --color-accent-600: #a2512e;
+  --color-accent-700: #824025;
+  --color-accent-800: #693722;
+  --color-accent-900: #562f21;
+  --color-accent-950: #321b14;
+}
+
+:root[data-accent='emerald'] {
+  --color-accent-50: #eef9f3;
+  --color-accent-100: #d6f1e2;
+  --color-accent-200: #afe3c9;
+  --color-accent-300: #78ceaa;
+  --color-accent-400: #40ab80;
+  --color-accent-500: #17845c;
+  --color-accent-600: #126e4d;
+  --color-accent-700: #10583f;
+  --color-accent-800: #124734;
+  --color-accent-900: #143b2e;
+  --color-accent-950: #09231b;
+  --gradient-action-hover: linear-gradient(180deg, var(--color-accent-500) 0%, var(--color-accent-600) 100%);
+}
+
+:root[data-accent='teal'] {
+  --color-accent-50: #edf9f8;
+  --color-accent-100: #d2f1ed;
+  --color-accent-200: #a7e1dc;
+  --color-accent-300: #6bcac5;
+  --color-accent-400: #30a7a5;
+  --color-accent-500: #087f83;
+  --color-accent-600: #086a70;
+  --color-accent-700: #0b545b;
+  --color-accent-800: #10464c;
+  --color-accent-900: #123b40;
+  --color-accent-950: #072327;
+  --gradient-action-hover: linear-gradient(180deg, var(--color-accent-500) 0%, var(--color-accent-600) 100%);
+}
+
+:root[data-accent='cyan'] {
+  --color-accent-50: #eef9fd;
+  --color-accent-100: #d9eff8;
+  --color-accent-200: #b4def0;
+  --color-accent-300: #80c5e3;
+  --color-accent-400: #40a0c8;
+  --color-accent-500: #087ba6;
+  --color-accent-600: #08668e;
+  --color-accent-700: #0c5375;
+  --color-accent-800: #12445f;
+  --color-accent-900: #15394d;
+  --color-accent-950: #092130;
+  --gradient-action-hover: linear-gradient(180deg, var(--color-accent-500) 0%, var(--color-accent-600) 100%);
+}
+
+:root[data-accent='indigo'] {
+  --color-accent-50: #f1f3ff;
+  --color-accent-100: #e4e8fc;
+  --color-accent-200: #cbd3f8;
+  --color-accent-300: #a6b1ee;
+  --color-accent-400: #7e8ae4;
+  --color-accent-500: #5866d7;
+  --color-accent-600: #4753bd;
+  --color-accent-700: #3c449b;
+  --color-accent-800: #343c7e;
+  --color-accent-900: #2d3365;
+  --color-accent-950: #191d3c;
+  --gradient-action-hover: linear-gradient(180deg, var(--color-accent-500) 0%, var(--color-accent-600) 100%);
+}
+
+:root[data-accent='rose'] {
+  --color-accent-50: #fff1f5;
+  --color-accent-100: #fce0ea;
+  --color-accent-200: #f8bfd5;
+  --color-accent-300: #ec93b5;
+  --color-accent-400: #dd6c98;
+  --color-accent-500: #c44875;
+  --color-accent-600: #a5355f;
+  --color-accent-700: #882c4e;
+  --color-accent-800: #702842;
+  --color-accent-900: #5d2539;
+  --color-accent-950: #351421;
+  --gradient-action-hover: linear-gradient(180deg, var(--color-accent-500) 0%, var(--color-accent-600) 100%);
+}
+
+:root[data-accent='amber'] {
+  --color-accent-50: #fff8e8;
+  --color-accent-100: #fdf0ca;
+  --color-accent-200: #f8df96;
+  --color-accent-300: #ecc765;
+  --color-accent-400: #d3a237;
+  --color-accent-500: #a16a0c;
+  --color-accent-600: #88540b;
+  --color-accent-700: #70430e;
+  --color-accent-800: #5c3812;
+  --color-accent-900: #4c3014;
+  --color-accent-950: #2c1a08;
+  --gradient-action-hover: linear-gradient(180deg, var(--color-accent-500) 0%, var(--color-accent-600) 100%);
+}
+
+:root[data-accent='slate'] {
+  --color-accent-50: #f3f5f8;
+  --color-accent-100: #e6ebf1;
+  --color-accent-200: #ced7e3;
+  --color-accent-300: #adbcd0;
+  --color-accent-400: #8598b2;
+  --color-accent-500: #5f6e85;
+  --color-accent-600: #4e5c72;
+  --color-accent-700: #404c60;
+  --color-accent-800: #354051;
+  --color-accent-900: #2e3745;
+  --color-accent-950: #1a202c;
+  --gradient-action-hover: linear-gradient(180deg, var(--color-accent-500) 0%, var(--color-accent-600) 100%);
+}

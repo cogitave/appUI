@@ -1,0 +1,62 @@
+{
+  "name": "empty-state",
+  "title": "Empty State",
+  "group": "Base",
+  "type": "component",
+  "description": "A clear explanation and useful next action for an empty collection, filtered result, first visit or unavailable content.",
+  "sections": [
+    "Preview",
+    "First use and no results",
+    "Sizes and surfaces"
+  ],
+  "example": "<EmptyState\n  title=\"No matching projects\"\n  description=\"Try a different search or clear the active filters.\"\n  icon={<RiSearchLine />}\n  actions={<Button onClick={clearFilters}>Clear filters</Button>}\n/>",
+  "entryFiles": [
+    "components/base/empty-state/empty-state.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/empty-state/empty-state.tsx",
+      "names": [
+        "EmptyState",
+        "EmptyStateProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/empty-state/empty-state.tsx",
+      "content": "import type { ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type EmptyStateProps = {\n  title: string;\n  description?: ReactNode;\n  icon?: ReactNode;\n  actions?: ReactNode;\n  children?: ReactNode;\n  size?: 'small' | 'medium' | 'large';\n  variant?: 'plain' | 'bordered' | 'soft';\n  className?: string;\n};\n\nexport function EmptyState({ title, description, icon, actions, children, size = 'medium', variant = 'plain', className }: EmptyStateProps) {\n  return <div className={cx('ui-empty-state', className)} data-size={size} data-variant={variant}>\n    {icon && <div className=\"ui-empty-state__icon\" aria-hidden>{icon}</div>}<h3>{title}</h3>{description && <p>{description}</p>}{actions && <div className=\"ui-empty-state__actions\">{actions}</div>}{children && <div className=\"ui-empty-state__detail\">{children}</div>}\n  </div>;\n}\n",
+      "sha256": "8fc8c85405c6fa17a06a0a46be2e70d9412fcc284347531dd1b1c95fade6a7f2",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 60,
+          "end": 70
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-empty-state",
+      "ui-empty-state__actions",
+      "ui-empty-state__detail",
+      "ui-empty-state__icon"
+    ],
+    "prefixes": []
+  }
+}

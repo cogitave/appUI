@@ -1,0 +1,105 @@
+{
+  "name": "composer-attachments",
+  "title": "Composer Attachments",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A strip of compact attachment tiles with thumbnails, progress rings, add, and remove actions.",
+  "sections": [
+    "Preview",
+    "Upload queue",
+    "Tile kinds"
+  ],
+  "example": "<ComposerAttachments attachments={files}\n  onAddFiles={addFiles} onRemove={removeFile} />",
+  "entryFiles": [
+    "components/blocks/composer/composer-attachments.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/composer/composer-attachments.tsx",
+      "names": [
+        "ComposerAttachment",
+        "ComposerAttachments",
+        "ComposerAttachmentsProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/composer/composer-attachments.tsx",
+      "content": "'use client';\n\nimport { forwardRef, useRef } from 'react';\nimport { AnimatePresence, motion, useIsPresent } from 'motion/react';\nimport { RiAddLine, RiCloseLine, RiFileLine } from '@remixicon/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { cx } from '@/utils/cx';\n\nexport type ComposerAttachment = { id: string; name: string; thumbnail?: string; progress?: number; status?: 'uploading' | 'ready' | 'error' };\nexport type ComposerAttachmentsProps = { attachments: ComposerAttachment[]; onAddFiles?: (files: File[]) => void; onRemove?: (id: string) => void; accept?: string; className?: string };\n\nconst AttachmentTile = forwardRef<HTMLDivElement, { item: ComposerAttachment; onRemove?: (id: string) => void; reducedMotion: boolean }>(function AttachmentTile({ item, onRemove, reducedMotion }, ref) {\n  const present = useIsPresent();\n  const progress = typeof item.progress === 'number' ? Math.min(100, Math.max(0, item.progress)) : undefined;\n  const uploading = item.status === 'uploading';\n  return <motion.div ref={ref} inert={!present} layout={reducedMotion ? false : 'position'} initial={{ opacity: 0, scale: reducedMotion ? 1 : .94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: reducedMotion ? 1 : .94 }} transition={{ duration: reducedMotion ? 0 : .18, ease: [.2, .8, .2, 1] }} className=\"ui-composer-attachments__tile\" data-status={item.status ?? 'ready'}>\n    {item.thumbnail ? <img src={item.thumbnail} alt=\"\" /> : <RiFileLine size={21} aria-hidden />}\n    <span title={item.name}>{item.name}</span>\n    {progress !== undefined && <svg className=\"ui-composer-attachments__ring\" viewBox=\"0 0 56 56\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"53\" height=\"53\" rx=\"10\" pathLength=\"100\" style={{ strokeDashoffset: 100 - progress }} /></svg>}\n    {progress !== undefined && <small data-visible={uploading || undefined}>{Math.round(progress)}%</small>}\n    {onRemove && <button type=\"button\" aria-label={`Remove ${item.name}`} disabled={uploading} onClick={() => onRemove(item.id)}><RiCloseLine size={13} aria-hidden /></button>}\n  </motion.div>;\n});\n\nexport function ComposerAttachments({ attachments, onAddFiles, onRemove, accept, className }: ComposerAttachmentsProps) {\n  const inputRef = useRef<HTMLInputElement>(null);\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  return <AnimatedHeight className={cx('ui-composer-attachments', className)}>\n    <div className=\"ui-composer-attachments__tiles\" data-empty={!attachments.length && !onAddFiles || undefined}>\n      <AnimatePresence initial={false} mode=\"popLayout\">{attachments.map(item => <AttachmentTile key={item.id} item={item} onRemove={onRemove} reducedMotion={reducedMotion} />)}</AnimatePresence>\n      {onAddFiles && <><input ref={inputRef} className=\"ui-composer-attachments__input\" type=\"file\" multiple accept={accept} aria-label=\"Add attachments\" onChange={event => { onAddFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ''; }} /><motion.button layout={reducedMotion ? false : 'position'} transition={{ duration: reducedMotion ? 0 : .18, ease: [.2, .8, .2, 1] }} type=\"button\" className=\"ui-composer-attachments__add\" aria-label=\"Add attachments\" onClick={() => inputRef.current?.click()}><RiAddLine size={19} aria-hidden /></motion.button></>}\n    </div>\n  </AnimatedHeight>;\n}\n",
+      "sha256": "d1c656f277255f164d2c90e5e21f1d17696264f20e4c14224009031dd68144f7",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 232,
+          "end": 281
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 315,
+          "end": 338
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 361,
+          "end": 371
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-composer-attachments",
+      "ui-composer-attachments__add",
+      "ui-composer-attachments__input",
+      "ui-composer-attachments__ring",
+      "ui-composer-attachments__tile",
+      "ui-composer-attachments__tiles"
+    ],
+    "prefixes": []
+  }
+}

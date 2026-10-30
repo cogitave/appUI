@@ -1,0 +1,49 @@
+{
+  "overrides": {
+    "toggle-group": [
+      "components/base/toggle/toggle.tsx"
+    ],
+    "date-picker": [
+      "components/base/date-picker/date-picker.tsx",
+      "components/base/date-picker/date-range-picker.tsx",
+      "components/base/date-picker/meeting-scheduler.tsx"
+    ],
+    "checkbox": [
+      "components/base/checkbox/checkbox.tsx",
+      "components/base/checkbox/checkbox-card.tsx"
+    ],
+    "radio": [
+      "components/base/radio/radio.tsx",
+      "components/base/radio/radio-card.tsx"
+    ],
+    "switch": [
+      "components/base/switch/switch.tsx",
+      "components/base/switch/switch-card.tsx"
+    ],
+    "link-button": [
+      "components/base/buttons/link-button.tsx",
+      "components/base/buttons/button-link.tsx"
+    ],
+    "color-swatch": [
+      "components/base/color-swatch/color-swatch.tsx",
+      "components/base/color-swatch/color-swatch-picker.tsx"
+    ]
+  },
+  "typeDependencies": {},
+  "foundations": [
+    "components/foundations/appearance-initializer.tsx",
+    "components/base/theme-switch/theme-switch.tsx",
+    "hooks/use-appearance.ts",
+    "utils/cx.ts"
+  ],
+  "excludedStyles": [
+    "docs.css",
+    "docs-extended.css",
+    "foundations.css",
+    "getting-started.css"
+  ],
+  "fontDependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0"
+  }
+}

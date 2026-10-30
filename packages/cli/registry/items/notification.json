@@ -1,0 +1,529 @@
+{
+  "name": "notification",
+  "title": "Notification",
+  "group": "Base",
+  "type": "component",
+  "description": "Shared notification cards with tone, avatar, actions and timed dismissal. A scoped provider presents a list or animated stack, with queue limits, paused timers, keyboard navigation and updates for pending operations.",
+  "sections": [
+    "Preview",
+    "Tones",
+    "Actions",
+    "Timed dismissal",
+    "Queue and updates",
+    "Stacked notifications"
+  ],
+  "example": "<NotificationProvider layout=\"stack\" maxVisible={3} position=\"bottom-right\">\n  <Workspace />\n</NotificationProvider>\n\n// Use layout=\"list\" for individually visible cards (the default).\n// Inside Workspace:\nconst notifications = useNotification();\nnotifications.notify({\n  title: \"Changes saved\",\n  description: \"Your preferences are up to date.\",\n  tone: \"success\",\n});",
+  "entryFiles": [
+    "components/base/notification/notification.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/notification/notification.tsx",
+      "names": [
+        "Notification",
+        "NotificationAPI",
+        "NotificationOptions",
+        "NotificationProps",
+        "NotificationProvider",
+        "NotificationProviderProps",
+        "NotificationQueueLayout",
+        "NotificationViewport",
+        "NotificationViewportPosition",
+        "useNotification"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/avatar/avatar.tsx",
+      "content": "'use client';\n\nimport type { HTMLAttributes } from 'react';\nimport { useEffect, useRef, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';\nexport type AvatarColor = 'neutral' | 'blue' | 'lime' | 'pink';\n\nexport type AvatarProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & {\n  size?: AvatarSize;\n  color?: AvatarColor;\n  initials?: string;\n  src?: string;\n  alt?: string;\n};\n\nexport function Avatar({ size = 'md', color = 'neutral', initials, src, alt, className, ...props }: AvatarProps) {\n  const [failedSource, setFailedSource] = useState<string | null>(null);\n  const imageRef = useRef<HTMLImageElement>(null);\n  const showImage = Boolean(src && src !== failedSource);\n\n  useEffect(() => {\n    const image = imageRef.current;\n    if (!image || !src) return;\n    const fail = () => setFailedSource(src);\n    if (image.complete && image.naturalWidth === 0) fail();\n    image.addEventListener('error', fail);\n    return () => image.removeEventListener('error', fail);\n  }, [src, showImage]);\n\n  return (\n    <span role=\"img\" aria-label={alt || initials || 'Avatar'} data-size={size} data-color={color} className={cx('ui-avatar', className)} {...props}>\n      <span className=\"ui-avatar__initials\" aria-hidden=\"true\">{initials}</span>\n      {showImage && <img ref={imageRef} src={src} alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\" onError={() => setFailedSource(src!)} />}\n    </span>\n  );\n}\n",
+      "sha256": "c6e2f1f5909af8da88f8ba420c072d1b421c3ae4a00527fe823ff3e760ccc13c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 133,
+          "end": 143
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/button.tsx",
+      "content": "'use client';\n\nimport type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\nimport { Spinner } from '@/components/base/spinner/spinner';\n\nexport type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline' | 'solid' | 'quiet';\nexport type ButtonSize = 'medium' | 'small' | 'xs';\n\ntype NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;\ntype ContentProps =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonProps = NativeButtonProps & ContentProps & {\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  trailingIcon?: IconComponent;\n  isLoading?: boolean;\n  loadingLabel?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\nconst base = 'ui-button inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none outline-none';\nconst sizes: Record<ButtonSize, string> = {\n  medium: 'h-9 rounded-[10px] px-2 gap-0.5',\n  small: 'h-8 rounded-lg px-2 gap-0.5',\n  xs: 'h-6 rounded-[5px] px-2 gap-0.5',\n};\nexport const buttonIconClassNames: Record<ButtonSize, string> = { medium: 'size-5', small: 'size-[18px]', xs: 'size-3.5' };\nexport function buttonClassNames(size: ButtonSize, iconOnly = false, className?: string) {\n  return cx(base, sizes[size], iconOnly && 'ui-button--icon-only !p-0', className);\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'medium',\n  iconOnly = false,\n  leadingIcon: LeadingIcon,\n  trailingIcon: TrailingIcon,\n  children,\n  className,\n  type = 'button',\n  isLoading = false,\n  loadingLabel,\n  disabled,\n  onClick,\n  onKeyDown,\n  ...props\n}: ButtonProps) {\n  return (\n    <button\n      {...props}\n      type={isLoading && type === 'submit' ? 'button' : type}\n      disabled={disabled}\n      aria-disabled={isLoading || props['aria-disabled'] || undefined}\n      aria-busy={isLoading || undefined}\n      aria-description={isLoading && loadingLabel ? loadingLabel : props['aria-description']}\n      data-variant={variant}\n      data-size={size}\n      data-icon-only={iconOnly || undefined}\n      data-loading={isLoading || undefined}\n      data-loading-label={loadingLabel !== undefined || undefined}\n      className={buttonClassNames(size, iconOnly, className)}\n      onClick={event => { if (isLoading || props['aria-disabled'] === true || props['aria-disabled'] === 'true') { event.preventDefault(); event.stopPropagation(); return; } onClick?.(event); }}\n      onKeyDown={event => { if (isLoading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); return; } onKeyDown?.(event); }}\n    >\n      {LeadingIcon && <span className=\"ui-button__leading-slot\" aria-hidden><LeadingIcon className={cx(buttonIconClassNames[size], 'ui-button__leading-icon')}/></span>}\n      {!iconOnly && <span className=\"ui-button__label\">{children}</span>}\n      {!iconOnly && TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n      <Spinner className=\"ui-button__busy-spinner\" size={size === 'xs' ? 'xs' : size === 'small' ? 'sm' : 'md'}/>\n    </button>\n  );\n}\n",
+      "sha256": "bcfc2d2db4debfd2c11dd8ba8b23a167c705ad3bf7d9151571e501ed195fe158",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 118,
+          "end": 153
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 176,
+          "end": 186
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 214,
+          "end": 247
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/close-button.tsx",
+      "content": "import type { ButtonHTMLAttributes, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CloseButtonSize = '2xs' | 'xs' | 'sm' | 'md';\n\nexport type CloseButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'> & {\n  size?: CloseButtonSize;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nconst glyphSizes: Record<CloseButtonSize, number> = { '2xs': 8, xs: 11, sm: 13, md: 17 };\nconst strokes: Record<CloseButtonSize, number> = { '2xs': 1.6, xs: 2, sm: 2, md: 2.5 };\n\nexport function CloseButton({ size = 'xs', className, type = 'button', ...props }: CloseButtonProps) {\n  const glyph = glyphSizes[size];\n  const inset = size === '2xs' ? 1.4 : 2;\n  return (\n    <button type={type} data-size={size} className={cx('ui-close-button', className)} {...props}>\n      <svg width={glyph} height={glyph} viewBox={`0 0 ${glyph} ${glyph}`} fill=\"none\" aria-hidden=\"true\">\n        <path d={`M${inset} ${inset}L${glyph - inset} ${glyph - inset}M${glyph - inset} ${inset}L${inset} ${glyph - inset}`} stroke=\"currentColor\" strokeWidth={strokes[size]} strokeLinecap=\"round\" />\n      </svg>\n    </button>\n  );\n}\n",
+      "sha256": "c670608d6b5b2e2c1d8d50bb37efbca9c38463fd0fecc5b3525464bff6cbed78",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/collapsible/collapsible.tsx",
+      "content": "import type { HTMLAttributes, ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CollapsibleProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & { isOpen: boolean; children: ReactNode };\n\n/** Keep descendants mounted while hiding their focus targets and animating flow. */\nexport function Collapsible({ isOpen, children, className, ...props }: CollapsibleProps) {\n  return <div {...props} className={cx('ui-collapsible', className)} data-open={isOpen || undefined} aria-hidden={!isOpen} inert={!isOpen}>\n    <div className=\"ui-collapsible__inner\"><div className=\"ui-collapsible__content\">{children}</div></div>\n  </div>;\n}\n",
+      "sha256": "639642d279efcb03d280423ca16442c74c8d97c0a83d3692047ac43d0748fa3c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/notification/notification-content.tsx",
+      "content": "'use client';\n\nimport {useRef,type HTMLAttributes} from 'react';\nimport {AnimatePresence,motion,useReducedMotion} from 'motion/react';\nimport {RiCheckboxCircleLine,RiErrorWarningLine,RiInformationLine} from '@remixicon/react';\nimport {Avatar} from '@/components/base/avatar/avatar';\nimport {Button} from '@/components/base/buttons/button';\nimport {Spinner} from '@/components/base/spinner/spinner';\nimport {AnimatedHeight} from '@/components/base/animated-height/animated-height';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport type {NotificationContent} from './notification-types';\n\nconst icons={neutral:RiInformationLine,information:RiInformationLine,success:RiCheckboxCircleLine,error:RiErrorWarningLine};\nexport function NotificationBody({content,contentProps,titleProps,descriptionProps,onAction}:{content:NotificationContent;contentProps?:HTMLAttributes<HTMLDivElement>;titleProps?:HTMLAttributes<HTMLElement>;descriptionProps?:HTMLAttributes<HTMLParagraphElement>;onAction?:(action:NonNullable<NotificationContent['action']>)=>void}){\n  const {title,description,tone='neutral',avatar,icon,iconKey,timestamp,action,secondaryAction,isPending}=content,Icon=icons[tone];\n  const root=useRef<HTMLDivElement>(null),tokens=useMotionTokens(root),reduced=useReducedMotion();\n  const identity=isPending?'pending':avatar?`avatar:${avatar.src??avatar.initials}`:icon?iconKey??'custom':tone;\n  const press=(item:NonNullable<NotificationContent['action']>)=>onAction?onAction(item):item.onPress();\n  return <AnimatedHeight className=\"ui-notification__body-height\"><div className=\"ui-notification__body-row\">\n    <div ref={root} className=\"ui-notification__icon\" aria-hidden><AnimatePresence initial={false}><motion.span className=\"ui-notification__icon-content\" key={identity} data-icon-key={identity} initial={reduced?false:{opacity:0,scale:.8}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:.8}} transition={{duration:reduced?0:tokens.fast,ease:tokens.ease}}>{isPending?<Spinner size=\"sm\"/>:avatar?<><Avatar size=\"md\" src={avatar.src} alt={avatar.alt} initials={avatar.initials}/>{avatar.presence&&<span className=\"ui-notification__presence\" data-presence={avatar.presence}/>}</>:icon??<Icon size={20} aria-hidden/>}</motion.span></AnimatePresence></div>\n    <div className=\"ui-notification__content\"><div {...contentProps}><div className=\"ui-notification__heading\"><strong {...titleProps}>{title}</strong>{timestamp&&<time>{timestamp}</time>}</div>{description!==undefined&&description!==null&&<p {...descriptionProps}>{description}</p>}</div>\n      {(action||secondaryAction)&&<div className=\"ui-notification__actions\">{secondaryAction&&<Button size=\"small\" variant=\"secondary\" onClick={()=>press(secondaryAction)}>{secondaryAction.label}</Button>}{action&&<Button size=\"small\" className=\"ui-notification__primary\" onClick={()=>press(action)}>{action.label}</Button>}</div>}\n    </div>\n  </div></AnimatedHeight>;\n}\n",
+      "sha256": "2b83b1bf874b0eebacc69f2ed2e8a59f956c1f92e948d8ce8e3668d8916eacca",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/avatar/avatar",
+          "target": "components/base/avatar/avatar.tsx",
+          "start": 249,
+          "end": 280
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 305,
+          "end": 337
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 363,
+          "end": 396
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 429,
+          "end": 478
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 512,
+          "end": 537
+        },
+        {
+          "kind": "module",
+          "value": "./notification-types",
+          "target": "components/base/notification/notification-types.ts",
+          "start": 580,
+          "end": 600
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/notification/notification-provider.tsx",
+      "content": "'use client';\n\nimport {createContext,useContext,useEffect,useId,useLayoutEffect,useMemo,useRef,useState,type FocusEvent,type KeyboardEvent,type ReactNode} from 'react';\nimport {createPortal} from 'react-dom';\nimport {mergeProps,useButton,useToast,useToastRegion} from 'react-aria';\nimport {ToastQueue,useToastQueue,type QueuedToast,type ToastState} from 'react-stately';\nimport {motion,useIsPresent,useReducedMotion} from 'motion/react';\nimport {CloseButton} from '@/components/base/buttons/close-button';\nimport {Button} from '@/components/base/buttons/button';\nimport {Collapsible} from '@/components/base/collapsible/collapsible';\nimport {RiArrowDownSLine} from '@remixicon/react';\nimport {NotificationQueue} from './notification-queue';\nimport {ScrollArea} from '@/components/base/scroll-area/scroll-area';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport {useDismissTimer} from '@/hooks/use-dismiss-timer';\nimport {NotificationBody} from './notification-content';\nimport type {NotificationContent,NotificationOptions,NotificationViewportPosition,NotificationQueueLayout} from './notification-types';\nimport {cx} from '@/utils/cx';\n\ntype Entry={content:NotificationOptions;revision:number;returnFocus:HTMLElement|null};\ntype FocusHandoff={key:string;index:number;origin:HTMLElement|null;keyboard:boolean};\ntype QueueFocus={root:{current:HTMLDivElement|null};pending:FocusHandoff|null;outside:HTMLElement|null;keyboard:boolean};\nexport type NotificationAPI={\n  notify:(content:NotificationOptions,options?:{id?:string;returnFocus?:HTMLElement|null})=>string;\n  update:(key:string,content:Partial<NotificationOptions>)=>boolean;\n  dismiss:(key:string)=>void;\n  clear:()=>void;\n  promise:<T>(promise:Promise<T>,messages:{loading:NotificationOptions;success:NotificationOptions|((value:T)=>NotificationOptions);error:NotificationOptions|((error:unknown)=>NotificationOptions)})=>Promise<T>;\n};\nexport type NotificationProviderProps={children:ReactNode;position?:NotificationViewportPosition;layout?:NotificationQueueLayout;maxVisible?:number;maxQueued?:number;defaultDuration?:number;label?:string;className?:string};\nconst Context=createContext<NotificationAPI|null>(null);\nexport function useNotification(){const api=useContext(Context);if(!api)throw new Error('useNotification must be used inside NotificationProvider.');return api;}\nfunction bounded(value:number,fallback:number,min:number,max:number){return Number.isFinite(value)?Math.min(max,Math.max(min,Math.floor(value))):fallback;}\nfunction canFocus(element:Element|null):element is HTMLElement{\n  return element instanceof HTMLElement&&element!==document.body&&element!==document.documentElement&&element.isConnected&&!element.closest('[inert]')&&!element.matches(':disabled')&&!!element.getClientRects().length&&getComputedStyle(element).visibility!=='hidden';\n}\n\nfunction ToastCard({toast,state,entry,paused,focus,hidden=false}:{toast:QueuedToast<NotificationOptions>;state:ToastState<NotificationOptions>;entry:Entry;paused:boolean;focus:QueueFocus;hidden?:boolean}){\n  const root=useRef<HTMLDivElement>(null),close=useRef<HTMLButtonElement>(null),present=useIsPresent();\n  const content=entry.content,descriptionId=useId(),hasDescription=content.description!==undefined&&content.description!==null;\n  const {toastProps,contentProps,titleProps,descriptionProps,closeButtonProps}=useToast({toast,'aria-describedby':hasDescription?descriptionId:undefined},state,root);\n  const {buttonProps}=useButton({...closeButtonProps,isDisabled:!present||hidden},close);\n  useDismissTimer(content.duration,paused||hidden,present,()=>state.close(toast.key),entry.revision);\n  function action(item:NonNullable<NotificationContent['action']>){\n    if(item.dismiss!==false){\n      state.close(toast.key);\n      // The action owns its next focus destination, including a newly opened dialog.\n      focus.pending=null;\n      if(canFocus(entry.returnFocus))entry.returnFocus.focus({preventScroll:true});\n    }\n    item.onPress();\n  }\n  return <div {...toastProps} role={present&&!hidden?toastProps.role:undefined} ref={root} aria-describedby={hasDescription?descriptionId:undefined} className=\"ui-notification\" data-tone={content.tone??'neutral'} data-toast-key={toast.key} data-exiting={!present||undefined} inert={!present||hidden} aria-hidden={!present||hidden||undefined}>\n    <NotificationBody content={content} contentProps={contentProps} titleProps={titleProps} descriptionProps={{...descriptionProps,id:descriptionId}} onAction={action}/>\n    <CloseButton {...buttonProps} ref={close} className=\"ui-notification__close\" size=\"xs\" aria-label={`Dismiss ${content.title}`}/>\n  </div>;\n}\n\nfunction Region({state,entries,position,layout,label,className,focus}:{state:ToastState<NotificationOptions>;entries:Map<string,Entry>;position:NotificationViewportPosition;layout:NotificationQueueLayout;label:string;className?:string;focus:QueueFocus}){\n  const root=focus.root,{regionProps}=useToastRegion({'aria-label':label},state,root),tokens=useMotionTokens(root),reduced=useReducedMotion();\n  const [hovered,setHovered]=useState(false),[focused,setFocused]=useState(false),[hidden,setHidden]=useState(false);\n  const [expanded,setExpanded]=useState(false),[pinned,setPinned]=useState(false),toggle=useRef<HTMLButtonElement>(null),queueId=useId(),lastCount=useRef(0);\n  if(state.visibleToasts.length>1)lastCount.current=state.visibleToasts.length;\n  useEffect(()=>{function visibility(){setHidden(document.hidden);}visibility();document.addEventListener('visibilitychange',visibility);return()=>document.removeEventListener('visibilitychange',visibility);},[]);\n  // Presence keeps outgoing cards mounted. Preserve owned focus before inert can\n  // blur a removed control, including when a previously empty queue is reused.\n  useLayoutEffect(()=>{\n    const pending=focus.pending;if(!pending)return;focus.pending=null;\n    const active=document.activeElement;\n    if(canFocus(active)&&(!root.current?.contains(active)&&active!==pending.origin||active.closest('[data-toast-key]:not([data-exiting])')))return;\n    const retained=state.visibleToasts.find(toast=>toast.key===pending.key);\n    const next=retained??(pending.keyboard?state.visibleToasts[Math.min(pending.index,state.visibleToasts.length-1)]:undefined);\n    const target=next?root.current?.querySelector<HTMLElement>(`[data-toast-key=\"${CSS.escape(next.key)}\"]:not([data-exiting])`):pending.origin;\n    if(canFocus(target??null))target!.focus({preventScroll:true});\n  },[state.visibleToasts,entries,focus,root]);\n  const paused=hovered||focused||hidden;\n  function onFocus(event:FocusEvent<HTMLDivElement>){setFocused(true);if(layout==='stack'&&!toggle.current?.contains(event.target))setExpanded(true);if(canFocus(event.relatedTarget)&&!event.currentTarget.contains(event.relatedTarget))focus.outside=event.relatedTarget;}\n  function onBlur(event:FocusEvent<HTMLDivElement>){if(!event.currentTarget.contains(event.relatedTarget)){setFocused(false);if(!hovered&&!pinned)setExpanded(false);if(canFocus(event.relatedTarget))focus.pending=null;}}\n  function onKeyDown(event:KeyboardEvent<HTMLDivElement>){\n    focus.keyboard=true;\n    if(event.key==='Escape'&&layout==='stack'&&expanded&&state.visibleToasts.length>1){event.preventDefault();event.stopPropagation();toggle.current?.focus({preventScroll:true});setExpanded(false);setPinned(false);}\n  }\n  return createPortal(<motion.div className={cx('ui-notification-region',className)} data-position={position} data-layout={layout} data-expanded={layout==='stack'&&expanded||undefined} data-empty={!state.visibleToasts.length||undefined} data-paused={paused||undefined} layout=\"position\" layoutDependency={position} transition={{layout:{duration:reduced?0:tokens.standard,ease:tokens.ease}}}>\n    <div {...mergeProps(regionProps,{onMouseEnter:()=>setHovered(true),onMouseLeave:()=>{setHovered(false);if(!focused&&!pinned)setExpanded(false);},onKeyDownCapture:onKeyDown,onPointerDownCapture:()=>{focus.keyboard=false;},onFocusCapture:onFocus,onBlurCapture:onBlur})} ref={root} className=\"ui-notification-region__landmark\" inert={!state.visibleToasts.length} aria-hidden={!state.visibleToasts.length||undefined}>\n      <ScrollArea label={label} className=\"ui-notification-region__scroll\" renderViewport={({ref,className,children})=><div ref={ref} className={className} tabIndex={-1} onMouseEnter={()=>{if(layout==='stack')setExpanded(true);}}>{children}</div>}>\n        <NotificationQueue id={queueId} keys={state.visibleToasts.map(toast=>toast.key)} layout={layout} expanded={expanded} bottom={position.startsWith('bottom')} tokens={tokens}>{(key,index,hidden)=>{const toast=state.visibleToasts[index];return <ToastCard toast={toast} state={state} entry={entries.get(key)??{content:toast.content,revision:0,returnFocus:null}} paused={paused} focus={focus} hidden={hidden}/>;}}</NotificationQueue>\n      </ScrollArea>\n      <Collapsible isOpen={layout==='stack'&&state.visibleToasts.length>1}><div className=\"ui-notification-stack__toolbar\"><Button ref={toggle} variant=\"ghost\" size=\"small\" trailingIcon={RiArrowDownSLine} aria-expanded={expanded} aria-controls={queueId} onClick={()=>{const next=!expanded;setExpanded(next);setPinned(next);}}>{expanded?'Collapse notifications':`Show ${lastCount.current} notifications`}</Button></div></Collapsible>\n    </div>\n  </motion.div>,document.body);\n}\n\n/** A scoped queue, with shared cards and public React Aria focus/landmark behavior. */\nexport function NotificationProvider({children,position='top-right',layout='list',maxVisible=3,maxQueued=20,defaultDuration=5000,label='Notifications',className}:NotificationProviderProps){\n  const [visibleLimit]=useState(()=>bounded(maxVisible,3,1,5)),[mounted,setMounted]=useState(false);\n  const [queue]=useState(()=>new ToastQueue<NotificationOptions>({maxVisibleToasts:visibleLimit}));\n  const nativeState=useToastQueue(queue),entriesRef=useRef(new Map<string,Entry>()),identities=useRef(new Map<string,string>()),[entries,setEntries]=useState(new Map<string,Entry>());\n  const visibleRef=useRef(nativeState.visibleToasts);visibleRef.current=nativeState.visibleToasts;\n  const focus=useRef<QueueFocus>({root:{current:null},pending:null,outside:null,keyboard:true}).current;\n  const alive=useRef(true),options=useRef({defaultDuration,maxQueued});options.current={defaultDuration,maxQueued};\n  useEffect(()=>setMounted(true),[]);\n  useLayoutEffect(()=>{alive.current=true;return()=>{alive.current=false;queue.clear();entriesRef.current.clear();identities.current.clear();};},[queue]);\n  const api=useMemo<NotificationAPI>(()=>{\n    function rememberFocus(){\n      const active=document.activeElement,card=focus.root.current?.contains(active)?active?.closest<HTMLElement>('[data-toast-key]'):null,key=card?.dataset.toastKey,index=visibleRef.current.findIndex(toast=>toast.key===key);\n      if(!key||index<0)return;\n      focus.pending={key,index,origin:canFocus(focus.outside)?focus.outside:entriesRef.current.get(key)?.returnFocus??null,keyboard:focus.keyboard};\n    }\n    function close(key:string){\n      rememberFocus();\n      // The landmark's last focused element must survive an empty queue cycle.\n      // Its native viewport remains mounted while the outgoing card becomes inert.\n      if(visibleRef.current.length===1&&focus.pending?.key===key){\n        const anchor=focus.root.current?.querySelector<HTMLElement>('.ui-scroll-area__viewport');\n        if(canFocus(anchor??null))anchor!.focus({preventScroll:true});\n      }\n      queue.close(key);\n    }\n    function sync(){if(alive.current)setEntries(new Map(entriesRef.current));}\n    function update(key:string,patch:Partial<NotificationOptions>){\n      const entry=entriesRef.current.get(key);if(!alive.current||!entry)return false;rememberFocus();\n      entriesRef.current.set(key,{...entry,content:{...entry.content,...patch},revision:entry.revision+1});sync();return true;\n    }\n    function notify(content:NotificationOptions,dedupe?:{id?:string;returnFocus?:HTMLElement|null}){\n      if(!alive.current)return '';\n      // A queue addition may synchronously update focus, so capture the producer first.\n      const returnFocus=dedupe?.returnFocus!==undefined?dedupe.returnFocus:document.activeElement instanceof HTMLElement&&!document.activeElement.closest('.ui-notification-region')?document.activeElement:null;\n      const existing=dedupe?.id?identities.current.get(dedupe.id):undefined;\n      const prepared={...content,duration:content.duration??(content.tone==='error'||content.isPending?0:options.current.defaultDuration)};\n      if(existing&&update(existing,prepared))return existing;\n      const limit=bounded(options.current.maxQueued,20,visibleLimit,100);\n      while(entriesRef.current.size>=limit){const oldest=entriesRef.current.keys().next().value;if(oldest===undefined)break;close(oldest);}\n      rememberFocus();\n      const key=queue.add(prepared,{onClose:()=>{const entry=entriesRef.current.get(key);entriesRef.current.delete(key);for(const [id,value]of identities.current)if(value===key)identities.current.delete(id);sync();entry?.content.onDismiss?.();}});\n      entriesRef.current.set(key,{content:prepared,revision:0,returnFocus});if(dedupe?.id)identities.current.set(dedupe.id,key);sync();return key;\n    }\n    function replace(key:string,content:NotificationOptions){const entry=entriesRef.current.get(key);if(!alive.current||!entry)return;rememberFocus();entriesRef.current.set(key,{...entry,content,revision:entry.revision+1});sync();}\n    return {notify,update,dismiss:close,clear:()=>{for(const key of [...entriesRef.current.keys()])close(key);},promise:async<T,>(promise:Promise<T>,messages:{loading:NotificationOptions;success:NotificationOptions|((value:T)=>NotificationOptions);error:NotificationOptions|((error:unknown)=>NotificationOptions)})=>{\n      const key=notify({...messages.loading,isPending:true,duration:0});\n      try{const value=await promise,content=typeof messages.success==='function'?messages.success(value):messages.success;replace(key,{...content,isPending:false,duration:content.duration??options.current.defaultDuration});return value;}\n      catch(error){const content=typeof messages.error==='function'?messages.error(error):messages.error;replace(key,{...content,isPending:false,duration:content.duration??0});throw error;}\n    }};\n  },[queue,visibleLimit,focus]);\n  const state={...nativeState,close:api.dismiss};\n  return <Context.Provider value={api}>{children}{mounted&&<Region state={state} entries={entries} position={position} layout={layout} label={label} className={className} focus={focus}/>}</Context.Provider>;\n}\n",
+      "sha256": "c11288b55491cd1121dbc83ed0ea8fdd421fdc8010c48d48b983415431b9f48e",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 465,
+          "end": 503
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 528,
+          "end": 560
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/collapsible/collapsible",
+          "target": "components/base/collapsible/collapsible.tsx",
+          "start": 590,
+          "end": 631
+        },
+        {
+          "kind": "module",
+          "value": "./notification-queue",
+          "target": "components/base/notification/notification-queue.tsx",
+          "start": 718,
+          "end": 738
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 767,
+          "end": 808
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 842,
+          "end": 867
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-dismiss-timer",
+          "target": "hooks/use-dismiss-timer.ts",
+          "start": 901,
+          "end": 926
+        },
+        {
+          "kind": "module",
+          "value": "./notification-content",
+          "target": "components/base/notification/notification-content.tsx",
+          "start": 961,
+          "end": 983
+        },
+        {
+          "kind": "module",
+          "value": "./notification-types",
+          "target": "components/base/notification/notification-types.ts",
+          "start": 1099,
+          "end": 1119
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 1140,
+          "end": 1150
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/notification/notification-queue.tsx",
+      "content": "'use client';\n\nimport {useLayoutEffect,useRef,useState,type ReactNode} from 'react';\nimport {AnimatePresence,motion,useIsPresent,useReducedMotion} from 'motion/react';\nimport type {MotionTokens} from '@/hooks/use-motion-tokens';\nimport type {NotificationQueueLayout} from './notification-types';\n\nconst gap=10,depth=8,inset=4;\n\nfunction QueueItem({children,y,height,scale,zIndex,peek,tokens,following}:{children:ReactNode;y:number;height:number;scale:number;zIndex:number;peek:boolean;tokens:MotionTokens;following:boolean}){\n  const present=useIsPresent(),reduced=useReducedMotion();\n  return <motion.div className=\"ui-notification-region__item\" data-peek={peek||undefined} data-exiting={!present||undefined} inert={peek||!present} aria-hidden={peek||!present||undefined}\n    style={{zIndex}} initial={reduced?false:{opacity:0,y:y+8,scale}} animate={{opacity:1,y,height,scale}}\n    exit={{height:0,opacity:0,y:y-6,scale}} transition={{duration:reduced?0:tokens.standard,ease:tokens.ease,height:{duration:reduced||following?0:tokens.standard},y:{duration:reduced||following?0:tokens.standard}}}>{children}</motion.div>;\n}\n\n/** Measure natural cards independently of their animated placement and stack shells. */\nexport function NotificationQueue({keys,layout,expanded,bottom,tokens,children,id}:{keys:string[];layout:NotificationQueueLayout;expanded:boolean;bottom:boolean;tokens:MotionTokens;children:(key:string,index:number,hidden:boolean)=>ReactNode;id:string}){\n  const root=useRef<HTMLDivElement>(null),reduced=useReducedMotion(),[heights,setHeights]=useState<Record<string,number>>({}),[following,setFollowing]=useState(false);\n  const identities=JSON.stringify(keys);\n  useLayoutEffect(()=>{\n    const element=root.current;if(!element)return;\n    const cards=[...element.querySelectorAll<HTMLElement>('.ui-notification:not([data-exiting])')];\n    let alive=true;const observed=new WeakSet<Animation>();\n    function measure(){\n      if(!alive)return;\n      const next=Object.fromEntries(cards.filter(card=>card.isConnected).map(card=>[card.dataset.toastKey!,card.offsetHeight]));\n      const moving=cards.flatMap(card=>card.getAnimations({subtree:true})).filter(animation=>animation.playState==='running'&&'transitionProperty' in animation&&animation.transitionProperty==='height');\n      setFollowing(moving.length>0);\n      for(const animation of moving)if(!observed.has(animation)){observed.add(animation);animation.finished.then(measure,measure);}\n      setHeights(current=>Object.keys(current).length===Object.keys(next).length&&Object.entries(next).every(([key,value])=>current[key]===value)?current:next);\n    }\n    measure();const observer=new ResizeObserver(measure);cards.forEach(card=>observer.observe(card,{box:'border-box'}));\n    return()=>{alive=false;observer.disconnect();};\n  },[identities]);\n  const sizes=keys.map(key=>heights[key]??74),front=sizes[0]??0,stacked=layout==='stack'&&!expanded;\n  const contentHeight=stacked?front+depth*Math.max(0,keys.length-1):sizes.reduce((sum,size)=>sum+size,0)+gap*Math.max(0,keys.length-1);\n  let offset=0;\n  return <motion.div ref={root} id={id} className=\"ui-notification-region__list\" data-layout={layout} data-expanded={layout==='stack'&&expanded||undefined}\n    initial={false} animate={{height:keys.length?contentHeight+inset*2:0}} transition={{duration:reduced||following?0:tokens.standard,ease:tokens.ease}}>\n    <AnimatePresence initial={false}>{keys.map((key,index)=>{\n      const hidden=stacked&&index>0,ownHeight=sizes[index],height=hidden?front:ownHeight;\n      const y=stacked?(bottom?depth*(keys.length-1-index):depth*index):layout==='stack'&&bottom?contentHeight-offset-ownHeight:offset;\n      offset+=ownHeight+gap;\n      return <QueueItem key={key} y={y+inset} height={height} scale={hidden?1-index*.025:1} zIndex={keys.length-index} peek={hidden} tokens={tokens} following={following}>{children(key,index,hidden)}</QueueItem>;\n    })}</AnimatePresence>\n  </motion.div>;\n}\n",
+      "sha256": "7c47c84ce8466f107678947ba2785d9331b3a7f96ab5e9249aded15c6b432aa6",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 201,
+          "end": 226
+        },
+        {
+          "kind": "module",
+          "value": "./notification-types",
+          "target": "components/base/notification/notification-types.ts",
+          "start": 273,
+          "end": 293
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/notification/notification-types.ts",
+      "content": "import type {ReactNode} from 'react';\n\nexport type NotificationContent={\n  title:string;\n  description?:ReactNode;\n  tone?:'neutral'|'information'|'success'|'error';\n  avatar?:{src?:string;alt:string;initials:string;presence?:'online'|'busy'|'offline'};\n  icon?:ReactNode;\n  iconKey?:string;\n  timestamp?:string;\n  action?:{label:string;onPress:()=>void;dismiss?:boolean};\n  secondaryAction?:{label:string;onPress:()=>void;dismiss?:boolean};\n  isPending?:boolean;\n};\nexport type NotificationOptions=NotificationContent&{duration?:number;onDismiss?:()=>void};\nexport type NotificationViewportPosition='top-left'|'top-center'|'top-right'|'bottom-left'|'bottom-center'|'bottom-right';\nexport type NotificationQueueLayout='list'|'stack';\n",
+      "sha256": "86a124e43fd9963f18afa421642f0e3f646cc9b4f72bd3e2acc4ba0ef106d926",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/notification/notification.tsx",
+      "content": "'use client';\n\nimport { useEffect, useRef, useState, type ReactNode } from 'react';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { createPortal } from 'react-dom';\nimport { CloseButton } from '@/components/base/buttons/close-button';\nimport { useDismissTimer,notificationTimeout } from '@/hooks/use-dismiss-timer';\nimport { useMotionTokens } from '@/hooks/use-motion-tokens';\nimport { NotificationBody } from './notification-content';\nimport { NotificationProvider,useNotification } from './notification-provider';\nimport type { NotificationOptions,NotificationViewportPosition } from './notification-types';\nimport { cx } from '@/utils/cx';\n\nexport { NotificationProvider,useNotification };\nexport type {NotificationAPI,NotificationProviderProps} from './notification-provider';\nexport type {NotificationOptions,NotificationViewportPosition,NotificationQueueLayout} from './notification-types';\nexport type NotificationProps=NotificationOptions&{onExitComplete?:()=>void;className?:string};\n\nfunction NotificationSurface({content,onClose,paused,className}:{content:NotificationOptions;onClose:()=>void;paused:boolean;className?:string}){\n  const present=useIsPresent(),root=useRef<HTMLDivElement>(null),tokens=useMotionTokens(root),reduced=useReducedMotion(),duration=notificationTimeout(content.duration);\n  return <motion.div ref={root} className={cx('ui-notification',className)} data-tone={content.tone??'neutral'} data-paused={paused||undefined} data-exiting={!present||undefined} role={content.tone==='error'?'alert':'status'} inert={!present} aria-hidden={!present||undefined} initial={reduced?false:{opacity:0,y:9,scale:.985}} animate={{opacity:1,y:0,scale:1}} exit={{height:0,paddingTop:0,paddingBottom:0,borderTopWidth:0,borderBottomWidth:0,opacity:0,y:-6,scale:.985}} transition={{duration:reduced?0:tokens.standard,ease:tokens.ease}}>\n    <NotificationBody content={content} onAction={item=>{if(item.dismiss)onClose();item.onPress();}}/><CloseButton className=\"ui-notification__close\" size=\"xs\" aria-label=\"Dismiss notification\" onClick={onClose}/>\n    {duration&&<span key={duration} className=\"ui-notification__countdown\" style={{animationDuration:`${duration}ms`,animationPlayState:paused?'paused':'running'}} aria-hidden/>}\n  </motion.div>;\n}\n\nexport function Notification({onDismiss,onExitComplete,className,...content}:NotificationProps){\n  const [visible,setVisible]=useState(true),[hovered,setHovered]=useState(false),[focused,setFocused]=useState(false),[hidden,setHidden]=useState(false),dismissed=useRef(false);\n  useEffect(()=>{function visibility(){setHidden(document.hidden);}visibility();document.addEventListener('visibilitychange',visibility);return()=>document.removeEventListener('visibilitychange',visibility);},[]);\n  const paused=hovered||focused||hidden;\n  function dismiss(){if(dismissed.current)return;dismissed.current=true;setVisible(false);onDismiss?.();}\n  useDismissTimer(content.duration,paused,visible,dismiss);\n  return <div className=\"ui-notification-presence\" onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)} onFocusCapture={()=>setFocused(true)} onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))setFocused(false);}}><AnimatePresence onExitComplete={onExitComplete}>{visible&&<NotificationSurface content={content} paused={paused} onClose={dismiss} className={className}/>}</AnimatePresence></div>;\n}\n\nexport function NotificationViewport({ children, position = 'top-right', className }: { children: ReactNode; position?: NotificationViewportPosition; className?: string }) {\n  const [mounted, setMounted] = useState(false);\n  useEffect(() => setMounted(true), []);\n  if (!mounted) return null;\n  return createPortal(<div className={cx('ui-notification-viewport', className)} data-position={position}>{children}</div>, document.body);\n}\n",
+      "sha256": "f0ba0d42e83c25973fc09c405a1ea7f053888890074abe51796a6c5275a80998",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 243,
+          "end": 281
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-dismiss-timer",
+          "target": "hooks/use-dismiss-timer.ts",
+          "start": 337,
+          "end": 362
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 398,
+          "end": 423
+        },
+        {
+          "kind": "module",
+          "value": "./notification-content",
+          "target": "components/base/notification/notification-content.tsx",
+          "start": 460,
+          "end": 482
+        },
+        {
+          "kind": "module",
+          "value": "./notification-provider",
+          "target": "components/base/notification/notification-provider.tsx",
+          "start": 539,
+          "end": 562
+        },
+        {
+          "kind": "module",
+          "value": "./notification-types",
+          "target": "components/base/notification/notification-types.ts",
+          "start": 636,
+          "end": 656
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 679,
+          "end": 689
+        },
+        {
+          "kind": "module",
+          "value": "./notification-provider",
+          "target": "components/base/notification/notification-provider.tsx",
+          "start": 804,
+          "end": 827
+        },
+        {
+          "kind": "module",
+          "value": "./notification-types",
+          "target": "components/base/notification/notification-types.ts",
+          "start": 923,
+          "end": 943
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/scroll-area/scroll-area.tsx",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type Ref, type RefObject } from 'react';\nimport { RiArrowDownSLine, RiArrowUpSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type ScrollAreaViewportProps = { ref: Ref<HTMLDivElement>; className: string; children: ReactNode };\nexport type ScrollAreaProps = {\n  children?: ReactNode;\n  label: string;\n  className?: string;\n  viewportClassName?: string;\n  orientation?: 'vertical' | 'horizontal' | 'both';\n  /** Let a collection own the scroll viewport, keeping its keyboard scrolling native. */\n  renderViewport?: (props: ScrollAreaViewportProps) => ReactElement;\n  /** Keep a pointer action in a searchable input without stealing its focus. */\n  preservePointerFocus?: boolean;\n  /** Restore a virtual collection's input when a focused edge disappears. */\n  focusRef?: RefObject<HTMLElement | null>;\n  /** Keep arrow controls outside the item viewport in constrained collections. */\n  indicatorPlacement?: 'overlay' | 'gutter';\n};\n\n/** Keep native scrolling, with directional controls only when content overflows. */\nexport function ScrollArea({ children, label, className, viewportClassName, renderViewport, orientation = 'vertical', preservePointerFocus = false, focusRef, indicatorPlacement='overlay' }: ScrollAreaProps) {\n  const viewport = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);\n  const [mountedViewport, setMountedViewport] = useState<HTMLDivElement | null>(null);\n  const setViewport = useCallback((element: HTMLDivElement | null) => {\n    viewport.current = element;\n    setMountedViewport(element);\n  }, []);\n  const [edges, setEdges] = useState({ up: false, down: false, left: false, right: false });\n  const measuredEdges = useRef(edges);\n  useLayoutEffect(() => {\n    const el = mountedViewport;\n    if (!el) return;\n    function measure() {\n      if (!el) return;\n      const up = orientation !== 'horizontal' && el.scrollTop > 1, down = orientation !== 'horizontal' && el.scrollHeight - el.clientHeight - el.scrollTop > 1;\n      const rtl = getComputedStyle(el).direction === 'rtl', maximum = el.scrollWidth - el.clientWidth;\n      const left = orientation !== 'vertical' && (rtl ? maximum + el.scrollLeft : el.scrollLeft) > 1;\n      const right = orientation !== 'vertical' && (rtl ? -el.scrollLeft : maximum - el.scrollLeft) > 1;\n      const next = { up, down, left, right };\n      const focusedEdge = document.activeElement?.closest('.ui-scroll-area__edge');\n      const direction = focusedEdge?.getAttribute('data-direction') as keyof typeof next | undefined;\n      if (focusedEdge && el.parentElement?.contains(focusedEdge) && direction && !next[direction]) (focusRef?.current ?? el).focus({ preventScroll: true });\n      if (Object.keys(next).some(key => measuredEdges.current[key as keyof typeof next] !== next[key as keyof typeof next])) {\n        measuredEdges.current = next;\n        setEdges(measuredEdges.current);\n      }\n    }\n    const observer = new ResizeObserver(measure);\n    const observed = new Set<Element>();\n    function observeContent() {\n      if (!el) return;\n      // A collection may not allow a wrapper between itself and its sections.\n      // Observe those sections directly so filtering and density changes are measured.\n      const next = new Set<Element>([el, ...el.children]);\n      for (const child of observed) if (!next.has(child)) { observer.unobserve(child); observed.delete(child); }\n      for (const child of next) if (!observed.has(child)) { observer.observe(child); observed.add(child); }\n      measure();\n    }\n    const mutations = new MutationObserver(observeContent);\n    mutations.observe(el, { childList: true, subtree: true });\n    observeContent();\n    el.addEventListener('scroll', measure, { passive: true });\n    return () => { observer.disconnect(); mutations.disconnect(); el.removeEventListener('scroll', measure); };\n  }, [focusRef, mountedViewport, orientation]);\n  function scroll(direction: number, horizontal = false) {\n    const el = viewport.current;\n    if (!el) return;\n    el.scrollBy({ [horizontal ? 'left' : 'top']: direction * Math.max(80, (horizontal ? el.clientWidth : el.clientHeight) * .7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });\n  }\n  return <div className={cx('ui-scroll-area', className)} data-orientation={orientation} data-indicator-placement={indicatorPlacement} data-overflow-y={edges.up || edges.down || undefined}>\n    {renderViewport ? renderViewport({ ref: setViewport, className: cx('ui-scroll-area__viewport', viewportClassName), children }) : <div ref={setViewport} className={cx('ui-scroll-area__viewport', viewportClassName)} role=\"region\" aria-label={label} tabIndex={0}><div ref={content} className=\"ui-scroll-area__content\">{children}</div></div>}\n    <div className=\"ui-scroll-area__edge\" data-direction=\"up\" data-visible={edges.up || undefined} aria-hidden={!edges.up}><IconButton icon={RiArrowUpSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} up`} disabled={!edges.up} tabIndex={edges.up ? 0 : -1} onClick={() => scroll(-1)}/></div>\n    <div className=\"ui-scroll-area__edge\" data-direction=\"down\" data-visible={edges.down || undefined} aria-hidden={!edges.down}><IconButton icon={RiArrowDownSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} down`} disabled={!edges.down} tabIndex={edges.down ? 0 : -1} onClick={() => scroll(1)}/></div>\n    {orientation !== 'vertical' && <>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"left\" data-visible={edges.left || undefined} aria-hidden={!edges.left}><IconButton icon={RiArrowLeftSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} left`} disabled={!edges.left} tabIndex={edges.left ? 0 : -1} onClick={() => scroll(-1, true)}/></div>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"right\" data-visible={edges.right || undefined} aria-hidden={!edges.right}><IconButton icon={RiArrowRightSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} right`} disabled={!edges.right} tabIndex={edges.right ? 0 : -1} onClick={() => scroll(1, true)}/></div>\n    </>}\n  </div>;\n}\n",
+      "sha256": "6a0b95325225bbeb5dbcfb3fc4d3069c72e5d022d897f9e6bee1e96c34243bcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 282,
+          "end": 319
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 342,
+          "end": 352
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-dismiss-timer.ts",
+      "content": "'use client';\n\nimport {useEffect,useLayoutEffect,useRef} from 'react';\n\n/** Zero/invalid durations persist. Automatic messages remain readable for 5s. */\nexport function notificationTimeout(duration?:number){return duration!==undefined&&Number.isFinite(duration)&&duration>0?Math.min(2147483647,Math.max(5000,duration)):undefined;}\n\n/** Pause without restarting; a new duration or content revision starts a new clock. */\nexport function useDismissTimer(duration:number|undefined,paused:boolean,enabled:boolean,onDismiss:()=>void,revision=0){\n  const timeout=notificationTimeout(duration),latest=useRef(onDismiss),remaining=useRef(timeout??0),previous=useRef({timeout,revision});\n  useLayoutEffect(()=>{latest.current=onDismiss;},[onDismiss]);\n  useEffect(()=>{\n    if(previous.current.timeout!==timeout||previous.current.revision!==revision){remaining.current=timeout??0;previous.current={timeout,revision};}\n    if(!enabled||paused||!timeout)return;\n    const started=performance.now(),timer=setTimeout(()=>latest.current(),Math.max(0,remaining.current));\n    return()=>{clearTimeout(timer);remaining.current=Math.max(0,remaining.current-(performance.now()-started));};\n  },[timeout,paused,enabled,revision]);\n}\n",
+      "sha256": "566502b901ce99a060b1d674163b7a140821bd3f1b7bb55285be6a5ccb2d7aa9",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "react-dom": "19.2.4",
+    "react-stately": "3.50.0",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-avatar",
+      "ui-avatar__initials",
+      "ui-button",
+      "ui-button--icon-only",
+      "ui-button__busy-spinner",
+      "ui-button__label",
+      "ui-button__leading-icon",
+      "ui-button__leading-slot",
+      "ui-close-button",
+      "ui-collapsible",
+      "ui-collapsible__content",
+      "ui-collapsible__inner",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-notification",
+      "ui-notification-presence",
+      "ui-notification-region",
+      "ui-notification-region__item",
+      "ui-notification-region__landmark",
+      "ui-notification-region__list",
+      "ui-notification-region__scroll",
+      "ui-notification-stack__toolbar",
+      "ui-notification-viewport",
+      "ui-notification__actions",
+      "ui-notification__body-height",
+      "ui-notification__body-row",
+      "ui-notification__close",
+      "ui-notification__content",
+      "ui-notification__countdown",
+      "ui-notification__heading",
+      "ui-notification__icon",
+      "ui-notification__icon-content",
+      "ui-notification__presence",
+      "ui-notification__primary",
+      "ui-scroll-area",
+      "ui-scroll-area__content",
+      "ui-scroll-area__edge",
+      "ui-scroll-area__viewport",
+      "ui-spinner"
+    ],
+    "prefixes": []
+  }
+}

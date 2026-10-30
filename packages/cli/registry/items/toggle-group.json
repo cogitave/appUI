@@ -1,0 +1,67 @@
+{
+  "name": "toggle-group",
+  "title": "Toggle Group",
+  "group": "Base",
+  "type": "component",
+  "description": "Related pressed controls with single or multiple selection, joined or separated surfaces and logical keyboard navigation.",
+  "sections": [
+    "Preview",
+    "Single selection",
+    "Layouts and orientation",
+    "Formatting toolbar",
+    "Disabled items"
+  ],
+  "example": "<ToggleGroup aria-label=\"Text formatting\" selectionMode=\"multiple\"\n  selectedKeys={formatting} onSelectionChange={setFormatting}>\n  <Toggle id=\"bold\" aria-label=\"Bold\" iconOnly><RiBold aria-hidden /></Toggle>\n  <Toggle id=\"italic\" aria-label=\"Italic\" iconOnly><RiItalic aria-hidden /></Toggle>\n</ToggleGroup>",
+  "entryFiles": [
+    "components/base/toggle/toggle.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/toggle/toggle.tsx",
+      "names": [
+        "Toggle",
+        "ToggleGroup",
+        "ToggleGroupProps",
+        "ToggleProps",
+        "ToggleSize",
+        "ToggleVariant"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/toggle/toggle.tsx",
+      "content": "'use client';\n\nimport { createContext, useContext, type ReactNode, type Ref } from 'react';\nimport { ToggleButton, ToggleButtonGroup, type ToggleButtonProps, type ToggleButtonGroupProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\n\nexport type ToggleVariant = 'soft' | 'outline' | 'plain';\nexport type ToggleSize = 'small' | 'medium' | 'large';\ntype ToggleAppearance = { variant?: ToggleVariant; size?: ToggleSize };\nconst ToggleAppearanceContext = createContext<ToggleAppearance>({});\n\nexport type ToggleProps = Omit<ToggleButtonProps, 'children' | 'className'> & ToggleAppearance & {\n  children: ReactNode;\n  iconOnly?: boolean;\n  className?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\n/** A pressed action. Supply an accessible name for icon-only controls. */\nexport function Toggle({ children, variant, size, iconOnly = false, className, ...props }: ToggleProps) {\n  const group = useContext(ToggleAppearanceContext);\n  return <ToggleButton {...props} className={cx('ui-toggle', className)} data-variant={variant ?? group.variant ?? 'soft'} data-size={size ?? group.size ?? 'medium'} data-icon-only={iconOnly || undefined}>{children}</ToggleButton>;\n}\n\nexport type ToggleGroupProps = Omit<ToggleButtonGroupProps, 'children' | 'className'> & ToggleAppearance & {\n  children: ReactNode;\n  layout?: 'separated' | 'joined';\n  className?: string;\n  ref?: Ref<HTMLDivElement>;\n};\n\n/** React Aria owns selection and roving focus, including logical RTL navigation. */\nexport function ToggleGroup({ children, variant = 'soft', size = 'medium', layout = 'separated', className, ...props }: ToggleGroupProps) {\n  return <ToggleAppearanceContext value={{variant, size}}><ToggleButtonGroup {...props} data-layout={layout} className={cx('ui-toggle-group', className)}>{children}</ToggleButtonGroup></ToggleAppearanceContext>;\n}\n",
+      "sha256": "7907124cd230123bd606538bcab702f19866eb0637729b80eacb12caedbb2405",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 238,
+          "end": 248
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-toggle",
+      "ui-toggle-group"
+    ],
+    "prefixes": []
+  }
+}

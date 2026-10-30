@@ -1,0 +1,66 @@
+{
+  "name": "tabs",
+  "title": "Tabs",
+  "group": "Base",
+  "type": "component",
+  "description": "A keyboard-accessible way to move between related panels, with a restrained underline or compact pill treatment.",
+  "sections": [
+    "Preview",
+    "Pill tabs",
+    "Panels"
+  ],
+  "example": "<Tabs defaultSelectedKey=\"posts\">\n  <TabList aria-label=\"Content\"><Tab id=\"posts\">Posts</Tab><Tab id=\"members\">Members</Tab></TabList>\n  <TabPanel id=\"posts\">Recent posts</TabPanel>\n  <TabPanel id=\"members\">Team members</TabPanel>\n</Tabs>",
+  "entryFiles": [
+    "components/base/tabs/tabs.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/tabs/tabs.tsx",
+      "names": [
+        "Tab",
+        "TabList",
+        "TabPanel",
+        "Tabs",
+        "TabsProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/tabs/tabs.tsx",
+      "content": "'use client';\n\nimport { Tabs as AriaTabs, TabList as AriaTabList, Tab as AriaTab, TabPanel as AriaTabPanel, type TabsProps as AriaTabsProps, type TabListProps as AriaTabListProps, type TabProps as AriaTabProps, type TabPanelProps as AriaTabPanelProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport type { Ref } from 'react';\n\nexport type TabsProps = AriaTabsProps & { variant?: 'underline' | 'pill'; className?: string; ref?:Ref<HTMLDivElement> };\nexport function Tabs({ variant = 'underline', className, ...props }: TabsProps) { return <AriaTabs {...props} data-variant={variant} className={cx('ui-tabs', className)} />; }\nexport function TabList<T extends object>({ className, ...props }: AriaTabListProps<T> & {ref?:Ref<HTMLDivElement>}) { return <AriaTabList {...props} className={typeof className === 'function' ? values => cx('ui-tabs__list', className(values)) : cx('ui-tabs__list', className)} />; }\nexport function Tab({ className, ...props }: AriaTabProps) { return <AriaTab {...props} className={typeof className === 'function' ? values => cx('ui-tabs__tab', className(values)) : cx('ui-tabs__tab', className)} />; }\nexport function TabPanel({ className, ...props }: AriaTabPanelProps) { return <AriaTabPanel {...props} className={typeof className === 'function' ? values => cx('ui-tabs__panel', className(values)) : cx('ui-tabs__panel', className)} />; }\n",
+      "sha256": "244f92a34cc0d1bb51dc519c2398c69b8c88fe9e3c509f8d587dc011a2150dc6",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 303,
+          "end": 313
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-tabs",
+      "ui-tabs__list",
+      "ui-tabs__panel",
+      "ui-tabs__tab"
+    ],
+    "prefixes": []
+  }
+}

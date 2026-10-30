@@ -1,0 +1,368 @@
+{
+  "name": "sidebar",
+  "title": "Sidebar",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A floating navigation panel with a workspace identity, search, selected route, badges, secondary actions, and an account footer. The same component can collapse to a compact rail.",
+  "sections": [
+    "Preview",
+    "Selection variants",
+    "Collapsed rail",
+    "Composed content",
+    "Navigation data"
+  ],
+  "example": "<Sidebar\n  workspace={{ name: 'Studio team', initials: 'S' }}\n  user={{ name: 'Maya Chen', initials: 'MC', email: 'maya@studio.co' }}\n  items={navigation}\n  defaultSelectedKey=\"home\"\n  selectionVariant=\"neutral\"\n  onSelectionChange={setSelectedKey}\n/>",
+  "entryFiles": [
+    "components/blocks/sidebar/sidebar.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/sidebar/sidebar.tsx",
+      "names": [
+        "Sidebar",
+        "SidebarIdentity",
+        "SidebarItem",
+        "SidebarProps",
+        "SidebarSelectionVariant"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/announcement/announcement.tsx",
+      "content": "'use client';\n\nimport type { HTMLAttributes, ReactNode } from 'react';\nimport { useState } from 'react';\nimport { AnimatePresence, motion, useReducedMotion } from 'motion/react';\nimport { RiSparklingFill } from '@remixicon/react';\nimport { Button } from '@/components/base/buttons/button';\nimport { CloseButton } from '@/components/base/buttons/close-button';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type AnnouncementProps = Omit<HTMLAttributes<HTMLDivElement>, 'title' | 'onDrag' | 'onDragStart' | 'onDragEnd' | 'onAnimationStart' | 'onAnimationEnd'> & {\n  title: ReactNode;\n  description?: ReactNode;\n  icon?: IconComponent;\n  actionLabel?: ReactNode;\n  onAction?: () => void;\n  dismissible?: boolean;\n  closeLabel?: string;\n  onClose?: () => void;\n};\n\nexport function Announcement({\n  title,\n  description,\n  icon: Icon = RiSparklingFill,\n  actionLabel,\n  onAction,\n  dismissible = false,\n  closeLabel = 'Dismiss announcement',\n  onClose,\n  className,\n  ...props\n}: AnnouncementProps) {\n  const [open, setOpen] = useState(true);\n  const reduceMotion = useReducedMotion();\n\n  return (\n    <AnimatePresence onExitComplete={onClose}>\n      {open && (\n        <motion.div\n          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -5, filter: 'blur(3px)' }}\n          transition={{ duration: reduceMotion ? 0.01 : 0.2, ease: 'easeOut' }}\n          className={cx('ui-announcement', className)}\n          {...props}\n        >\n          <div className=\"ui-announcement__top\">\n            <Icon className=\"ui-announcement__icon\" aria-hidden />\n            {dismissible && <CloseButton size=\"xs\" aria-label={closeLabel} onClick={() => setOpen(false)} />}\n          </div>\n          <div className=\"ui-announcement__copy\">\n            <p className=\"ui-announcement__title\">{title}</p>\n            {description && <p className=\"ui-announcement__description\">{description}</p>}\n          </div>\n          {actionLabel && <Button variant=\"secondary\" size=\"small\" className=\"ui-announcement__action\" onClick={onAction}>{actionLabel}</Button>}\n        </motion.div>\n      )}\n    </AnimatePresence>\n  );\n}\n",
+      "sha256": "8b3e949ef0ebbbd30dad51350c6170bb95772b520b1b06909b478d9d5d96b41d",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 255,
+          "end": 287
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 319,
+          "end": 357
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 396,
+          "end": 431
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 454,
+          "end": 464
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/avatar/avatar.tsx",
+      "content": "'use client';\n\nimport type { HTMLAttributes } from 'react';\nimport { useEffect, useRef, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';\nexport type AvatarColor = 'neutral' | 'blue' | 'lime' | 'pink';\n\nexport type AvatarProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & {\n  size?: AvatarSize;\n  color?: AvatarColor;\n  initials?: string;\n  src?: string;\n  alt?: string;\n};\n\nexport function Avatar({ size = 'md', color = 'neutral', initials, src, alt, className, ...props }: AvatarProps) {\n  const [failedSource, setFailedSource] = useState<string | null>(null);\n  const imageRef = useRef<HTMLImageElement>(null);\n  const showImage = Boolean(src && src !== failedSource);\n\n  useEffect(() => {\n    const image = imageRef.current;\n    if (!image || !src) return;\n    const fail = () => setFailedSource(src);\n    if (image.complete && image.naturalWidth === 0) fail();\n    image.addEventListener('error', fail);\n    return () => image.removeEventListener('error', fail);\n  }, [src, showImage]);\n\n  return (\n    <span role=\"img\" aria-label={alt || initials || 'Avatar'} data-size={size} data-color={color} className={cx('ui-avatar', className)} {...props}>\n      <span className=\"ui-avatar__initials\" aria-hidden=\"true\">{initials}</span>\n      {showImage && <img ref={imageRef} src={src} alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\" onError={() => setFailedSource(src!)} />}\n    </span>\n  );\n}\n",
+      "sha256": "c6e2f1f5909af8da88f8ba420c072d1b421c3ae4a00527fe823ff3e760ccc13c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 133,
+          "end": 143
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/badges/badge.tsx",
+      "content": "import type { HTMLAttributes } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type BadgeColor = 'primary' | 'neutral' | 'new';\nexport type BadgeProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & { color?: BadgeColor; variant?: 'count' | 'label' | 'pill' | 'subtle' | 'index' };\n\nexport function Badge({ color = 'neutral', variant = 'count', className, ...props }: BadgeProps) {\n  return <span data-color={color} data-variant={variant} className={cx('ui-badge', className)} {...props} />;\n}\n",
+      "sha256": "86b64775ebecc2e54ff2a0b217626324821a72bfbce71fc355e7ec5a94f16178",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 65,
+          "end": 75
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/button.tsx",
+      "content": "'use client';\n\nimport type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\nimport { Spinner } from '@/components/base/spinner/spinner';\n\nexport type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline' | 'solid' | 'quiet';\nexport type ButtonSize = 'medium' | 'small' | 'xs';\n\ntype NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;\ntype ContentProps =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonProps = NativeButtonProps & ContentProps & {\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  trailingIcon?: IconComponent;\n  isLoading?: boolean;\n  loadingLabel?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\nconst base = 'ui-button inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none outline-none';\nconst sizes: Record<ButtonSize, string> = {\n  medium: 'h-9 rounded-[10px] px-2 gap-0.5',\n  small: 'h-8 rounded-lg px-2 gap-0.5',\n  xs: 'h-6 rounded-[5px] px-2 gap-0.5',\n};\nexport const buttonIconClassNames: Record<ButtonSize, string> = { medium: 'size-5', small: 'size-[18px]', xs: 'size-3.5' };\nexport function buttonClassNames(size: ButtonSize, iconOnly = false, className?: string) {\n  return cx(base, sizes[size], iconOnly && 'ui-button--icon-only !p-0', className);\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'medium',\n  iconOnly = false,\n  leadingIcon: LeadingIcon,\n  trailingIcon: TrailingIcon,\n  children,\n  className,\n  type = 'button',\n  isLoading = false,\n  loadingLabel,\n  disabled,\n  onClick,\n  onKeyDown,\n  ...props\n}: ButtonProps) {\n  return (\n    <button\n      {...props}\n      type={isLoading && type === 'submit' ? 'button' : type}\n      disabled={disabled}\n      aria-disabled={isLoading || props['aria-disabled'] || undefined}\n      aria-busy={isLoading || undefined}\n      aria-description={isLoading && loadingLabel ? loadingLabel : props['aria-description']}\n      data-variant={variant}\n      data-size={size}\n      data-icon-only={iconOnly || undefined}\n      data-loading={isLoading || undefined}\n      data-loading-label={loadingLabel !== undefined || undefined}\n      className={buttonClassNames(size, iconOnly, className)}\n      onClick={event => { if (isLoading || props['aria-disabled'] === true || props['aria-disabled'] === 'true') { event.preventDefault(); event.stopPropagation(); return; } onClick?.(event); }}\n      onKeyDown={event => { if (isLoading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); return; } onKeyDown?.(event); }}\n    >\n      {LeadingIcon && <span className=\"ui-button__leading-slot\" aria-hidden><LeadingIcon className={cx(buttonIconClassNames[size], 'ui-button__leading-icon')}/></span>}\n      {!iconOnly && <span className=\"ui-button__label\">{children}</span>}\n      {!iconOnly && TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n      <Spinner className=\"ui-button__busy-spinner\" size={size === 'xs' ? 'xs' : size === 'small' ? 'sm' : 'md'}/>\n    </button>\n  );\n}\n",
+      "sha256": "bcfc2d2db4debfd2c11dd8ba8b23a167c705ad3bf7d9151571e501ed195fe158",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 118,
+          "end": 153
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 176,
+          "end": 186
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 214,
+          "end": 247
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/close-button.tsx",
+      "content": "import type { ButtonHTMLAttributes, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CloseButtonSize = '2xs' | 'xs' | 'sm' | 'md';\n\nexport type CloseButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'> & {\n  size?: CloseButtonSize;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nconst glyphSizes: Record<CloseButtonSize, number> = { '2xs': 8, xs: 11, sm: 13, md: 17 };\nconst strokes: Record<CloseButtonSize, number> = { '2xs': 1.6, xs: 2, sm: 2, md: 2.5 };\n\nexport function CloseButton({ size = 'xs', className, type = 'button', ...props }: CloseButtonProps) {\n  const glyph = glyphSizes[size];\n  const inset = size === '2xs' ? 1.4 : 2;\n  return (\n    <button type={type} data-size={size} className={cx('ui-close-button', className)} {...props}>\n      <svg width={glyph} height={glyph} viewBox={`0 0 ${glyph} ${glyph}`} fill=\"none\" aria-hidden=\"true\">\n        <path d={`M${inset} ${inset}L${glyph - inset} ${glyph - inset}M${glyph - inset} ${inset}L${inset} ${glyph - inset}`} stroke=\"currentColor\" strokeWidth={strokes[size]} strokeLinecap=\"round\" />\n      </svg>\n    </button>\n  );\n}\n",
+      "sha256": "c670608d6b5b2e2c1d8d50bb37efbca9c38463fd0fecc5b3525464bff6cbed78",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/kbd/kbd.tsx",
+      "content": "import type { HTMLAttributes } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type KbdProps = HTMLAttributes<HTMLElement> & {\n  variant?: 'soft' | 'outline';\n  size?: 'small' | 'medium';\n};\n\nexport function Kbd({ className, variant = 'soft', size = 'small', ...props }: KbdProps) {\n  return <kbd className={cx('ui-kbd', className)} data-variant={variant} data-size={size} {...props} />;\n}\n\n/** Supply an aria-label when the visible keys use platform-specific symbols. */\nexport function KbdGroup({ className, ...props }: HTMLAttributes<HTMLElement>) {\n  return <kbd className={cx('ui-kbd-group', className)} {...props}/>;\n}\n",
+      "sha256": "f81d5164c13b5403e002cc9e03fc8eeffe90461bf389b42a28af6114af1ca3cd",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 65,
+          "end": 75
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/theme-switch/theme-switch.tsx",
+      "content": "'use client';\n\nimport { RiMoonLine, RiSunLine } from '@remixicon/react';\nimport { useAppearance } from '@/hooks/use-appearance';\n\nexport function ThemeSwitch({ className = '' }: { className?: string }) {\n  const { theme, setTheme } = useAppearance();\n  return <div className={`ui-theme-switch ${className}`} role=\"group\" aria-label=\"Appearance\">\n    <button type=\"button\" aria-label=\"Light appearance\" aria-pressed={theme === 'light'} onClick={event => setTheme('light', event)}><RiSunLine size={17}/></button>\n    <button type=\"button\" aria-label=\"Dark appearance\" aria-pressed={theme === 'dark'} onClick={event => setTheme('dark', event)}><RiMoonLine size={17}/></button>\n  </div>;\n}\n",
+      "sha256": "01d93b870a5dd405334de5dc954b05e422ef6d70db32a316aebc79073efc2acf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-appearance",
+          "target": "hooks/use-appearance.ts",
+          "start": 104,
+          "end": 126
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/sidebar/sidebar.tsx",
+      "content": "'use client';\n\nimport { useEffect, useRef, useState, type Ref } from 'react';\nimport { RiLayoutLeftLine, RiSearchLine } from '@remixicon/react';\nimport { Announcement } from '@/components/base/announcement/announcement';\nimport { Avatar } from '@/components/base/avatar/avatar';\nimport { Badge } from '@/components/base/badges/badge';\nimport { Kbd } from '@/components/base/kbd/kbd';\nimport { ThemeSwitch } from '@/components/base/theme-switch/theme-switch';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport interface SidebarItem {\n  key: string;\n  label: string;\n  icon: IconComponent;\n  href?: string;\n  badge?: string | number;\n}\n\nexport interface SidebarIdentity { name: string; initials: string; image?: string; email?: string }\nexport type SidebarSelectionVariant = 'accent' | 'neutral';\nexport interface SidebarProps {\n  ref?: Ref<HTMLElement>;\n  role?: 'dialog';\n  'aria-modal'?: boolean;\n  workspace: SidebarIdentity;\n  user: SidebarIdentity;\n  items: SidebarItem[];\n  secondaryItems?: SidebarItem[];\n  selectedKey?: string;\n  defaultSelectedKey?: string;\n  selectionVariant?: SidebarSelectionVariant;\n  onSelectionChange?: (key: string) => void;\n  onWorkspaceClick?: () => void;\n  onUserClick?: () => void;\n  announcement?: { title: string; description: string; actionLabel?: string; onAction?: () => void };\n  collapsed?: boolean;\n  showThemeSwitch?: boolean;\n  defaultCollapsed?: boolean;\n  onCollapsedChange?: (collapsed: boolean) => void;\n  className?: string;\n  'aria-label'?: string;\n}\n\nexport function Sidebar({ ref, role, 'aria-modal': ariaModal, workspace, user, items, secondaryItems = [], selectedKey, defaultSelectedKey, selectionVariant = 'accent', onSelectionChange, onWorkspaceClick, onUserClick, announcement, collapsed, showThemeSwitch = false, defaultCollapsed = false, onCollapsedChange, className, 'aria-label': ariaLabel = 'Workspace navigation' }: SidebarProps) {\n  const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);\n  const [internalSelected, setInternalSelected] = useState(defaultSelectedKey ?? items[0]?.key);\n  const [query, setQuery] = useState('');\n  const searchRef = useRef<HTMLInputElement>(null);\n  const isCollapsed = collapsed === undefined ? internalCollapsed : collapsed;\n  const selected = selectedKey === undefined ? internalSelected : selectedKey;\n  const shownItems = items.filter(item => item.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));\n  const shownSecondary = secondaryItems.filter(item => item.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));\n\n  useEffect(() => {\n    if (!isCollapsed && query) searchRef.current?.focus();\n  }, [isCollapsed, query]);\n\n  function setCollapsed(next: boolean) {\n    if (next) setQuery('');\n    if (collapsed === undefined) setInternalCollapsed(next);\n    onCollapsedChange?.(next);\n  }\n\n  function select(key: string) {\n    if (selectedKey === undefined) setInternalSelected(key);\n    onSelectionChange?.(key);\n  }\n\n  function navItem(item: SidebarItem) {\n    const Icon = item.icon;\n    const isSelected = item.key === selected;\n    const content = <><Icon className=\"ui-app-sidebar__nav-icon\" aria-hidden /><span className=\"ui-app-sidebar__nav-label\">{item.label}</span>{item.badge !== undefined && <Badge color={isSelected && selectionVariant === 'accent' ? 'primary' : 'neutral'} className=\"ui-app-sidebar__badge\">{item.badge}</Badge>}</>;\n    const shared = { className: 'ui-app-sidebar__nav-item', 'aria-label': item.label, 'aria-current': isSelected ? 'page' as const : undefined, title: isCollapsed ? item.label : undefined, onClick: () => select(item.key) };\n    return item.href ? <a key={item.key} {...shared} href={item.href}>{content}</a> : <button key={item.key} {...shared} type=\"button\">{content}</button>;\n  }\n\n  return <aside ref={ref} role={role} aria-modal={ariaModal} className={cx('ui-app-sidebar', className)} data-selection-variant={selectionVariant} data-collapsed={isCollapsed || undefined} aria-label={ariaLabel} onKeyDown={event => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); if (isCollapsed) setCollapsed(false); window.requestAnimationFrame(() => searchRef.current?.focus()); } }}>\n    <div className=\"ui-app-sidebar__top\">\n      <div className=\"ui-app-sidebar__head\">\n        {onWorkspaceClick ? <button type=\"button\" className=\"ui-app-sidebar__identity\" aria-label={`Workspace: ${workspace.name}`} onClick={onWorkspaceClick}><Avatar size=\"md\" initials={workspace.initials} src={workspace.image} alt={workspace.name} /><span>{workspace.name}</span></button> : <div className=\"ui-app-sidebar__identity\"><Avatar size=\"md\" initials={workspace.initials} src={workspace.image} alt={workspace.name} /><span>{workspace.name}</span></div>}\n        <button type=\"button\" className=\"ui-app-sidebar__collapse\" aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!isCollapsed} onClick={() => setCollapsed(!isCollapsed)}><RiLayoutLeftLine size={19} aria-hidden /></button>\n      </div>\n      <div className=\"ui-app-sidebar__search-wrap\">\n        <label className=\"ui-app-sidebar__search\" aria-hidden={isCollapsed || undefined}><RiSearchLine size={18} aria-hidden /><input ref={searchRef} type=\"search\" tabIndex={isCollapsed ? -1 : undefined} value={query} onChange={event => setQuery(event.target.value)} placeholder=\"Quick Search\" aria-label=\"Search navigation\" /><Kbd>⌘K</Kbd></label>\n        <button type=\"button\" className=\"ui-app-sidebar__search-rail\" aria-label=\"Search navigation\" tabIndex={isCollapsed ? undefined : -1} onClick={() => { setCollapsed(false); window.requestAnimationFrame(() => searchRef.current?.focus()); }}><RiSearchLine size={18} aria-hidden /></button>\n      </div>\n      <nav className=\"ui-app-sidebar__nav\" aria-label=\"Primary navigation\">{shownItems.map(navItem)}{shownItems.length === 0 && !isCollapsed && <span className=\"ui-app-sidebar__empty\">No matching pages</span>}</nav>\n    </div>\n    <div className=\"ui-app-sidebar__bottom\">\n      {showThemeSwitch && <ThemeSwitch/>}\n      {secondaryItems.length > 0 && <nav className=\"ui-app-sidebar__nav ui-app-sidebar__nav--secondary\" aria-label=\"Secondary navigation\">{shownSecondary.map(navItem)}</nav>}\n      {announcement && <div className=\"ui-app-sidebar__announcement\" aria-hidden={isCollapsed || undefined} inert={isCollapsed}><Announcement title={announcement.title} description={announcement.description} actionLabel={announcement.actionLabel} onAction={announcement.onAction} /></div>}\n      {onUserClick ? <button type=\"button\" className=\"ui-app-sidebar__user\" aria-label={`Account: ${user.name}`} onClick={onUserClick}><Avatar size=\"sm\" initials={user.initials} src={user.image} alt={user.name} /><span><strong>{user.name}</strong>{user.email && <small>{user.email}</small>}</span></button> : <div className=\"ui-app-sidebar__user\"><Avatar size=\"sm\" initials={user.initials} src={user.image} alt={user.name} /><span><strong>{user.name}</strong>{user.email && <small>{user.email}</small>}</span></div>}\n    </div>\n  </aside>;\n}\n",
+      "sha256": "549caea17d7b1692d0ac2c0b639375b8b7c802b182508265170c6c7e77fb5473",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/announcement/announcement",
+          "target": "components/base/announcement/announcement.tsx",
+          "start": 175,
+          "end": 218
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/avatar/avatar",
+          "target": "components/base/avatar/avatar.tsx",
+          "start": 245,
+          "end": 276
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/badges/badge",
+          "target": "components/base/badges/badge.tsx",
+          "start": 302,
+          "end": 332
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/kbd/kbd",
+          "target": "components/base/kbd/kbd.tsx",
+          "start": 356,
+          "end": 381
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/theme-switch/theme-switch",
+          "target": "components/base/theme-switch/theme-switch.tsx",
+          "start": 413,
+          "end": 456
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 495,
+          "end": 530
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 553,
+          "end": 563
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "config/appearance.ts",
+      "content": "import colors from './colors.json';\n\nexport type Accent = keyof typeof colors.accents;\nexport const accentNames = Object.keys(colors.accents) as Accent[];\nexport const accentPalettes = colors.accents;\nexport const accents = accentNames.map(id => ({ id, label: colors.accents[id].label, swatch: colors.accents[id].ramp['500'] }));\n\nexport function isAccent(value: string | null | undefined): value is Accent {\n  return value != null && Object.hasOwn(colors.accents, value);\n}\n",
+      "sha256": "28daeb91c11f8634794f65897d6ef0c1d1759884f49dab1e85fdd5b4516520d1",
+      "references": [
+        {
+          "kind": "module",
+          "value": "./colors.json",
+          "target": "config/colors.json",
+          "start": 20,
+          "end": 33
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "config/colors.json",
+      "content": "{\n  \"accents\": {\n    \"blue\": {\n      \"label\": \"Sapphire\",\n      \"ramp\": {\n        \"50\": \"#edf4ff\",\n        \"100\": \"#dceaff\",\n        \"200\": \"#b9d5ff\",\n        \"300\": \"#88b8ff\",\n        \"400\": \"#3392ff\",\n        \"500\": \"lab(54.1736% 13.3369 -74.6839)\",\n        \"600\": \"lab(44.0605% 29.0279 -86.0352)\",\n        \"700\": \"lab(36.9089% 35.0961 -85.6872)\",\n        \"800\": \"#16448d\",\n        \"900\": \"#173a6d\",\n        \"950\": \"#112747\"\n      }\n    },\n    \"violet\": {\n      \"label\": \"Violet\",\n      \"ramp\": {\n        \"50\": \"#f6f2ff\",\n        \"100\": \"#ece4ff\",\n        \"200\": \"#d8c9ff\",\n        \"300\": \"#bda4fb\",\n        \"400\": \"#9b7aee\",\n        \"500\": \"#7a59d9\",\n        \"600\": \"#6947c3\",\n        \"700\": \"#5735a6\",\n        \"800\": \"#462e80\",\n        \"900\": \"#392967\",\n        \"950\": \"#251b43\"\n      }\n    },\n    \"copper\": {\n      \"label\": \"Copper\",\n      \"ramp\": {\n        \"50\": \"#fff6ee\",\n        \"100\": \"#fce9d8\",\n        \"200\": \"#f8cfaa\",\n        \"300\": \"#edae76\",\n        \"400\": \"#da8750\",\n        \"500\": \"#ba683b\",\n        \"600\": \"#a2512e\",\n        \"700\": \"#824025\",\n        \"800\": \"#693722\",\n        \"900\": \"#562f21\",\n        \"950\": \"#321b14\"\n      }\n    },\n    \"emerald\": {\n      \"label\": \"Emerald\",\n      \"ramp\": {\n        \"50\": \"#eef9f3\",\n        \"100\": \"#d6f1e2\",\n        \"200\": \"#afe3c9\",\n        \"300\": \"#78ceaa\",\n        \"400\": \"#40ab80\",\n        \"500\": \"#17845c\",\n        \"600\": \"#126e4d\",\n        \"700\": \"#10583f\",\n        \"800\": \"#124734\",\n        \"900\": \"#143b2e\",\n        \"950\": \"#09231b\"\n      }\n    },\n    \"teal\": {\n      \"label\": \"Teal\",\n      \"ramp\": {\n        \"50\": \"#edf9f8\",\n        \"100\": \"#d2f1ed\",\n        \"200\": \"#a7e1dc\",\n        \"300\": \"#6bcac5\",\n        \"400\": \"#30a7a5\",\n        \"500\": \"#087f83\",\n        \"600\": \"#086a70\",\n        \"700\": \"#0b545b\",\n        \"800\": \"#10464c\",\n        \"900\": \"#123b40\",\n        \"950\": \"#072327\"\n      }\n    },\n    \"cyan\": {\n      \"label\": \"Cyan\",\n      \"ramp\": {\n        \"50\": \"#eef9fd\",\n        \"100\": \"#d9eff8\",\n        \"200\": \"#b4def0\",\n        \"300\": \"#80c5e3\",\n        \"400\": \"#40a0c8\",\n        \"500\": \"#087ba6\",\n        \"600\": \"#08668e\",\n        \"700\": \"#0c5375\",\n        \"800\": \"#12445f\",\n        \"900\": \"#15394d\",\n        \"950\": \"#092130\"\n      }\n    },\n    \"indigo\": {\n      \"label\": \"Indigo\",\n      \"ramp\": {\n        \"50\": \"#f1f3ff\",\n        \"100\": \"#e4e8fc\",\n        \"200\": \"#cbd3f8\",\n        \"300\": \"#a6b1ee\",\n        \"400\": \"#7e8ae4\",\n        \"500\": \"#5866d7\",\n        \"600\": \"#4753bd\",\n        \"700\": \"#3c449b\",\n        \"800\": \"#343c7e\",\n        \"900\": \"#2d3365\",\n        \"950\": \"#191d3c\"\n      }\n    },\n    \"rose\": {\n      \"label\": \"Rose\",\n      \"ramp\": {\n        \"50\": \"#fff1f5\",\n        \"100\": \"#fce0ea\",\n        \"200\": \"#f8bfd5\",\n        \"300\": \"#ec93b5\",\n        \"400\": \"#dd6c98\",\n        \"500\": \"#c44875\",\n        \"600\": \"#a5355f\",\n        \"700\": \"#882c4e\",\n        \"800\": \"#702842\",\n        \"900\": \"#5d2539\",\n        \"950\": \"#351421\"\n      }\n    },\n    \"amber\": {\n      \"label\": \"Amber\",\n      \"ramp\": {\n        \"50\": \"#fff8e8\",\n        \"100\": \"#fdf0ca\",\n        \"200\": \"#f8df96\",\n        \"300\": \"#ecc765\",\n        \"400\": \"#d3a237\",\n        \"500\": \"#a16a0c\",\n        \"600\": \"#88540b\",\n        \"700\": \"#70430e\",\n        \"800\": \"#5c3812\",\n        \"900\": \"#4c3014\",\n        \"950\": \"#2c1a08\"\n      }\n    },\n    \"slate\": {\n      \"label\": \"Slate\",\n      \"ramp\": {\n        \"50\": \"#f3f5f8\",\n        \"100\": \"#e6ebf1\",\n        \"200\": \"#ced7e3\",\n        \"300\": \"#adbcd0\",\n        \"400\": \"#8598b2\",\n        \"500\": \"#5f6e85\",\n        \"600\": \"#4e5c72\",\n        \"700\": \"#404c60\",\n        \"800\": \"#354051\",\n        \"900\": \"#2e3745\",\n        \"950\": \"#1a202c\"\n      }\n    }\n  }\n}\n",
+      "sha256": "a72c2f3253445d3d77bea22184ac8ccdc5e18170eb3b1fbb3816731e0dbaa220",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-appearance.ts",
+      "content": "'use client';\n\nimport { useEffect, useState } from 'react';\nimport { transitionTheme, type ThemeChangeEvent } from '@/utils/theme-transition';\nimport { isAccent, type Accent } from '@/config/appearance';\n\nexport type Theme = 'light' | 'dark';\nexport type { Accent } from '@/config/appearance';\n\nexport function useAppearance() {\n  const [theme, setThemeState] = useState<Theme>('light');\n  const [accent, setAccentState] = useState<Accent>('blue');\n\n  useEffect(() => {\n    function syncAppearance() {\n      setThemeState(document.documentElement.classList.contains('dark') ? 'dark' : 'light');\n      const current = document.documentElement.dataset.accent;\n      setAccentState(isAccent(current) ? current : 'blue');\n    }\n    syncAppearance();\n    const observer = new MutationObserver(syncAppearance);\n    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-accent'] });\n    return () => observer.disconnect();\n  }, []);\n\n  function setTheme(next: Theme, event?: ThemeChangeEvent) {\n    if (document.documentElement.classList.contains('dark') === (next === 'dark')) return;\n    void transitionTheme(() => {\n      document.documentElement.classList.toggle('dark', next === 'dark');\n      try { window.localStorage.setItem('appui:theme', next); } catch { /* Appearance also works without storage. */ }\n      setThemeState(next);\n    }, event);\n  }\n\n  function setAccent(next: Accent) {\n    if (next === 'blue') delete document.documentElement.dataset.accent;\n    else document.documentElement.dataset.accent = next;\n    try { window.localStorage.setItem('appui:accent', next); } catch { /* Appearance also works without storage. */ }\n    setAccentState(next);\n  }\n\n  return { theme, accent, setTheme, setAccent };\n}\n",
+      "sha256": "87265c31cac506e25933cfaa986acacfc39b66da5acab121f0927b7343d79d7b",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/theme-transition",
+          "target": "utils/theme-transition.ts",
+          "start": 116,
+          "end": 140
+        },
+        {
+          "kind": "module",
+          "value": "@/config/appearance",
+          "target": "config/appearance.ts",
+          "start": 182,
+          "end": 201
+        },
+        {
+          "kind": "module",
+          "value": "@/config/appearance",
+          "target": "config/appearance.ts",
+          "start": 272,
+          "end": 291
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/theme-transition.ts",
+      "content": "'use client';\n\nimport type { MouseEvent } from 'react';\nimport { flushSync } from 'react-dom';\n\nexport type ThemeChangeEvent = Pick<MouseEvent<HTMLElement>, 'clientX' | 'clientY' | 'currentTarget'>;\nlet transitioning = false;\n\n/** Reveal the new appearance from the pointer, or the control center for keyboards. */\nexport async function transitionTheme(update: () => void, event?: ThemeChangeEvent) {\n  if (transitioning) return;\n  if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {\n    update();\n    return;\n  }\n\n  const bounds = event?.currentTarget.getBoundingClientRect();\n  const pointer = event && (event.clientX !== 0 || event.clientY !== 0);\n  const x = Math.max(0, Math.min(window.innerWidth, pointer ? event.clientX : bounds ? bounds.left + bounds.width / 2 : window.innerWidth / 2));\n  const y = Math.max(0, Math.min(window.innerHeight, pointer ? event.clientY : bounds ? bounds.top + bounds.height / 2 : window.innerHeight / 2));\n  const diameter = 2.5 * Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));\n  const root = document.documentElement;\n  const mask = '<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><filter id=\"soft\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\"><feGaussianBlur stdDeviation=\"2\"/></filter></defs><circle cx=\"50\" cy=\"50\" r=\"42\" fill=\"white\" filter=\"url(#soft)\"/></svg>';\n  const properties = {\n    '--theme-reveal-x': `${x}px`,\n    '--theme-reveal-y': `${y}px`,\n    '--theme-reveal-left': `${x - diameter / 2}px`,\n    '--theme-reveal-top': `${y - diameter / 2}px`,\n    '--theme-reveal-size': `${diameter}px`,\n    '--theme-reveal-mask': `url(\"data:image/svg+xml,${encodeURIComponent(mask)}\")`,\n  };\n  transitioning = true;\n  Object.entries(properties).forEach(([key, value]) => root.style.setProperty(key, value));\n  root.classList.add('ui-theme-transitioning');\n  let committed = false;\n  const commit = () => {\n    if (committed) return;\n    committed = true;\n    flushSync(update);\n  };\n  try {\n    const transition = document.startViewTransition(commit);\n    await transition.ready;\n    await transition.finished;\n  } catch {\n    // A hidden tab or interrupted snapshot still needs the requested appearance.\n    commit();\n  } finally {\n    root.classList.remove('ui-theme-transitioning');\n    Object.keys(properties).forEach(key => root.style.removeProperty(key));\n    transitioning = false;\n  }\n}\n",
+      "sha256": "83d891fad2ea2227d22288f8d70c0ca0f66cea6d852df757239efc082a6c5b8e",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-announcement",
+      "ui-announcement__action",
+      "ui-announcement__copy",
+      "ui-announcement__description",
+      "ui-announcement__icon",
+      "ui-announcement__title",
+      "ui-announcement__top",
+      "ui-app-sidebar",
+      "ui-app-sidebar__announcement",
+      "ui-app-sidebar__badge",
+      "ui-app-sidebar__bottom",
+      "ui-app-sidebar__collapse",
+      "ui-app-sidebar__empty",
+      "ui-app-sidebar__head",
+      "ui-app-sidebar__identity",
+      "ui-app-sidebar__nav",
+      "ui-app-sidebar__nav--secondary",
+      "ui-app-sidebar__nav-icon",
+      "ui-app-sidebar__nav-item",
+      "ui-app-sidebar__nav-label",
+      "ui-app-sidebar__search",
+      "ui-app-sidebar__search-rail",
+      "ui-app-sidebar__search-wrap",
+      "ui-app-sidebar__top",
+      "ui-app-sidebar__user",
+      "ui-avatar",
+      "ui-avatar__initials",
+      "ui-badge",
+      "ui-button",
+      "ui-button--icon-only",
+      "ui-button__busy-spinner",
+      "ui-button__label",
+      "ui-button__leading-icon",
+      "ui-button__leading-slot",
+      "ui-close-button",
+      "ui-kbd",
+      "ui-kbd-group",
+      "ui-spinner",
+      "ui-theme-switch",
+      "ui-theme-transitioning"
+    ],
+    "prefixes": []
+  }
+}

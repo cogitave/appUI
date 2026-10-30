@@ -1,0 +1,62 @@
+{
+  "name": "kbd",
+  "title": "Kbd",
+  "group": "Base",
+  "type": "component",
+  "description": "Compact keyboard hints and shortcut groups in soft or outlined surfaces. The visual hint does not register a shortcut by itself.",
+  "sections": [
+    "Preview",
+    "Appearances and sizes",
+    "Shortcut groups",
+    "With controls"
+  ],
+  "example": "<KbdGroup aria-label=\"Command K\">\n  <Kbd variant=\"outline\">⌘</Kbd>\n  <Kbd variant=\"outline\">K</Kbd>\n</KbdGroup>",
+  "entryFiles": [
+    "components/base/kbd/kbd.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/kbd/kbd.tsx",
+      "names": [
+        "Kbd",
+        "KbdGroup",
+        "KbdProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/kbd/kbd.tsx",
+      "content": "import type { HTMLAttributes } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type KbdProps = HTMLAttributes<HTMLElement> & {\n  variant?: 'soft' | 'outline';\n  size?: 'small' | 'medium';\n};\n\nexport function Kbd({ className, variant = 'soft', size = 'small', ...props }: KbdProps) {\n  return <kbd className={cx('ui-kbd', className)} data-variant={variant} data-size={size} {...props} />;\n}\n\n/** Supply an aria-label when the visible keys use platform-specific symbols. */\nexport function KbdGroup({ className, ...props }: HTMLAttributes<HTMLElement>) {\n  return <kbd className={cx('ui-kbd-group', className)} {...props}/>;\n}\n",
+      "sha256": "f81d5164c13b5403e002cc9e03fc8eeffe90461bf389b42a28af6114af1ca3cd",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 65,
+          "end": 75
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-kbd",
+      "ui-kbd-group"
+    ],
+    "prefixes": []
+  }
+}

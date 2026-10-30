@@ -1,0 +1,116 @@
+{
+  "name": "foundations",
+  "files": [
+    {
+      "path": "components/base/theme-switch/theme-switch.tsx",
+      "content": "'use client';\n\nimport { RiMoonLine, RiSunLine } from '@remixicon/react';\nimport { useAppearance } from '@/hooks/use-appearance';\n\nexport function ThemeSwitch({ className = '' }: { className?: string }) {\n  const { theme, setTheme } = useAppearance();\n  return <div className={`ui-theme-switch ${className}`} role=\"group\" aria-label=\"Appearance\">\n    <button type=\"button\" aria-label=\"Light appearance\" aria-pressed={theme === 'light'} onClick={event => setTheme('light', event)}><RiSunLine size={17}/></button>\n    <button type=\"button\" aria-label=\"Dark appearance\" aria-pressed={theme === 'dark'} onClick={event => setTheme('dark', event)}><RiMoonLine size={17}/></button>\n  </div>;\n}\n",
+      "sha256": "01d93b870a5dd405334de5dc954b05e422ef6d70db32a316aebc79073efc2acf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-appearance",
+          "target": "hooks/use-appearance.ts",
+          "start": 104,
+          "end": 126
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/appearance-initializer.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect } from 'react';\nimport { isAccent } from '@/config/appearance';\n\nexport function AppearanceInitializer() {\n  useLayoutEffect(() => {\n    function applyStoredAppearance() {\n      try {\n        document.documentElement.classList.toggle('dark', localStorage.getItem('appui:theme') === 'dark');\n        const accent = localStorage.getItem('appui:accent');\n        if (isAccent(accent) && accent !== 'blue') document.documentElement.dataset.accent = accent;\n        else delete document.documentElement.dataset.accent;\n      } catch { /* Storage may be unavailable in private browsing. */ }\n    }\n    function onStorage(event: StorageEvent) {\n      if (event.key === null || event.key === 'appui:theme' || event.key === 'appui:accent') applyStoredAppearance();\n    }\n    applyStoredAppearance();\n    window.addEventListener('storage', onStorage);\n    return () => window.removeEventListener('storage', onStorage);\n  }, []);\n\n  return null;\n}\n",
+      "sha256": "f6eb31bf258ab2a4eae8a243bae87db3b481f28d572ff721057665402341fa7c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/config/appearance",
+          "target": "config/appearance.ts",
+          "start": 82,
+          "end": 101
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "config/appearance.ts",
+      "content": "import colors from './colors.json';\n\nexport type Accent = keyof typeof colors.accents;\nexport const accentNames = Object.keys(colors.accents) as Accent[];\nexport const accentPalettes = colors.accents;\nexport const accents = accentNames.map(id => ({ id, label: colors.accents[id].label, swatch: colors.accents[id].ramp['500'] }));\n\nexport function isAccent(value: string | null | undefined): value is Accent {\n  return value != null && Object.hasOwn(colors.accents, value);\n}\n",
+      "sha256": "28daeb91c11f8634794f65897d6ef0c1d1759884f49dab1e85fdd5b4516520d1",
+      "references": [
+        {
+          "kind": "module",
+          "value": "./colors.json",
+          "target": "config/colors.json",
+          "start": 20,
+          "end": 33
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "config/colors.json",
+      "content": "{\n  \"accents\": {\n    \"blue\": {\n      \"label\": \"Sapphire\",\n      \"ramp\": {\n        \"50\": \"#edf4ff\",\n        \"100\": \"#dceaff\",\n        \"200\": \"#b9d5ff\",\n        \"300\": \"#88b8ff\",\n        \"400\": \"#3392ff\",\n        \"500\": \"lab(54.1736% 13.3369 -74.6839)\",\n        \"600\": \"lab(44.0605% 29.0279 -86.0352)\",\n        \"700\": \"lab(36.9089% 35.0961 -85.6872)\",\n        \"800\": \"#16448d\",\n        \"900\": \"#173a6d\",\n        \"950\": \"#112747\"\n      }\n    },\n    \"violet\": {\n      \"label\": \"Violet\",\n      \"ramp\": {\n        \"50\": \"#f6f2ff\",\n        \"100\": \"#ece4ff\",\n        \"200\": \"#d8c9ff\",\n        \"300\": \"#bda4fb\",\n        \"400\": \"#9b7aee\",\n        \"500\": \"#7a59d9\",\n        \"600\": \"#6947c3\",\n        \"700\": \"#5735a6\",\n        \"800\": \"#462e80\",\n        \"900\": \"#392967\",\n        \"950\": \"#251b43\"\n      }\n    },\n    \"copper\": {\n      \"label\": \"Copper\",\n      \"ramp\": {\n        \"50\": \"#fff6ee\",\n        \"100\": \"#fce9d8\",\n        \"200\": \"#f8cfaa\",\n        \"300\": \"#edae76\",\n        \"400\": \"#da8750\",\n        \"500\": \"#ba683b\",\n        \"600\": \"#a2512e\",\n        \"700\": \"#824025\",\n        \"800\": \"#693722\",\n        \"900\": \"#562f21\",\n        \"950\": \"#321b14\"\n      }\n    },\n    \"emerald\": {\n      \"label\": \"Emerald\",\n      \"ramp\": {\n        \"50\": \"#eef9f3\",\n        \"100\": \"#d6f1e2\",\n        \"200\": \"#afe3c9\",\n        \"300\": \"#78ceaa\",\n        \"400\": \"#40ab80\",\n        \"500\": \"#17845c\",\n        \"600\": \"#126e4d\",\n        \"700\": \"#10583f\",\n        \"800\": \"#124734\",\n        \"900\": \"#143b2e\",\n        \"950\": \"#09231b\"\n      }\n    },\n    \"teal\": {\n      \"label\": \"Teal\",\n      \"ramp\": {\n        \"50\": \"#edf9f8\",\n        \"100\": \"#d2f1ed\",\n        \"200\": \"#a7e1dc\",\n        \"300\": \"#6bcac5\",\n        \"400\": \"#30a7a5\",\n        \"500\": \"#087f83\",\n        \"600\": \"#086a70\",\n        \"700\": \"#0b545b\",\n        \"800\": \"#10464c\",\n        \"900\": \"#123b40\",\n        \"950\": \"#072327\"\n      }\n    },\n    \"cyan\": {\n      \"label\": \"Cyan\",\n      \"ramp\": {\n        \"50\": \"#eef9fd\",\n        \"100\": \"#d9eff8\",\n        \"200\": \"#b4def0\",\n        \"300\": \"#80c5e3\",\n        \"400\": \"#40a0c8\",\n        \"500\": \"#087ba6\",\n        \"600\": \"#08668e\",\n        \"700\": \"#0c5375\",\n        \"800\": \"#12445f\",\n        \"900\": \"#15394d\",\n        \"950\": \"#092130\"\n      }\n    },\n    \"indigo\": {\n      \"label\": \"Indigo\",\n      \"ramp\": {\n        \"50\": \"#f1f3ff\",\n        \"100\": \"#e4e8fc\",\n        \"200\": \"#cbd3f8\",\n        \"300\": \"#a6b1ee\",\n        \"400\": \"#7e8ae4\",\n        \"500\": \"#5866d7\",\n        \"600\": \"#4753bd\",\n        \"700\": \"#3c449b\",\n        \"800\": \"#343c7e\",\n        \"900\": \"#2d3365\",\n        \"950\": \"#191d3c\"\n      }\n    },\n    \"rose\": {\n      \"label\": \"Rose\",\n      \"ramp\": {\n        \"50\": \"#fff1f5\",\n        \"100\": \"#fce0ea\",\n        \"200\": \"#f8bfd5\",\n        \"300\": \"#ec93b5\",\n        \"400\": \"#dd6c98\",\n        \"500\": \"#c44875\",\n        \"600\": \"#a5355f\",\n        \"700\": \"#882c4e\",\n        \"800\": \"#702842\",\n        \"900\": \"#5d2539\",\n        \"950\": \"#351421\"\n      }\n    },\n    \"amber\": {\n      \"label\": \"Amber\",\n      \"ramp\": {\n        \"50\": \"#fff8e8\",\n        \"100\": \"#fdf0ca\",\n        \"200\": \"#f8df96\",\n        \"300\": \"#ecc765\",\n        \"400\": \"#d3a237\",\n        \"500\": \"#a16a0c\",\n        \"600\": \"#88540b\",\n        \"700\": \"#70430e\",\n        \"800\": \"#5c3812\",\n        \"900\": \"#4c3014\",\n        \"950\": \"#2c1a08\"\n      }\n    },\n    \"slate\": {\n      \"label\": \"Slate\",\n      \"ramp\": {\n        \"50\": \"#f3f5f8\",\n        \"100\": \"#e6ebf1\",\n        \"200\": \"#ced7e3\",\n        \"300\": \"#adbcd0\",\n        \"400\": \"#8598b2\",\n        \"500\": \"#5f6e85\",\n        \"600\": \"#4e5c72\",\n        \"700\": \"#404c60\",\n        \"800\": \"#354051\",\n        \"900\": \"#2e3745\",\n        \"950\": \"#1a202c\"\n      }\n    }\n  }\n}\n",
+      "sha256": "a72c2f3253445d3d77bea22184ac8ccdc5e18170eb3b1fbb3816731e0dbaa220",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-appearance.ts",
+      "content": "'use client';\n\nimport { useEffect, useState } from 'react';\nimport { transitionTheme, type ThemeChangeEvent } from '@/utils/theme-transition';\nimport { isAccent, type Accent } from '@/config/appearance';\n\nexport type Theme = 'light' | 'dark';\nexport type { Accent } from '@/config/appearance';\n\nexport function useAppearance() {\n  const [theme, setThemeState] = useState<Theme>('light');\n  const [accent, setAccentState] = useState<Accent>('blue');\n\n  useEffect(() => {\n    function syncAppearance() {\n      setThemeState(document.documentElement.classList.contains('dark') ? 'dark' : 'light');\n      const current = document.documentElement.dataset.accent;\n      setAccentState(isAccent(current) ? current : 'blue');\n    }\n    syncAppearance();\n    const observer = new MutationObserver(syncAppearance);\n    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-accent'] });\n    return () => observer.disconnect();\n  }, []);\n\n  function setTheme(next: Theme, event?: ThemeChangeEvent) {\n    if (document.documentElement.classList.contains('dark') === (next === 'dark')) return;\n    void transitionTheme(() => {\n      document.documentElement.classList.toggle('dark', next === 'dark');\n      try { window.localStorage.setItem('appui:theme', next); } catch { /* Appearance also works without storage. */ }\n      setThemeState(next);\n    }, event);\n  }\n\n  function setAccent(next: Accent) {\n    if (next === 'blue') delete document.documentElement.dataset.accent;\n    else document.documentElement.dataset.accent = next;\n    try { window.localStorage.setItem('appui:accent', next); } catch { /* Appearance also works without storage. */ }\n    setAccentState(next);\n  }\n\n  return { theme, accent, setTheme, setAccent };\n}\n",
+      "sha256": "87265c31cac506e25933cfaa986acacfc39b66da5acab121f0927b7343d79d7b",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/theme-transition",
+          "target": "utils/theme-transition.ts",
+          "start": 116,
+          "end": 140
+        },
+        {
+          "kind": "module",
+          "value": "@/config/appearance",
+          "target": "config/appearance.ts",
+          "start": 182,
+          "end": 201
+        },
+        {
+          "kind": "module",
+          "value": "@/config/appearance",
+          "target": "config/appearance.ts",
+          "start": 272,
+          "end": 291
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/theme-transition.ts",
+      "content": "'use client';\n\nimport type { MouseEvent } from 'react';\nimport { flushSync } from 'react-dom';\n\nexport type ThemeChangeEvent = Pick<MouseEvent<HTMLElement>, 'clientX' | 'clientY' | 'currentTarget'>;\nlet transitioning = false;\n\n/** Reveal the new appearance from the pointer, or the control center for keyboards. */\nexport async function transitionTheme(update: () => void, event?: ThemeChangeEvent) {\n  if (transitioning) return;\n  if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {\n    update();\n    return;\n  }\n\n  const bounds = event?.currentTarget.getBoundingClientRect();\n  const pointer = event && (event.clientX !== 0 || event.clientY !== 0);\n  const x = Math.max(0, Math.min(window.innerWidth, pointer ? event.clientX : bounds ? bounds.left + bounds.width / 2 : window.innerWidth / 2));\n  const y = Math.max(0, Math.min(window.innerHeight, pointer ? event.clientY : bounds ? bounds.top + bounds.height / 2 : window.innerHeight / 2));\n  const diameter = 2.5 * Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));\n  const root = document.documentElement;\n  const mask = '<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><filter id=\"soft\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\"><feGaussianBlur stdDeviation=\"2\"/></filter></defs><circle cx=\"50\" cy=\"50\" r=\"42\" fill=\"white\" filter=\"url(#soft)\"/></svg>';\n  const properties = {\n    '--theme-reveal-x': `${x}px`,\n    '--theme-reveal-y': `${y}px`,\n    '--theme-reveal-left': `${x - diameter / 2}px`,\n    '--theme-reveal-top': `${y - diameter / 2}px`,\n    '--theme-reveal-size': `${diameter}px`,\n    '--theme-reveal-mask': `url(\"data:image/svg+xml,${encodeURIComponent(mask)}\")`,\n  };\n  transitioning = true;\n  Object.entries(properties).forEach(([key, value]) => root.style.setProperty(key, value));\n  root.classList.add('ui-theme-transitioning');\n  let committed = false;\n  const commit = () => {\n    if (committed) return;\n    committed = true;\n    flushSync(update);\n  };\n  try {\n    const transition = document.startViewTransition(commit);\n    await transition.ready;\n    await transition.finished;\n  } catch {\n    // A hidden tab or interrupted snapshot still needs the requested appearance.\n    commit();\n  } finally {\n    root.classList.remove('ui-theme-transitioning');\n    Object.keys(properties).forEach(key => root.style.removeProperty(key));\n    transitioning = false;\n  }\n}\n",
+      "sha256": "83d891fad2ea2227d22288f8d70c0ca0f66cea6d852df757239efc082a6c5b8e",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.0.0",
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-theme-switch",
+      "ui-theme-transitioning"
+    ],
+    "prefixes": []
+  }
+}

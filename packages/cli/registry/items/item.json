@@ -1,0 +1,131 @@
+{
+  "name": "item",
+  "title": "Item",
+  "group": "Base",
+  "type": "component",
+  "description": "Content rows composed from Card, with media, text and ordinary actions. Three surfaces, three sizes, native list groups and complete row links share the same typography and responsive layout.",
+  "sections": [
+    "Preview",
+    "Surfaces",
+    "Sizes and groups",
+    "Media",
+    "Headers and footers",
+    "Links",
+    "Long content",
+    "Right to left"
+  ],
+  "example": "<Item variant=\"outline\">\n  <ItemMedia variant=\"avatar\"><Avatar initials=\"MC\" /></ItemMedia>\n  <ItemContent>\n    <ItemTitle>Maya Chen</ItemTitle>\n    <ItemDescription>Design lead</ItemDescription>\n  </ItemContent>\n  <ItemActions><Button size=\"small\">View profile</Button></ItemActions>\n</Item>",
+  "entryFiles": [
+    "components/base/item/item.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/item/item.tsx",
+      "names": [
+        "Item",
+        "ItemActions",
+        "ItemContent",
+        "ItemDescription",
+        "ItemFooter",
+        "ItemGroup",
+        "ItemGroupProps",
+        "ItemHeader",
+        "ItemLink",
+        "ItemLinkProps",
+        "ItemMedia",
+        "ItemProps",
+        "ItemSize",
+        "ItemTitle",
+        "ItemVariant"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/card/card.tsx",
+      "content": "import type { HTMLAttributes, ReactNode, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CardProps = HTMLAttributes<HTMLDivElement> & { ref?: Ref<HTMLDivElement>; variant?: 'bordered' | 'raised' | 'soft'; padding?: 'none' | 'small' | 'medium' | 'large' };\nexport function Card({ variant = 'bordered', padding = 'medium', className, ...props }: CardProps) {\n  return <div {...props} className={cx('ui-card', className)} data-variant={variant} data-padding={padding}/>;\n}\nexport function CardHeader({ title, description, actions, leading }: { title: string; description?: string; actions?: ReactNode; leading?: ReactNode }) {\n  return <header className=\"ui-card__header\">{leading && <span className=\"ui-card__leading\" aria-hidden>{leading}</span>}<div><h3>{title}</h3>{description && <p>{description}</p>}</div>{actions && <div className=\"ui-card__actions\">{actions}</div>}</header>;\n}\nexport function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) { return <div {...props} className={cx('ui-card__footer', className)}/>; }\n",
+      "sha256": "742356565d970d6e79db31da7e8fc650e7f9044a9a11c50b9335dc40a449e1b8",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 81,
+          "end": 91
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/item/item.tsx",
+      "content": "'use client';\n\nimport { createContext, createElement, useContext, useId, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react';\nimport { Link, type LinkProps } from 'react-aria-components';\nimport { RiArrowRightSLine } from '@remixicon/react';\nimport { Card, CardFooter, type CardProps } from '@/components/base/card/card';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type ItemSize = 'small' | 'medium' | 'large';\nexport type ItemVariant = 'plain' | 'outline' | 'soft';\ntype Appearance = { size?: ItemSize; variant?: ItemVariant; align?: 'center' | 'start' };\nconst ItemGroupContext = createContext<{size:ItemSize}|null>(null);\n\nfunction ItemSurface({size='medium',variant='outline',align='center',className,...props}:Omit<CardProps,'variant'|'padding'> & Appearance) {\n  return <Card {...props} padding=\"none\" variant={variant==='soft'?'soft':'bordered'} data-item-variant={variant} data-size={size} data-align={align} className={cx('ui-item',className)}/>;\n}\n\nfunction ItemRow({children}:{children:ReactNode}) {\n  const group=useContext(ItemGroupContext);\n  return group ? <li className=\"ui-item-group__row\">{children}</li> : children;\n}\n\nexport type ItemProps = Omit<CardProps,'variant'|'padding'> & Appearance;\n/** A content row. Keep its actions as their own buttons, links or controls. */\nexport function Item({size,...props}:ItemProps) {\n  const group=useContext(ItemGroupContext);\n  return <ItemRow><ItemSurface {...props} size={size ?? group?.size}/></ItemRow>;\n}\n\nexport type ItemGroupProps = HTMLAttributes<HTMLUListElement> & {size?:ItemSize;spacing?:'separated'|'joined'};\n/** Related rows retain native list semantics and ordinary Tab navigation. */\nexport function ItemGroup({size='medium',spacing='separated',className,...props}:ItemGroupProps) {\n  return <ItemGroupContext.Provider value={{size}}><ul {...props} role=\"list\" data-spacing={spacing} className={cx('ui-item-group',className)}/></ItemGroupContext.Provider>;\n}\n\nexport function ItemMedia({variant='icon',className,...props}:HTMLAttributes<HTMLDivElement> & {variant?:'icon'|'avatar'|'image'}) {\n  return <div aria-hidden={variant==='icon'||undefined} {...props} data-variant={variant} className={cx('ui-item-media',className)}/>;\n}\nexport function ItemContent({className,...props}:HTMLAttributes<HTMLDivElement>) {\n  return <div {...props} className={cx('ui-item-content',className)}/>;\n}\nexport function ItemTitle({as='div',className,...props}:HTMLAttributes<HTMLDivElement> & {as?:'div'|'h2'|'h3'|'h4'}) {\n  return createElement(as,{...props,className:cx('ui-item-title',className)});\n}\nexport function ItemDescription({lines='none',className,...props}:HTMLAttributes<HTMLParagraphElement> & {lines?:1|2|3|'none'}) {\n  return <p {...props} data-lines={lines} className={cx('ui-item-description',className)}/>;\n}\nexport function ItemActions({className,...props}:HTMLAttributes<HTMLDivElement>) {\n  return <div {...props} className={cx('ui-item-actions',className)}/>;\n}\nexport function ItemHeader({className,...props}:HTMLAttributes<HTMLDivElement>) {\n  return <div {...props} className={cx('ui-item-header',className)}/>;\n}\nexport function ItemFooter({className,...props}:HTMLAttributes<HTMLDivElement>) {\n  return <CardFooter {...props} className={cx('ui-item-footer',className)}/>;\n}\n\nexport type ItemLinkProps = Omit<LinkProps,'children'|'className'|'onPress'|'title'> & Appearance & {\n  href:string;\n  title:string;\n  description?:string;\n  media?:ReactNode;\n  mediaVariant?:'icon'|'avatar'|'image';\n  trailingIcon?:IconComponent;\n  onNavigate?:(event:MouseEvent<HTMLElement>)=>void;\n  className?:string;\n};\n/** One native link for the whole row; separate actions belong in Item. */\nexport function ItemLink({title,description,media,mediaVariant='icon',trailingIcon:TrailingIcon=RiArrowRightSLine,size,variant='outline',align='center',onNavigate,className,render,...props}:ItemLinkProps) {\n  const group=useContext(ItemGroupContext),id=useId();\n  const descriptionId=description?`${id}-description`:undefined;\n  const describedBy=[props['aria-describedby'],descriptionId].filter(Boolean).join(' ')||undefined;\n  return <ItemRow><Link {...props} aria-labelledby={props['aria-label']?undefined:props['aria-labelledby']??`${id}-title`} aria-describedby={describedBy} className={cx('ui-item-link',className)} render={(domProps,renderProps)=>{\n    const linkProps={...domProps,onClick:(event:MouseEvent<HTMLAnchorElement>)=>{domProps.onClick?.(event);if(!event.defaultPrevented&&!props.isDisabled)onNavigate?.(event);}};\n    if(props.isDisabled)return createElement('span',{...linkProps,href:undefined,target:undefined,rel:undefined,download:undefined});\n    return render?render(linkProps,renderProps):createElement('a',linkProps);\n  }}>\n    <ItemSurface size={size??group?.size} variant={variant} align={align}>\n      {media&&<ItemMedia variant={mediaVariant}>{media}</ItemMedia>}\n      <ItemContent><ItemTitle id={`${id}-title`}>{title}</ItemTitle>{description&&<ItemDescription id={descriptionId}>{description}</ItemDescription>}</ItemContent>\n      <ItemActions aria-hidden><TrailingIcon className=\"ui-item-link__arrow\" data-directional={TrailingIcon===RiArrowRightSLine||undefined}/></ItemActions>\n    </ItemSurface>\n  </Link></ItemRow>;\n}\n",
+      "sha256": "8b2bf6aacd495a20072da26ebf0172eddc86359e3d8e1dc6b947421f4d6899b1",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/card/card",
+          "target": "components/base/card/card.tsx",
+          "start": 308,
+          "end": 335
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 374,
+          "end": 409
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 432,
+          "end": 442
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-card",
+      "ui-card__actions",
+      "ui-card__footer",
+      "ui-card__header",
+      "ui-card__leading",
+      "ui-item",
+      "ui-item-actions",
+      "ui-item-content",
+      "ui-item-description",
+      "ui-item-footer",
+      "ui-item-group",
+      "ui-item-group__row",
+      "ui-item-header",
+      "ui-item-link",
+      "ui-item-link__arrow",
+      "ui-item-media",
+      "ui-item-title"
+    ],
+    "prefixes": []
+  }
+}

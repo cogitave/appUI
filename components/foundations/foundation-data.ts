@@ -1,0 +1,42 @@
+export { accents } from '@/config/appearance';
+
+export const semanticColors = [
+  { group: 'Surfaces', label: 'Canvas', token: '--surface-canvas', note: 'App background' },
+  { group: 'Surfaces', label: 'Base', token: '--surface-base', note: 'Content surface' },
+  { group: 'Surfaces', label: 'Raised', token: '--surface-raised', note: 'Elevated surface' },
+  { group: 'Surfaces', label: 'Muted', token: '--surface-muted', note: 'Quiet emphasis' },
+  { group: 'Text', label: 'Strong', token: '--text-strong', note: 'Headings and primary labels' },
+  { group: 'Text', label: 'Main', token: '--text-main', note: 'Body copy' },
+  { group: 'Text', label: 'Muted', token: '--text-muted', note: 'Supporting copy' },
+  { group: 'Text', label: 'Subtle', token: '--text-subtle', note: 'Metadata and hints' },
+  { group: 'Borders', label: 'Subtle', token: '--border-subtle', note: 'Soft dividers' },
+  { group: 'Borders', label: 'Control', token: '--border-control', note: 'Interactive edges' },
+  { group: 'Borders', label: 'Strong', token: '--border-strong', note: 'Hover emphasis' },
+  { group: 'Actions', label: 'Accent', token: '--accent-strong', note: 'Primary action' },
+  { group: 'Actions', label: 'Accent soft', token: '--accent-soft', note: 'Quiet selection' },
+  { group: 'Actions', label: 'Danger', token: '--danger-strong', note: 'Destructive action' },
+  { group: 'Actions', label: 'Success', token: '--success-strong', note: 'Positive state' },
+  { group: 'Feedback', label: 'Success surface', token: '--success-soft', note: 'Positive message surface' },
+  { group: 'Feedback', label: 'Success text', token: '--success-text', note: 'Readable positive labels' },
+  { group: 'Feedback', label: 'Warning surface', token: '--warning-soft', note: 'Attention message surface' },
+  { group: 'Feedback', label: 'Warning text', token: '--warning-text', note: 'Readable attention labels' },
+  { group: 'Feedback', label: 'Information surface', token: '--info-soft', note: 'Informational message surface' },
+  { group: 'Feedback', label: 'Information text', token: '--info-text', note: 'Readable information labels' },
+  { group: 'Feedback', label: 'Error text', token: '--danger-text', note: 'Readable error labels' },
+] as const;
+
+export const typeSpecimens = [
+  { name: 'Large title', metric: '64 / 80', className: 'text-large-title-regular', sample: 'Make space for ideas' },
+  { name: 'Display 1', metric: '56 / 72', className: 'text-display-1-medium', sample: 'Design with intent' },
+  { name: 'Display 2', metric: '48 / 64', className: 'text-display-2-medium', sample: 'Design with intent' },
+  { name: 'Display 3', metric: '40 / 54', className: 'text-display-3-medium', sample: 'Design with intent' },
+  { name: 'Display 4', metric: '32 / 44', className: 'text-display-4-medium', sample: 'Design with intent' },
+  { name: 'Title 1', metric: '24 / 34', className: 'text-title-1-semibold', sample: 'A clearer way forward' },
+  { name: 'Title 2', metric: '20 / 26', className: 'text-title-2-semibold', sample: 'A clearer way forward' },
+  { name: 'Title 3', metric: '18 / 26', className: 'text-title-3-semibold', sample: 'A clearer way forward' },
+  { name: 'Headline', metric: '16 / 22', className: 'text-headline-semibold', sample: 'A clearer way forward' },
+  { name: 'Body', metric: '14 / 20', className: 'text-body-regular', sample: 'Useful design feels natural from the first interaction.' },
+  { name: 'Body 2', metric: '13 / 18', className: 'text-body-2-regular', sample: 'Useful design feels natural from the first interaction.' },
+  { name: 'Caption 1', metric: '12 / 16', className: 'text-caption-1-medium', sample: 'Details that make the difference' },
+  { name: 'Caption 2', metric: '11 / 15', className: 'text-caption-2-medium', sample: 'Details that make the difference' },
+] as const;

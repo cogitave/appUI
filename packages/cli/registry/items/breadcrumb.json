@@ -1,0 +1,79 @@
+{
+  "name": "breadcrumb",
+  "title": "Breadcrumb",
+  "group": "Base",
+  "type": "component",
+  "description": "A compact path through the interface. Ancestors are interactive, while the current page is announced clearly to assistive technology.",
+  "sections": [
+    "Preview",
+    "With avatars",
+    "Narrow screens"
+  ],
+  "example": "<Breadcrumb>\n  <BreadcrumbItem href=\"/components\">Components</BreadcrumbItem>\n  <BreadcrumbItem href=\"/components/avatar\">People</BreadcrumbItem>\n  <BreadcrumbItem current>Profile</BreadcrumbItem>\n</Breadcrumb>",
+  "entryFiles": [
+    "components/base/breadcrumb/breadcrumb.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/breadcrumb/breadcrumb.tsx",
+      "names": [
+        "Breadcrumb",
+        "BreadcrumbItem",
+        "BreadcrumbItemProps",
+        "BreadcrumbProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/breadcrumb/breadcrumb.tsx",
+      "content": "import { Children, Fragment, isValidElement } from 'react';\nimport type { HTMLAttributes, ReactNode } from 'react';\nimport { RiArrowRightSLine } from '@remixicon/react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type BreadcrumbProps = Omit<HTMLAttributes<HTMLElement>, 'children'> & {\n  children: ReactNode;\n  'aria-label'?: string;\n};\n\nexport function Breadcrumb({ children, className, 'aria-label': ariaLabel = 'Breadcrumb', ...props }: BreadcrumbProps) {\n  const items = Children.toArray(children).filter(isValidElement);\n  return (\n    <nav aria-label={ariaLabel} className={cx('ui-breadcrumb', className)} {...props}>\n      <ol>\n        {items.map((item, index) => (\n          <Fragment key={item.key ?? index}>\n            {index > 0 && <li className=\"ui-breadcrumb__separator\" aria-hidden=\"true\"><RiArrowRightSLine size={14} /></li>}\n            {item}\n          </Fragment>\n        ))}\n      </ol>\n    </nav>\n  );\n}\n\nexport type BreadcrumbItemProps = {\n  children: ReactNode;\n  icon?: IconComponent;\n  href?: string;\n  onClick?: () => void;\n  current?: boolean;\n  className?: string;\n};\n\nexport function BreadcrumbItem({ children, icon: Icon, href, onClick, current = false, className }: BreadcrumbItemProps) {\n  const content = <>{Icon && <Icon className=\"ui-breadcrumb__icon\" aria-hidden />}{children}</>;\n  if (current) return <li className={cx('ui-breadcrumb__item is-current', className)} aria-current=\"page\"><span>{content}</span></li>;\n  if (href) return <li className={cx('ui-breadcrumb__item', className)}><a href={href}>{content}</a></li>;\n  if (onClick) return <li className={cx('ui-breadcrumb__item', className)}><button type=\"button\" onClick={onClick}>{content}</button></li>;\n  return <li className={cx('ui-breadcrumb__item', className)}><span>{content}</span></li>;\n}\n",
+      "sha256": "eeadecd99c8a103f04004faf6bc152fc12d863ec6021ed23bdaa431639209d3e",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 206,
+          "end": 241
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 264,
+          "end": 274
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-breadcrumb",
+      "ui-breadcrumb__icon",
+      "ui-breadcrumb__item",
+      "ui-breadcrumb__separator"
+    ],
+    "prefixes": []
+  }
+}

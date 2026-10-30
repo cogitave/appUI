@@ -1,0 +1,79 @@
+{
+  "name": "social-button",
+  "title": "Social Button",
+  "group": "Base",
+  "type": "component",
+  "description": "Sign-in actions for 24 providers or a custom brand, with three appearances, two sizes, and a navigation mode.",
+  "sections": [
+    "Preview",
+    "Providers",
+    "Appearances and sizes",
+    "Buttons and links"
+  ],
+  "example": "<SocialButton provider=\"google\" appearance=\"brand\" onPress={signIn} />\n<SocialButton provider=\"github\" href=\"/auth/github\" />",
+  "entryFiles": [
+    "components/base/social-button/social-button.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/social-button/social-button.tsx",
+      "names": [
+        "SocialButton",
+        "SocialButtonProps",
+        "SocialMark",
+        "SocialProvider",
+        "socialProviderNames"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/social-button/social-button.tsx",
+      "content": "import type { ReactNode, CSSProperties } from 'react';\nimport { RiAmazonFill, RiAppleFill, RiDiscordFill, RiDropboxFill, RiFacebookFill, RiFigmaFill, RiGithubFill, RiGitlabFill, RiGlobalLine, RiGoogleFill, RiInstagramFill, RiLinkedinFill, RiMicrosoftFill, RiNotionFill, RiRedditFill, RiSlackFill, RiSpotifyFill, RiTelegramFill, RiTiktokFill, RiTwitchFill, RiTwitterXFill, RiWhatsappFill } from '@remixicon/react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nconst providers: Record<string, { label: string; color: string; icon?: IconComponent }> = {\n  google: { label: 'Google', color: '#2678f5', icon: RiGoogleFill },\n  apple: { label: 'Apple', color: '#111318', icon: RiAppleFill },\n  github: { label: 'GitHub', color: '#111318', icon: RiGithubFill },\n  gitlab: { label: 'GitLab', color: '#e96e30', icon: RiGitlabFill },\n  microsoft: { label: 'Microsoft', color: '#4e6f98', icon: RiMicrosoftFill },\n  x: { label: 'X', color: '#111318', icon: RiTwitterXFill },\n  facebook: { label: 'Facebook', color: '#1877f2', icon: RiFacebookFill },\n  linkedin: { label: 'LinkedIn', color: '#0a66c2', icon: RiLinkedinFill },\n  discord: { label: 'Discord', color: '#5865f2', icon: RiDiscordFill },\n  slack: { label: 'Slack', color: '#5b285f', icon: RiSlackFill },\n  figma: { label: 'Figma', color: '#9b4cee', icon: RiFigmaFill },\n  notion: { label: 'Notion', color: '#111318', icon: RiNotionFill },\n  dropbox: { label: 'Dropbox', color: '#0061fe', icon: RiDropboxFill },\n  spotify: { label: 'Spotify', color: '#16883b', icon: RiSpotifyFill },\n  twitch: { label: 'Twitch', color: '#9146ff', icon: RiTwitchFill },\n  reddit: { label: 'Reddit', color: '#ff4500', icon: RiRedditFill },\n  tiktok: { label: 'TikTok', color: '#111318', icon: RiTiktokFill },\n  instagram: { label: 'Instagram', color: '#d62976', icon: RiInstagramFill },\n  telegram: { label: 'Telegram', color: '#229ed9', icon: RiTelegramFill },\n  whatsapp: { label: 'WhatsApp', color: '#138c4a', icon: RiWhatsappFill },\n  amazon: { label: 'Amazon', color: '#e48619', icon: RiAmazonFill },\n  bitbucket: { label: 'Bitbucket', color: '#0052cc' },\n  auth0: { label: 'Auth0', color: '#d95225' },\n  okta: { label: 'Okta', color: '#007dc1' },\n};\n\nexport type SocialProvider = keyof typeof providers;\nexport type SocialButtonProps = {\n  provider?: SocialProvider;\n  label?: string;\n  logo?: ReactNode;\n  color?: string;\n  appearance?: 'brand' | 'neutral' | 'outline';\n  size?: 'medium' | 'small';\n  iconOnly?: boolean;\n  href?: string;\n  onPress?: () => void;\n  disabled?: boolean;\n  className?: string;\n};\n\nexport function SocialButton({ provider = 'google', label, logo, color, appearance = 'outline', size = 'medium', iconOnly = false, href, onPress, disabled = false, className }: SocialButtonProps) {\n  const config = providers[provider];\n  const name = label ?? config?.label ?? provider;\n  const Icon = config?.icon;\n  const style = { '--social-brand': color ?? config?.color ?? 'var(--accent-strong)' } as CSSProperties;\n  const content = <>{logo ?? (Icon ? <Icon size={size === 'small' ? 17 : 19} aria-hidden /> : <span className=\"ui-social-button__monogram\" aria-hidden=\"true\">{name[0]}</span>)}{!iconOnly && <span>Continue with {name}</span>}</>;\n  const common = { className: cx('ui-social-button', className), 'data-appearance': appearance, 'data-size': size, 'data-icon-only': iconOnly || undefined, style, 'aria-label': iconOnly ? `Continue with ${name}` : undefined };\n  return href && !disabled ? <a {...common} href={href} onClick={onPress}>{content}</a> : <button {...common} type=\"button\" disabled={disabled} onClick={onPress}>{content}</button>;\n}\n\nexport const socialProviderNames = Object.keys(providers) as SocialProvider[];\n\nexport function SocialMark({ provider, size = 14, className }: { provider?: SocialProvider; size?: number; className?: string }) {\n  const config = provider ? providers[provider] : undefined;\n  const Icon = config?.icon ?? RiGlobalLine;\n  const monochrome = provider === 'x' || provider === 'github' || provider === 'notion' || provider === 'apple' || provider === 'tiktok';\n  return <Icon size={size} className={className} style={{ color: monochrome ? 'var(--text-main)' : config?.color ?? 'var(--text-muted)' }} aria-hidden />;\n}\n",
+      "sha256": "b9349d54682b61edf2b300b496658109b4904789759704cc144f099c3d1c439c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 450,
+          "end": 485
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 508,
+          "end": 518
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-social-button",
+      "ui-social-button__monogram"
+    ],
+    "prefixes": []
+  }
+}

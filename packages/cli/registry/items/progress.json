@@ -1,0 +1,68 @@
+{
+  "name": "progress",
+  "title": "Progress",
+  "group": "Base",
+  "type": "component",
+  "description": "Determinate and indeterminate progress in bars or rings, with an accessible label, custom range and animated updates.",
+  "sections": [
+    "Preview",
+    "Indeterminate",
+    "Rings and sizes",
+    "Ranges and tones"
+  ],
+  "example": "<Progress label=\"Processing files\" value={completed} maxValue={total} />\n<Progress label=\"Connecting\" isIndeterminate />\n<Progress label=\"Setup\" value={75} variant=\"ring\" />",
+  "entryFiles": [
+    "components/base/progress/progress.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/progress/progress.tsx",
+      "names": [
+        "Progress",
+        "ProgressProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/progress/progress.tsx",
+      "content": "'use client';\n\nimport { ProgressBar, Label, type ProgressBarProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\n\nexport type ProgressProps = Omit<ProgressBarProps, 'children' | 'className'> & {\n  label: string;\n  hideLabel?: boolean;\n  showValue?: boolean;\n  variant?: 'bar' | 'ring';\n  size?: 'small' | 'medium' | 'large';\n  tone?: 'accent' | 'success' | 'warning' | 'danger';\n  className?: string;\n};\n\nexport function Progress({ label, hideLabel = false, showValue = true, variant = 'bar', size = 'medium', tone = 'accent', className, value, minValue = 0, maxValue = 100, isIndeterminate = false, ...props }: ProgressProps) {\n  const minimum = Number.isFinite(minValue) ? minValue : 0;\n  const maximum = Number.isFinite(maxValue) && maxValue > minimum ? maxValue : minimum + 100;\n  const indefinite = isIndeterminate || value == null || !Number.isFinite(value);\n  const boundedValue = indefinite ? undefined : Math.max(minimum, Math.min(maximum, value!));\n  return <ProgressBar {...props} value={boundedValue} minValue={minimum} maxValue={maximum} isIndeterminate={indefinite} className={cx('ui-progress', className)} data-variant={variant} data-size={size} data-tone={tone}>\n    {({ percentage, valueText }) => <>\n      <div className=\"ui-progress__heading\"><Label className={cx('ui-progress__label', hideLabel && 'sr-only')}>{label}</Label>{showValue && variant === 'bar' && !indefinite && <span className=\"ui-progress__value\" aria-hidden>{valueText}</span>}</div>\n      {variant === 'ring' ? <div className=\"ui-progress__ring\" data-indeterminate={indefinite || undefined}>\n        <svg viewBox=\"0 0 48 48\" aria-hidden><circle cx=\"24\" cy=\"24\" r=\"20\" className=\"ui-progress__track-circle\"/><circle cx=\"24\" cy=\"24\" r=\"20\" className=\"ui-progress__fill-circle\" pathLength=\"100\" strokeDasharray={indefinite ? '24 76' : '100'} strokeDashoffset={indefinite ? 0 : 100 - (percentage ?? 0)}/></svg>\n        {showValue && !indefinite && <span aria-hidden>{valueText}</span>}\n      </div> : <div className=\"ui-progress__track\" data-indeterminate={indefinite || undefined}><span className=\"ui-progress__fill\" style={{ width: indefinite ? '36%' : `${percentage ?? 0}%` }}/></div>}\n    </>}\n  </ProgressBar>;\n}\n",
+      "sha256": "bed6eda76541f324fdcab5f484903e294a4d4e55bbad44f985be220c78e9976e",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 118,
+          "end": 128
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-progress",
+      "ui-progress__fill",
+      "ui-progress__fill-circle",
+      "ui-progress__heading",
+      "ui-progress__label",
+      "ui-progress__ring",
+      "ui-progress__track",
+      "ui-progress__track-circle",
+      "ui-progress__value"
+    ],
+    "prefixes": []
+  }
+}

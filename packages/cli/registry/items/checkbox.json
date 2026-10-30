@@ -1,0 +1,131 @@
+{
+  "name": "checkbox",
+  "title": "Checkbox",
+  "group": "Base",
+  "type": "component",
+  "description": "A precise 16px choice control built on React Aria. Checked, mixed, disabled, and labelled states share one visual language.",
+  "sections": [
+    "Preview",
+    "Sizes",
+    "Labels and control",
+    "Card"
+  ],
+  "example": "<Checkbox defaultSelected>Remember me</Checkbox>\n<Checkbox size=\"sm\" aria-label=\"Select row\" />\n<CheckboxCard title=\"Product updates\" description=\"Occasional news from the team.\" />",
+  "entryFiles": [
+    "components/base/checkbox/checkbox.tsx",
+    "components/base/checkbox/checkbox-card.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/checkbox/checkbox.tsx",
+      "names": [
+        "Checkbox",
+        "CheckboxProps"
+      ]
+    },
+    {
+      "path": "components/base/checkbox/checkbox-card.tsx",
+      "names": [
+        "CheckboxCard",
+        "CheckboxCardProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/checkbox/checkbox-card.tsx",
+      "content": "'use client';\n\nimport type { ReactNode } from 'react';\nimport { Checkbox as AriaCheckbox } from 'react-aria-components';\nimport type { CheckboxProps as AriaCheckboxProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { CheckboxGlyph } from './checkbox-glyph';\n\nexport type CheckboxCardProps = Omit<AriaCheckboxProps, 'children' | 'title'> & {\n  title: ReactNode;\n  description?: ReactNode;\n};\n\nexport function CheckboxCard({ title, description, className, ...props }: CheckboxCardProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaCheckbox {...props} isDisabled={isDisabled} className={state => cx('ui-checkbox-card', typeof className === 'function' ? className(state) : className)}>\n    {state => <><span className=\"ui-checkbox-card__copy\"><strong>{title}</strong>{description != null && <span>{description}</span>}</span><CheckboxGlyph state={state} /></>}\n  </AriaCheckbox>;\n}\n",
+      "sha256": "feb512f018cc7aba2257e14195dd8d901d5e53d08bfbd0d921674f6a81402a30",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 222,
+          "end": 232
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 269,
+          "end": 306
+        },
+        {
+          "kind": "module",
+          "value": "./checkbox-glyph",
+          "target": "components/base/checkbox/checkbox-glyph.tsx",
+          "start": 340,
+          "end": 356
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/checkbox/checkbox-glyph.tsx",
+      "content": "export type CheckboxSize = 'sm' | 'md';\n\nexport type CheckboxGlyphState = {\n  isSelected: boolean;\n  isIndeterminate: boolean;\n  isFocusVisible: boolean;\n  isDisabled: boolean;\n  isHovered: boolean;\n};\n\nexport function CheckboxGlyph({ state, size = 'md' }: { state: CheckboxGlyphState; size?: CheckboxSize }) {\n  const marked = state.isSelected || state.isIndeterminate;\n  return <span className=\"ui-checkbox__box\" data-size={size} data-marked={marked || undefined} data-hovered={state.isHovered || undefined} data-focus-visible={state.isFocusVisible || undefined} data-disabled={state.isDisabled || undefined} aria-hidden=\"true\">\n    <svg viewBox=\"0 0 16 16\" fill=\"none\">\n      {state.isIndeterminate ? <path d=\"M4.2 8h7.6\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\" /> : state.isSelected ? <path d=\"m3.8 8 2.7 2.6 5.7-5.5\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\" strokeLinejoin=\"round\" pathLength=\"1\" className=\"ui-checkbox__tick\" /> : null}\n    </svg>\n  </span>;\n}\n",
+      "sha256": "7dae5b5f897dfff4fe8871bb0c58da0363b31c86bb96cfd93af661245c249a6c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/checkbox/checkbox.tsx",
+      "content": "'use client';\n\nimport type { ReactNode } from 'react';\nimport { Checkbox as AriaCheckbox } from 'react-aria-components';\nimport type { CheckboxProps as AriaCheckboxProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { CheckboxGlyph, type CheckboxSize } from './checkbox-glyph';\n\nexport type CheckboxProps = Omit<AriaCheckboxProps, 'children'> & {\n  children?: ReactNode;\n  size?: CheckboxSize;\n};\n\nexport function Checkbox({ children, size = 'md', className, ...props }: CheckboxProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaCheckbox {...props} isDisabled={isDisabled} data-size={size} className={state => cx('ui-checkbox', typeof className === 'function' ? className(state) : className)}>\n    {state => <><CheckboxGlyph state={state} size={size} />{children != null && <span className=\"ui-checkbox__label\">{children}</span>}</>}\n  </AriaCheckbox>;\n}\n",
+      "sha256": "b08f3091c4e35d95db6e7ba103a93a3096ad117341c4de931aa0146003fc59ab",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 222,
+          "end": 232
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 269,
+          "end": 306
+        },
+        {
+          "kind": "module",
+          "value": "./checkbox-glyph",
+          "target": "components/base/checkbox/checkbox-glyph.tsx",
+          "start": 359,
+          "end": 375
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-checkbox",
+      "ui-checkbox-card",
+      "ui-checkbox-card__copy",
+      "ui-checkbox__box",
+      "ui-checkbox__label",
+      "ui-checkbox__tick"
+    ],
+    "prefixes": []
+  }
+}

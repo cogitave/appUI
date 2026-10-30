@@ -1,0 +1,239 @@
+{
+  "name": "questionnaire",
+  "title": "Questionnaire",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A stepped question flow with single and multiple selections, optional custom answers, and a completion callback.",
+  "sections": [
+    "Preview",
+    "Multiple choice"
+  ],
+  "example": "<Questionnaire questions={questions} onComplete={saveAnswers} />",
+  "entryFiles": [
+    "components/blocks/questionnaire/questionnaire.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/questionnaire/questionnaire.tsx",
+      "names": [
+        "Question",
+        "Questionnaire",
+        "QuestionnaireProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/button.tsx",
+      "content": "'use client';\n\nimport type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\nimport { Spinner } from '@/components/base/spinner/spinner';\n\nexport type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline' | 'solid' | 'quiet';\nexport type ButtonSize = 'medium' | 'small' | 'xs';\n\ntype NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;\ntype ContentProps =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonProps = NativeButtonProps & ContentProps & {\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  trailingIcon?: IconComponent;\n  isLoading?: boolean;\n  loadingLabel?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\nconst base = 'ui-button inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none outline-none';\nconst sizes: Record<ButtonSize, string> = {\n  medium: 'h-9 rounded-[10px] px-2 gap-0.5',\n  small: 'h-8 rounded-lg px-2 gap-0.5',\n  xs: 'h-6 rounded-[5px] px-2 gap-0.5',\n};\nexport const buttonIconClassNames: Record<ButtonSize, string> = { medium: 'size-5', small: 'size-[18px]', xs: 'size-3.5' };\nexport function buttonClassNames(size: ButtonSize, iconOnly = false, className?: string) {\n  return cx(base, sizes[size], iconOnly && 'ui-button--icon-only !p-0', className);\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'medium',\n  iconOnly = false,\n  leadingIcon: LeadingIcon,\n  trailingIcon: TrailingIcon,\n  children,\n  className,\n  type = 'button',\n  isLoading = false,\n  loadingLabel,\n  disabled,\n  onClick,\n  onKeyDown,\n  ...props\n}: ButtonProps) {\n  return (\n    <button\n      {...props}\n      type={isLoading && type === 'submit' ? 'button' : type}\n      disabled={disabled}\n      aria-disabled={isLoading || props['aria-disabled'] || undefined}\n      aria-busy={isLoading || undefined}\n      aria-description={isLoading && loadingLabel ? loadingLabel : props['aria-description']}\n      data-variant={variant}\n      data-size={size}\n      data-icon-only={iconOnly || undefined}\n      data-loading={isLoading || undefined}\n      data-loading-label={loadingLabel !== undefined || undefined}\n      className={buttonClassNames(size, iconOnly, className)}\n      onClick={event => { if (isLoading || props['aria-disabled'] === true || props['aria-disabled'] === 'true') { event.preventDefault(); event.stopPropagation(); return; } onClick?.(event); }}\n      onKeyDown={event => { if (isLoading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); return; } onKeyDown?.(event); }}\n    >\n      {LeadingIcon && <span className=\"ui-button__leading-slot\" aria-hidden><LeadingIcon className={cx(buttonIconClassNames[size], 'ui-button__leading-icon')}/></span>}\n      {!iconOnly && <span className=\"ui-button__label\">{children}</span>}\n      {!iconOnly && TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n      <Spinner className=\"ui-button__busy-spinner\" size={size === 'xs' ? 'xs' : size === 'small' ? 'sm' : 'md'}/>\n    </button>\n  );\n}\n",
+      "sha256": "bcfc2d2db4debfd2c11dd8ba8b23a167c705ad3bf7d9151571e501ed195fe158",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 118,
+          "end": 153
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 176,
+          "end": 186
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 214,
+          "end": 247
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/close-button.tsx",
+      "content": "import type { ButtonHTMLAttributes, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CloseButtonSize = '2xs' | 'xs' | 'sm' | 'md';\n\nexport type CloseButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'> & {\n  size?: CloseButtonSize;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nconst glyphSizes: Record<CloseButtonSize, number> = { '2xs': 8, xs: 11, sm: 13, md: 17 };\nconst strokes: Record<CloseButtonSize, number> = { '2xs': 1.6, xs: 2, sm: 2, md: 2.5 };\n\nexport function CloseButton({ size = 'xs', className, type = 'button', ...props }: CloseButtonProps) {\n  const glyph = glyphSizes[size];\n  const inset = size === '2xs' ? 1.4 : 2;\n  return (\n    <button type={type} data-size={size} className={cx('ui-close-button', className)} {...props}>\n      <svg width={glyph} height={glyph} viewBox={`0 0 ${glyph} ${glyph}`} fill=\"none\" aria-hidden=\"true\">\n        <path d={`M${inset} ${inset}L${glyph - inset} ${glyph - inset}M${glyph - inset} ${inset}L${inset} ${glyph - inset}`} stroke=\"currentColor\" strokeWidth={strokes[size]} strokeLinecap=\"round\" />\n      </svg>\n    </button>\n  );\n}\n",
+      "sha256": "c670608d6b5b2e2c1d8d50bb37efbca9c38463fd0fecc5b3525464bff6cbed78",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/stepper/stepper.tsx",
+      "content": "'use client';\n\nimport { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';\nimport { motion, useReducedMotion } from 'motion/react';\nimport { RiCheckLine, RiErrorWarningLine } from '@remixicon/react';\nimport { Button } from '@/components/base/buttons/button';\nimport { useMotionTokens } from '@/hooks/use-motion-tokens';\nimport { cx } from '@/utils/cx';\n\nexport type StepperStep = { id: string; label: string; description?: string; controls?: string; status?: 'pending' | 'complete' | 'error'; isOptional?: boolean; isDisabled?: boolean };\nexport type StepperProps = {\n  steps: StepperStep[];\n  selectedKey?: string;\n  defaultSelectedKey?: string;\n  onSelectionChange?: (key: string) => void;\n  variant?: 'numbered' | 'labels';\n  orientation?: 'horizontal' | 'vertical';\n  isReadOnly?: boolean;\n  className?: string;\n  'aria-label'?: string;\n};\n\n/** Selection describes location; only caller-supplied status describes completion. */\nexport function Stepper({ steps, selectedKey, defaultSelectedKey, onSelectionChange, variant = 'numbered', orientation = 'horizontal', isReadOnly = false, className, 'aria-label': label = 'Progress steps' }: StepperProps) {\n  const [internal, setInternal] = useState(defaultSelectedKey ?? steps.find(step => !step.isDisabled)?.id ?? '');\n  const [focused, setFocused] = useState<string | null>(null);\n  const selected = selectedKey ?? internal;\n  const enabled = steps.filter(step => !step.isDisabled);\n  const tabStop = enabled.find(step => step.id === focused)?.id ?? enabled.find(step => step.id === selected)?.id ?? enabled[0]?.id;\n  const buttons = useRef(new Map<string, HTMLButtonElement>());\n  const id = useId(), reduced = useReducedMotion(), root = useRef<HTMLElement>(null), tokens = useMotionTokens(root);\n  const geometry = JSON.stringify(steps.map(step => [step.id, step.label, step.description, step.isOptional]));\n  useLayoutEffect(() => {\n    const element = root.current;\n    if (!element || variant === 'labels') return;\n    const items = [...element.querySelectorAll<HTMLElement>('.ui-stepper__item')];\n    function measure() {\n      const rtl = getComputedStyle(element!).direction === 'rtl';\n      const marks = items.map(item => item.querySelector<HTMLElement>('.ui-stepper__mark')!.getBoundingClientRect());\n      items.forEach((item, index) => {\n        const mark = marks[index], next = marks[index + 1], box = item.getBoundingClientRect();\n        if (!next) return;\n        const vertical = Math.abs(next.top - mark.top) > Math.abs(next.left - mark.left);\n        const center = mark.left + mark.width / 2, nextCenter = next.left + next.width / 2;\n        const inlineCenter = rtl ? box.right - center : center - box.left;\n        item.style.setProperty('--step-line-inline', `${vertical ? inlineCenter : inlineCenter + 21}px`);\n        item.style.setProperty('--step-line-top', `${mark.top - box.top + mark.height / 2 + (vertical ? 21 : 0)}px`);\n        item.style.setProperty('--step-line-width', `${vertical ? 1 : Math.max(0, (rtl ? center - nextCenter : nextCenter - center) - 42)}px`);\n        item.style.setProperty('--step-line-height', `${vertical ? Math.max(0, next.top - mark.top - 42) : 1}px`);\n      });\n    }\n    measure();\n    const observer = new ResizeObserver(measure);\n    observer.observe(element, {box:'border-box'});\n    items.forEach(item => observer.observe(item, {box:'border-box'}));\n    element.querySelectorAll('.ui-stepper__content').forEach(content => observer.observe(content, {box:'border-box'}));\n    const direction = new MutationObserver(measure);\n    for (let parent: HTMLElement | null = element; parent; parent = parent.parentElement) direction.observe(parent, {attributes:true, attributeFilter:['dir','class']});\n    return () => { observer.disconnect(); direction.disconnect(); };\n  }, [geometry, orientation, variant]);\n  function choose(key: string) {\n    if (isReadOnly || key === selected || !enabled.some(step => step.id === key)) return;\n    if (selectedKey === undefined) setInternal(key);\n    onSelectionChange?.(key);\n  }\n  function navigate(event: KeyboardEvent<HTMLElement>) {\n    if (isReadOnly || event.altKey || event.ctrlKey || event.metaKey || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key) || !enabled.length) return;\n    const key = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-step-key]')?.dataset.stepKey;\n    if (!key) return;\n    event.preventDefault();\n    const current = enabled.findIndex(step => step.id === key);\n    const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';\n    const forward = event.key === 'ArrowDown' || (event.key === 'ArrowRight' && !rtl) || (event.key === 'ArrowLeft' && rtl);\n    const index = event.key === 'Home' ? 0 : event.key === 'End' ? enabled.length - 1 : (current + (forward ? 1 : -1) + enabled.length) % enabled.length;\n    buttons.current.get(enabled[index].id)?.focus();\n  }\n  return <nav ref={root} className={cx('ui-stepper', className)} data-variant={variant} data-orientation={orientation} data-readonly={isReadOnly || undefined} aria-label={label} onKeyDown={navigate}>\n    <ol className=\"ui-stepper__list\">{steps.map((step, index) => {\n      const current = selected === step.id, status = step.status ?? 'pending', detailId = `${id}-${index}`;\n      const content = <><span className=\"ui-stepper__content\"><span className=\"ui-stepper__mark\" aria-hidden>{(['pending','complete','error'] as const).map(kind => <span className=\"ui-stepper__glyph\" key={kind} data-status={kind} data-active={status === kind || undefined}>{kind === 'complete' ? <RiCheckLine/> : kind === 'error' ? <RiErrorWarningLine/> : index + 1}</span>)}</span><span className=\"ui-stepper__copy\"><span className=\"ui-stepper__title\">{step.label}</span>{step.isOptional && <span className=\"ui-stepper__optional\">Optional</span>}{step.description && <span className=\"ui-stepper__description\">{step.description}</span>}</span></span>{variant === 'labels' && current && <motion.span className=\"ui-stepper__indicator\" layoutId={`${id}-step`} transition={{ duration: reduced ? 0 : tokens.standard, ease: tokens.ease }}/>}</>;\n      return <li key={step.id} className=\"ui-stepper__item\" data-current={current || undefined} data-status={status} data-disabled={step.isDisabled || undefined}>\n        {isReadOnly ? <div className=\"ui-stepper__control\" aria-current={current ? 'step' : undefined} aria-describedby={detailId}>{content}</div> : <Button ref={element => { if (element) buttons.current.set(step.id, element); else buttons.current.delete(step.id); }} variant=\"ghost\" size=\"small\" className=\"ui-stepper__control\" data-step-key={step.id} tabIndex={tabStop === step.id ? 0 : -1} disabled={step.isDisabled} aria-label={step.label} aria-describedby={detailId} aria-controls={step.controls} aria-current={current ? 'step' : undefined} onFocus={() => setFocused(step.id)} onBlur={event => { if (!event.currentTarget.closest('.ui-stepper')?.contains(event.relatedTarget)) setFocused(null); }} onClick={() => choose(step.id)}>{content}</Button>}\n        <span id={detailId} className=\"sr-only\">Step {index + 1} of {steps.length}.{current ? ' Current step.' : ''}{status === 'complete' ? ' Complete.' : status === 'error' ? ' Needs attention.' : ''}{step.isOptional ? ' Optional.' : ''}{step.isDisabled ? ' Unavailable.' : ''}{step.description ? ` ${step.description}` : ''}</span>\n      </li>;\n    })}</ol>\n  </nav>;\n}\n",
+      "sha256": "777f46ac8367577b0a4ff46f10bf958a250c5103f6544a111be4cae7f4926e46",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 250,
+          "end": 282
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 318,
+          "end": 343
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 366,
+          "end": 376
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/questionnaire/questionnaire.tsx",
+      "content": "'use client';\n\nimport { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { RiCheckLine } from '@remixicon/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\nimport { Button } from '@/components/base/buttons/button';\nimport { CloseButton } from '@/components/base/buttons/close-button';\nimport { Stepper } from '@/components/base/stepper/stepper';\nimport { cx } from '@/utils/cx';\n\nexport type Question = {\n  id: string;\n  prompt: string;\n  type: 'single' | 'multiple';\n  options: { id: string; label: string; description?: string }[];\n  allowOther?: boolean;\n  stepLabel?: string;\n};\n\nexport type QuestionnaireProps = {\n  questions: Question[];\n  value?: Record<string, string[]>;\n  defaultValue?: Record<string, string[]>;\n  onChange?: (answers: Record<string, string[]>) => void;\n  onComplete?: (answers: Record<string, string[]>, otherAnswers: Record<string, string>) => void;\n  onClose?: () => void;\n  advanceDelay?: number;\n  className?: string;\n};\n\nconst slideVariants = {\n  enter: (travel: number) => ({ opacity: 0, x: travel * 18, filter: 'blur(3px)' }),\n  center: { opacity: 1, x: 0, filter: 'blur(0px)' },\n  exit: (travel: number) => ({ opacity: 0, x: travel * -18, filter: 'blur(3px)' }),\n};\n\nfunction QuestionPresence({ children }: { children: ReactNode }) {\n  const present = useIsPresent();\n  return <div inert={!present} aria-hidden={!present || undefined}>{children}</div>;\n}\n\nexport function Questionnaire({ questions, value, defaultValue = {}, onChange, onComplete, onClose, advanceDelay = 180, className }: QuestionnaireProps) {\n  const [internal, setInternal] = useState(defaultValue);\n  const [index, setIndex] = useState(0);\n  const [direction, setDirection] = useState(1);\n  const [otherAnswers, setOtherAnswers] = useState<Record<string, string>>({});\n  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);\n  const id = useId();\n  const reducedMotion = useReducedMotion();\n  const answers = value ?? internal;\n  const question = questions[index];\n  const root = useRef<HTMLDivElement>(null), focusQuestion = useRef(false);\n  useLayoutEffect(() => {\n    if (!focusQuestion.current) return;\n    focusQuestion.current = false;\n    [...(root.current?.querySelectorAll<HTMLElement>('.ui-questionnaire__question h2') ?? [])].find(title => !title.closest('[inert]'))?.focus({ preventScroll: true });\n  }, [question?.id]);\n\n  useEffect(() => () => { if (advanceTimer.current) clearTimeout(advanceTimer.current); }, []);\n  if (!question) return null;\n\n  function update(next: Record<string, string[]>) {\n    if (value === undefined) setInternal(next);\n    onChange?.(next);\n  }\n\n  function goTo(step: number, moveFocus = false) {\n    if (advanceTimer.current) clearTimeout(advanceTimer.current);\n    advanceTimer.current = null;\n    if (step < 0 || step >= questions.length || step === index) return;\n    focusQuestion.current = moveFocus;\n    setDirection(step > index ? 1 : -1);\n    setIndex(step);\n  }\n\n  function toggle(option: string) {\n    if (advanceTimer.current) clearTimeout(advanceTimer.current);\n    advanceTimer.current = null;\n    const current = answers[question.id] ?? [];\n    const selected = current.includes(option);\n    const next = question.type === 'single'\n      ? [option]\n      : selected ? current.filter(id => id !== option) : [...current, option];\n    update({ ...answers, [question.id]: next });\n    if (question.type === 'single' && option !== 'other' && index < questions.length - 1) {\n      advanceTimer.current = setTimeout(() => goTo(index + 1, true), advanceDelay);\n    }\n  }\n\n  function changeOther(text: string) {\n    setOtherAnswers(current => ({ ...current, [question.id]: text }));\n    const current = answers[question.id] ?? [];\n    if (text && !current.includes('other')) {\n      update({ ...answers, [question.id]: question.type === 'single' ? ['other'] : [...current, 'other'] });\n    }\n  }\n\n  function next() {\n    if (index < questions.length - 1) goTo(index + 1, true);\n    else onComplete?.(answers, otherAnswers);\n  }\n\n  const selected = answers[question.id] ?? [];\n  return <div ref={root} className={cx('ui-questionnaire', className)} role=\"group\" aria-label=\"Questionnaire\">\n    {onClose && <CloseButton className=\"ui-questionnaire__close\" size=\"xs\" aria-label=\"Dismiss\" onClick={onClose}/>}\n    <AnimatedHeight><div id={`${id}-questions`} role=\"region\" aria-label={question.prompt}><AnimatePresence mode=\"popLayout\" initial={false} custom={direction}>\n      <motion.div key={question.id} className=\"ui-questionnaire__question\" custom={direction} variants={slideVariants} initial={reducedMotion ? false : 'enter'} animate=\"center\" exit={reducedMotion ? undefined : 'exit'} transition={{ duration: reducedMotion ? 0 : .22, ease: [0.2, .75, .25, 1] }}>\n        <QuestionPresence>\n        <h2 tabIndex={-1}>{question.prompt}</h2>\n        <div className=\"ui-questionnaire__options\" role=\"group\" aria-label={question.prompt}>\n          {question.options.map(option => <label key={option.id} data-selected={selected.includes(option.id) || undefined}>\n            <input className=\"ui-questionnaire__choice\" type={question.type === 'single' ? 'radio' : 'checkbox'} name={`${id}-${question.id}`} value={option.id} checked={selected.includes(option.id)} onChange={() => toggle(option.id)} />\n            <span className=\"ui-questionnaire__option-copy\"><strong>{option.label}</strong>{option.description && <small>{option.description}</small>}</span>\n            <span className=\"ui-questionnaire__check\" aria-hidden><RiCheckLine size={12} /></span>\n          </label>)}\n          {question.allowOther && <div className=\"ui-questionnaire__other-row\" data-selected={selected.includes('other') || undefined}>\n            <div className=\"ui-questionnaire__option-copy\"><strong>Other</strong><input className=\"ui-questionnaire__other\" aria-label=\"Other answer\" value={otherAnswers[question.id] ?? ''} placeholder=\"Enter your custom answer here\" onFocus={() => { if (!selected.includes('other')) toggle('other'); }} onChange={event => changeOther(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); next(); } }} /></div>\n            <label className=\"ui-questionnaire__other-check\" aria-label=\"Select Other\"><input className=\"ui-questionnaire__choice\" type={question.type === 'single' ? 'radio' : 'checkbox'} name={`${id}-${question.id}`} value=\"other\" checked={selected.includes('other')} onChange={() => toggle('other')} /><span className=\"ui-questionnaire__check\" aria-hidden><RiCheckLine size={12} /></span></label>\n          </div>}\n        </div>\n        </QuestionPresence>\n      </motion.div>\n    </AnimatePresence></div></AnimatedHeight>\n    <footer><Stepper className=\"ui-questionnaire__steps\" aria-label=\"Steps\" variant=\"labels\" selectedKey={question.id} onSelectionChange={key => goTo(questions.findIndex(item => item.id === key))} steps={questions.map((item, step) => ({ id: item.id, label: item.stepLabel ?? `Step ${step + 1}`, controls: `${id}-questions`, status: (answers[item.id] ?? []).some(answer => answer === 'other' ? Boolean(otherAnswers[item.id]?.trim()) : item.options.some(option => option.id === answer)) ? 'complete' : 'pending' }))}/><Button size=\"small\" variant=\"secondary\" disabled={index === 0} onClick={() => goTo(index - 1, true)}>Previous</Button><Button size=\"small\" variant=\"solid\" className=\"ui-questionnaire__next\" onClick={next}>{index === questions.length - 1 ? 'Done' : 'Next'}</Button></footer>\n  </div>;\n}\n",
+      "sha256": "5c069b481177f6d301bff0c23d885120cd9c338199a1cb26bf7b3d6221042948",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 276,
+          "end": 325
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 352,
+          "end": 384
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 416,
+          "end": 454
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/stepper/stepper",
+          "target": "components/base/stepper/stepper.tsx",
+          "start": 482,
+          "end": 515
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 538,
+          "end": 548
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-button",
+      "ui-button--icon-only",
+      "ui-button__busy-spinner",
+      "ui-button__label",
+      "ui-button__leading-icon",
+      "ui-button__leading-slot",
+      "ui-close-button",
+      "ui-questionnaire",
+      "ui-questionnaire__check",
+      "ui-questionnaire__choice",
+      "ui-questionnaire__close",
+      "ui-questionnaire__next",
+      "ui-questionnaire__option-copy",
+      "ui-questionnaire__options",
+      "ui-questionnaire__other",
+      "ui-questionnaire__other-check",
+      "ui-questionnaire__other-row",
+      "ui-questionnaire__question",
+      "ui-questionnaire__steps",
+      "ui-spinner",
+      "ui-stepper",
+      "ui-stepper__content",
+      "ui-stepper__control",
+      "ui-stepper__copy",
+      "ui-stepper__description",
+      "ui-stepper__glyph",
+      "ui-stepper__indicator",
+      "ui-stepper__item",
+      "ui-stepper__list",
+      "ui-stepper__mark",
+      "ui-stepper__optional",
+      "ui-stepper__title"
+    ],
+    "prefixes": []
+  }
+}

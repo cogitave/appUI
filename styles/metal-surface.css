@@ -1,0 +1,5 @@
+.ui-metal-surface { position: relative; display: inline-grid; place-items: center; isolation: isolate; flex: none; width: var(--metal-size); height: var(--metal-size); overflow: hidden; border-radius: calc(var(--metal-size) * .22); border: 1px solid #96999f; background: linear-gradient(135deg,#eff0f1,#8c929b 42%,#d8dade 63%,#f9fafb); box-shadow: inset 0 1px 1px #fff9, inset 0 -1px 2px #30363f99, 0 1px 2px #1f263330; }
+.ui-metal-surface__sweep { position: absolute; inset: -65%; z-index: -1; background: conic-gradient(from 90deg,#adb1b9 0%,#5a606b 8%,#b9bcc4 22%,#f2f3f5 41%,#626b74 52%,#eff0f2 68%,#575d6b 79%,#f1f1f3 94%,#adb1b9 100%); opacity: .82; animation: ui-metal-sweep 9s linear infinite; }
+.ui-metal-surface__content { display: grid; place-items: center; width: 100%; height: 100%; color: #f8f9fb; background: linear-gradient(135deg,#fff3,transparent 45%,#1f263322); filter: drop-shadow(0 1px 1px #32394390); box-shadow: inset 0 0 0 1px #ffffff70; border-radius: inherit; }
+@keyframes ui-metal-sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ui-metal-surface__sweep { animation: none; } }

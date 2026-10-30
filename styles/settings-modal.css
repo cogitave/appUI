@@ -1,0 +1,101 @@
+.ui-settings-surface {
+  --modal-width: 760px;
+  height: min(700px, calc(100dvh - 36px));
+  max-height: calc(100dvh - 36px);
+}
+.ui-settings-modal {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
+}
+
+.ui-settings-modal section,
+.ui-settings-modal__content { min-height: 0; }
+.ui-settings-modal__content { grid-auto-rows: max-content; }
+
+.ui-settings-modal aside,
+.ui-settings-modal__content { scrollbar-width: none; }
+
+.ui-settings-modal aside::-webkit-scrollbar,
+.ui-settings-modal__content::-webkit-scrollbar { display: none; }
+
+.ui-settings-modal section > header,
+.ui-settings-modal footer { flex: none; }
+
+.ui-settings-modal aside h2,
+.ui-settings-modal nav button,
+.ui-settings-modal__nav-group > span { font-size: var(--text-body-medium); line-height: 20px; font-weight: 500; }
+
+.ui-settings-modal section > header h3 { font-size: var(--text-title-3-medium); line-height: 26px; font-weight: 500; }
+.ui-settings-modal__plan small { font-size: var(--text-body-2-medium); line-height: 18px; font-weight: 500; }
+.ui-settings-modal__plan strong { font-size: var(--text-headline-medium); line-height: 22px; font-weight: 500; }
+.ui-settings-modal__plan span { font-size: var(--text-body-2-regular); line-height: 18px; font-weight: 400; }
+.ui-settings-modal__plan button,
+.ui-settings-modal__limit > span:last-child { font-size: var(--text-body-medium); line-height: 20px; font-weight: 500; }
+.ui-settings-modal__limit strong,
+.ui-settings-modal__choice strong { font-size: var(--text-body-regular); line-height: 20px; font-weight: 400; }
+.ui-settings-modal__limit small,
+.ui-settings-modal__choice small { font-size: var(--text-body-2-regular); line-height: 18px; font-weight: 400; }
+.ui-settings-modal__section-label,
+.ui-settings-modal__content > label { font-size: var(--text-body-2-medium); line-height: 18px; font-weight: 500; }
+.ui-settings-modal__choice > span,
+.ui-settings-modal__setting > div:first-child { min-width: 0; }
+.ui-settings-modal__choice > .ui-select { flex: none; width: 160px; min-width: 0; max-width: 48%; }
+.ui-settings-modal__setting > .ui-select { flex: none; width: 185px; min-width: 0; max-width: 42%; }
+.ui-settings-modal__setting .ui-select__trigger { min-height: 36px; }
+.ui-settings-modal section > header .ui-close-button { width: 20px; height: 20px; border-radius: 50%; background: var(--surface-muted); }
+.ui-settings-modal nav button { transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease; }
+.ui-settings-modal nav button[aria-current] { font-weight: var(--text-body-medium--font-weight); }
+.ui-settings-modal section > header .ui-close-button:hover { color: var(--text-strong); background: var(--border-control); }
+.ui-settings-modal footer button,
+.ui-settings-modal__plan button { transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, transform var(--motion-fast) var(--motion-ease); }
+.ui-settings-modal footer button:hover,
+.ui-settings-modal__plan button:hover { border-color: var(--border-strong); }
+.ui-settings-modal footer button:active,
+.ui-settings-modal__plan button:active { transform: scale(.97); }
+.ui-settings-modal aside { overflow-y: auto; }
+.ui-settings-modal__setting strong { font-size: var(--text-body-2-medium); line-height: 18px; font-weight: 500; }
+.ui-settings-modal__setting small { font-size: var(--text-body-2-regular); line-height: 18px; font-weight: 400; }
+.ui-settings-modal footer button { font-size: var(--text-body-medium); line-height: 20px; font-weight: 500; }
+
+@media (max-width: 640px) {
+  .ui-settings-surface {
+    height: calc(100dvh - 28px);
+    max-height: calc(100dvh - 28px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-settings-modal footer button:active,
+  .ui-settings-modal__plan button:active { transform: none; }
+}
+@media (max-width: 480px) {
+  .ui-settings-modal__limit,
+  .ui-settings-modal__choice,
+  .ui-settings-modal__setting[data-kind='select'] { display: grid; justify-content: stretch; gap: 9px; }
+  .ui-settings-modal__limit > span:last-child { justify-self: start; }
+  .ui-settings-modal__choice > .ui-select,
+  .ui-settings-modal__setting > .ui-select { width: 100%; max-width: none; }
+  .ui-settings-modal__choice + .ui-settings-modal__choice { margin-top: -15px; }
+}
+
+.ui-settings-modal__content > .ui-agent-limits { width: 100%; }
+
+.ui-settings-modal__form { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
+.ui-settings-modal__content > .ui-input-field { width: 100%; }
+.ui-settings-modal__setting > .ui-input-field { flex: none; width: 185px; min-width: 0; max-width: 42%; }
+.ui-settings-modal__save-status { flex: none; min-height: 0; }
+.ui-settings-modal__save-feedback { padding: 0 30px 12px; }
+@media (max-width:480px) {
+  .ui-settings-modal__setting[data-kind='text'] { display: grid; justify-content: stretch; gap: 9px; }
+  .ui-settings-modal__setting > .ui-input-field { width: 100%; max-width: none; }
+  .ui-settings-modal__save-feedback { padding-inline: 16px; }
+}
+
+.docs-field-form { display: grid; gap: 16px; width: min(480px,100%); min-width: 0; }
+.docs-field-form > .ui-input-field, .docs-field-form > .ui-textarea-field, .docs-field-form > .ui-number-field, .docs-field-form > .ui-combobox, .docs-field-form > .ui-select { width: 100%; min-width: 0; }
+.docs-field-form > .ui-button { justify-self: start; }

@@ -1,0 +1,61 @@
+{
+  "name": "direction",
+  "title": "Direction",
+  "group": "Base",
+  "type": "component",
+  "description": "A scoped locale and DOM direction for readable layout, logical keyboard navigation and portaled controls. Nested scopes preserve the surrounding application.",
+  "sections": [
+    "Preview",
+    "Nested scopes",
+    "Direction only",
+    "Portaled controls"
+  ],
+  "example": "<Direction locale=\"ar-AE\">\n  <Select label=\"Visibility\" options={visibilityOptions} />\n  <NavigationMenu aria-label=\"Workspace navigation\" items={navigation} />\n</Direction>",
+  "entryFiles": [
+    "components/base/direction/direction.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/direction/direction.tsx",
+      "names": [
+        "Direction",
+        "DirectionProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/direction/direction.tsx",
+      "content": "'use client';\n\nimport type { HTMLAttributes } from 'react';\nimport { I18nProvider, useLocale } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\n\ntype ScopeProps = Omit<HTMLAttributes<HTMLDivElement>, 'dir'>;\nexport type DirectionProps = ScopeProps & (\n  | { locale: string; dir?: never }\n  | { dir: 'ltr' | 'rtl'; locale?: never }\n);\n\nfunction DirectionScope({className, ...props}: ScopeProps) {\n  const {direction} = useLocale();\n  return <div {...props} className={cx('ui-direction', className)} dir={direction}/>;\n}\n\n/** Keep DOM direction and accessible controls, including portals, in one scope.\n * Prefer locale for localized content. Direction-only scopes use en-US/ar-AE.\n */\nexport function Direction({locale, dir, ...props}: DirectionProps) {\n  const scopedLocale = locale ?? (dir === 'rtl' ? 'ar-AE' : 'en-US');\n  return <I18nProvider locale={scopedLocale}><DirectionScope {...props} lang={props.lang ?? locale}/></I18nProvider>;\n}\n",
+      "sha256": "ebc5b0f6b775b9ccee6c34ad399b829e9911d822d46460458a253ea94a78a10b",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 145,
+          "end": 155
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-direction"
+    ],
+    "prefixes": []
+  }
+}

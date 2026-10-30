@@ -1,0 +1,7 @@
+.ui-field-feedback { min-width: 0; margin-top: -6px; }
+.ui-field-feedback > .ui-animated-height > .ui-animated-height__content { position: relative; line-height: var(--text-caption-1-medium--line-height); }
+.ui-field-feedback[data-content] > .ui-animated-height > .ui-animated-height__content { padding-top: 6px; }
+.ui-field-feedback .ui-input-field__message { display: block; overflow-wrap: anywhere; }
+.ui-field-feedback__error .ui-input-field__message { color: var(--danger-strong); }
+.ui-field-feedback .ui-animated-height__content > .ui-input-field__message + div { margin-top: 4px; }
+.ui-textarea-field__foot > .ui-field-feedback { flex: 1; }

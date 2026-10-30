@@ -1,0 +1,53 @@
+.ui-streaming-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ui-streaming-text__incoming { animation: ui-stream-in 160ms ease both; }
+@keyframes ui-stream-in { from { opacity: .3; } to { opacity: 1; } }
+.ui-streaming-text__cursor { display: inline-block; vertical-align: baseline; width: 6px; height: 13px; margin-inline-start: 3px; border-radius: 2px; background: var(--accent-label); animation: ui-stream-cursor 900ms ease-in-out infinite; }
+@keyframes ui-stream-cursor { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+.ui-message-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; min-width: 0; }
+.ui-message-actions .ui-icon-button { width: 28px; height: 28px; border-radius: 8px; box-shadow: none; }
+.ui-message-actions .ui-icon-button[aria-pressed='true'], .ui-message-actions .ui-icon-button[data-copied] { background: var(--accent-soft); color: var(--accent-label); }
+.ui-message-actions [data-icon-key='pending'] svg { animation:ui-spinner-turn .85s linear infinite; }
+@media (prefers-reduced-motion:reduce) { .ui-message-actions [data-icon-key='pending'] svg { animation:none; } }
+.ui-message { display: flex; align-items: flex-start; gap: 9px; min-width: 0; max-width: 100%; color: var(--text-main); animation: ui-message-in var(--motion-standard) var(--motion-ease) both; }
+.ui-message__body { flex: 1; min-width: 0; }
+.ui-message__avatar { flex: none; }
+.ui-message[data-variant="workspace"] { width: min(440px,100%); }
+.ui-message[data-variant="workspace"][data-role="user"] { width: auto; max-width: min(440px,86%); align-self: flex-end; padding: 10px 13px; border-radius: 15px; background: var(--surface-base); color: var(--text-strong); box-shadow: 0 1px 1px rgb(0 0 0 / .03); }
+@keyframes ui-message-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.ui-message__header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--text-strong); font-size: 12px; line-height: 18px; font-weight: 500; }
+.ui-message__header > span:not(.ui-avatar):not(.ui-message__symbol) { min-width: 0; overflow-wrap: anywhere; }
+.ui-message__header time { margin-inline-start: auto; color: var(--text-muted); font-size: 11px; line-height: 18px; font-weight: 400; }
+.ui-message__symbol { display: grid; flex: none; place-items: center; width: 24px; height: 24px; border-radius: 8px; color: var(--accent-label); background: var(--accent-soft); }
+.ui-message__content { min-width: 0; font-size: var(--text-body-regular); line-height: var(--text-body-regular--line-height); font-weight: var(--text-body-regular--font-weight); letter-spacing: var(--text-body-regular--letter-spacing); overflow-wrap: anywhere; }
+.ui-message__content > p { margin: 0; white-space: pre-wrap; }
+.ui-message__content > :not(:first-child) { margin-top: 14px; }
+.ui-message__content > :is(ul,ol) { padding-inline-start: 22px; }
+.ui-message__content :is(pre,code) { max-width: 100%; }
+.ui-message__content > pre { overflow-x: auto; }
+.ui-message__footer { margin-top: 14px; }
+.ui-message__actions { margin-top: 8px; }
+.ui-message[data-variant='bubble'] { width: auto; max-width: min(540px,88%); padding: 11px 13px; border-radius: 15px; background: var(--surface-base); }
+.ui-message[data-role='user'][data-variant='bubble'] { align-self: flex-end; }
+.ui-message[data-role='assistant'][data-variant='bubble'] { align-self: flex-start; }
+.ui-message[data-role='system'] { color: var(--text-muted); }
+.ui-message[data-role='system'] .ui-message__content { font-size: 12px; line-height: 20px; }
+.ui-conversation { position: relative; display: flex; flex-direction: column; width: 100%; min-width: 0; min-height: 0; overflow: hidden; }
+.ui-conversation__body { position: relative; display: flex; flex: 1; min-width: 0; min-height: 0; }
+.ui-conversation__viewport { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; overflow-anchor: none; scrollbar-width: none; scrollbar-color: var(--border-strong) transparent; }
+.ui-conversation__content { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 18px; min-width: 0; min-height: 100%; padding: 24px; }
+.ui-conversation__header { flex: none; min-width: 0; padding: 14px 16px; }
+.ui-conversation__jump { position: absolute; inset-inline-end: 20px; bottom: 20px; z-index: 1; animation: ui-stream-in 160ms ease; }
+.ui-conversation__jump .ui-icon-button { border-radius: 999px; box-shadow: var(--shadow-panel); }
+.ui-conversation__footer { flex: none; min-width: 0; padding: 16px; border-top: 1px solid var(--border-subtle); background: var(--surface-base); }
+.docs-conversation { width: 100%; min-width: 0; border-radius: 18px; background: var(--surface-raised); }
+.docs-conversation .ui-conversation__footer { padding: 0 10px 12px; border: 0; background: transparent; }
+.docs-conversation .ui-conversation__content { padding: 20px; }
+.docs-stream-line { margin: 0; min-height: 72px; color: var(--text-main); font-size: var(--text-body-regular); line-height: var(--text-body-regular--line-height); font-weight: var(--text-body-regular--font-weight); letter-spacing: var(--text-body-regular--letter-spacing); }
+.docs-message-list { display: flex; flex-direction: column; align-items: stretch; gap: 24px; width: 100%; min-width: 0; }
+.ui-chat-starter__thread.ui-conversation { padding: 0; }
+.ui-chat-starter__thread .ui-conversation__viewport { display: flex; flex-direction: column; scrollbar-width: none; }
+.ui-chat-starter__thread .ui-conversation__content { flex: 1; min-height: min-content; padding: 14px 18px; }
+.ui-chat-starter__messages > .ui-message { max-width: min(540px,88%); padding: 11px 13px; border: 0; border-radius: 15px; background: var(--surface-base); }
+.ui-chat-starter__messages .ui-message__content { font-size: var(--text-body-regular); line-height: var(--text-body-regular--line-height); font-weight: var(--text-body-regular--font-weight); }
+@media (max-width: 480px) { .ui-conversation__content { padding: 16px; gap: 20px; } .ui-conversation__jump { inset-inline-end: 12px; bottom: 12px; } .ui-message[data-variant='bubble'] { padding: 10px 12px; max-width: 94%; } }
+@media (prefers-reduced-motion: reduce) { .ui-streaming-text__incoming, .ui-streaming-text__cursor, .ui-conversation__jump, .ui-message { animation: none; } }

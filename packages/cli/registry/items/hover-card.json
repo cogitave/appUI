@@ -1,0 +1,65 @@
+{
+  "name": "hover-card",
+  "title": "Hover Card",
+  "group": "Base",
+  "type": "component",
+  "description": "A non-modal preview for people, sources and related objects. Hover or focus to inspect details, then move into its actions without losing your place.",
+  "sections": [
+    "Preview",
+    "Interactive previews",
+    "Delay and placement"
+  ],
+  "example": "<HoverCard\n  trigger={<Button variant=\"ghost\">Maya Chen</Button>}\n  title=\"Project owner\"\n>\n  <ProfileSummary />\n</HoverCard>",
+  "entryFiles": [
+    "components/base/hover-card/hover-card.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/hover-card/hover-card.tsx",
+      "names": [
+        "HoverCard",
+        "HoverCardProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/hover-card/hover-card.tsx",
+      "content": "'use client';\n\nimport { cloneElement, useContext, useId, useRef, useState, type ComponentProps, type KeyboardEvent, type ReactNode, type Ref, type RefObject } from 'react';\nimport { Focusable, OverlayArrow, OverlayTriggerStateContext, Popover, PreviewTrigger, type PopoverProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\n\nexport type HoverCardProps = {\n  trigger: ComponentProps<typeof Focusable>['children'];\n  children: ReactNode;\n  title?: string;\n  label?: string;\n  placement?: PopoverProps['placement'];\n  delay?: number;\n  closeDelay?: number;\n  isDisabled?: boolean;\n  showArrow?: boolean;\n  className?: string;\n};\n\n/** A non-modal preview: hover keeps page focus; Tab can enter its controls. */\nfunction PointerTrigger({trigger,isDisabled,triggerRef,suppressRestore}:{trigger:HoverCardProps['trigger'];isDisabled?:boolean;triggerRef:Ref<HTMLElement>;suppressRestore:RefObject<boolean>}) {\n  const state = useContext(OverlayTriggerStateContext);\n  const element = trigger;\n  // A first hover can precede a pointer press. Use the public trigger state so\n  // it keeps the configured warmup, safe area and focus behavior without\n  // changing the page's keyboard modality.\n  const pointerTrigger = cloneElement(element,{onPointerEnter:event=>{\n    element.props.onPointerEnter?.(event);\n    if(!isDisabled&&!event.defaultPrevented&&(event.pointerType==='mouse'||event.pointerType==='pen')&&!state?.isOpen)state?.open();\n  },onFocusCapture:event=>{\n    element.props.onFocusCapture?.(event);\n    if(suppressRestore.current){suppressRestore.current=false;event.stopPropagation();element.props.onFocus?.(event);}\n  }}) as HoverCardProps['trigger'];\n  return <Focusable ref={triggerRef}>{pointerTrigger}</Focusable>;\n}\n\nfunction PreviewContent({children,title,titleId,label,isExiting,onDismiss}:{children:ReactNode;title?:string;titleId:string;label:string;isExiting:boolean;onDismiss:()=>void}) {\n  const state = useContext(OverlayTriggerStateContext);\n  function handleKeyDown(event:KeyboardEvent<HTMLElement>) {\n    if(event.key!=='Escape'||event.defaultPrevented)return;\n    // Keep the public preview state's cooldown and cancellation bookkeeping,\n    // then close the controlled surface immediately for explicit dismissal.\n    state?.close();\n    onDismiss();\n  }\n  return <section onKeyDown={handleKeyDown} inert={isExiting} aria-hidden={isExiting || undefined} className=\"ui-popover__dialog\" role=\"region\" aria-labelledby={title ? titleId : undefined} aria-label={title ? undefined : label}>\n    {title && <header className=\"ui-popover__header\"><h3 id={titleId}>{title}</h3></header>}<div className=\"ui-popover__body\">{children}</div>\n  </section>;\n}\n\nexport function HoverCard({ trigger, children, title, label = 'Preview details', placement = 'top', delay = 400, closeDelay = 180, isDisabled, showArrow = true, className }: HoverCardProps) {\n  const titleId = useId();\n  const triggerRef = useRef<HTMLElement>(null);\n  const suppressRestore = useRef(false);\n  const [open, setOpen] = useState(false);\n  function dismiss() {\n    // Pointer travel keeps its close delay; an explicit dismissal starts the\n    // exit immediately so Tab cannot return to the outgoing preview.\n    setOpen(false);\n    suppressRestore.current=true;\n    triggerRef.current?.focus({preventScroll:true});\n  }\n  return <PreviewTrigger isOpen={open} onOpenChange={setOpen} delay={delay} closeDelay={closeDelay} isDisabled={isDisabled}>\n    <PointerTrigger trigger={trigger} isDisabled={isDisabled} triggerRef={triggerRef} suppressRestore={suppressRestore}/>\n    <Popover shouldSkipAnimation={false} placement={placement} offset={showArrow ? 10 : 6} aria-labelledby={title ? titleId : undefined} aria-label={title ? undefined : label} className={cx('ui-popover ui-hover-card', className)}>\n      {({isExiting})=><>\n      {showArrow && <OverlayArrow className=\"ui-popover__arrow\"><svg width=\"12\" height=\"8\" viewBox=\"0 0 12 8\" aria-hidden><path d=\"M0 0 6 6 12 0\"/></svg></OverlayArrow>}\n      <PreviewContent isExiting={isExiting} title={title} titleId={titleId} label={label} onDismiss={dismiss}>{children}</PreviewContent>\n      </>}\n    </Popover>\n  </PreviewTrigger>;\n}\n",
+      "sha256": "cf830bb000b237c815e8efc2b45f7909d00eb85e83641ad52c08f58389e910ac",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 330,
+          "end": 340
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-hover-card",
+      "ui-popover",
+      "ui-popover__arrow",
+      "ui-popover__body",
+      "ui-popover__dialog",
+      "ui-popover__header"
+    ],
+    "prefixes": []
+  }
+}

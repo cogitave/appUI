@@ -1,0 +1,72 @@
+{
+  "name": "agent-progress",
+  "title": "Agent Progress",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A collapsible multi-step progress panel that keeps active work, completion, and timing readable in a small footprint.",
+  "sections": [
+    "Preview",
+    "Custom steps",
+    "Collapsed state"
+  ],
+  "example": "<AgentProgress steps={steps} onStepClick={inspectStep} />",
+  "entryFiles": [
+    "components/blocks/agent-progress/agent-progress.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/agent-progress/agent-progress.tsx",
+      "names": [
+        "AgentProgress",
+        "AgentProgressProps",
+        "AgentProgressStep"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/blocks/agent-progress/agent-progress.tsx",
+      "content": "'use client';\n\nimport { useState, type CSSProperties } from 'react';\nimport { AnimatePresence, motion, useReducedMotion } from 'motion/react';\nimport { RiCheckLine, RiSubtractLine, RiExpandVerticalLine } from '@remixicon/react';\nimport { cx } from '@/utils/cx';\n\nexport type AgentProgressStep = { id: string; label: string; status?: 'pending' | 'active' | 'complete'; progress?: number; duration?: string };\nexport type AgentProgressProps = { steps: AgentProgressStep[]; revealedCount?: number; defaultCollapsed?: boolean; stepDuration?: number; onStepClick?: (id: string) => void; className?: string };\nconst settleEase = [0.22, 1, 0.36, 1] as const;\nexport function AgentProgress({ steps, revealedCount, defaultCollapsed = false, stepDuration = 2400, onStepClick, className }: AgentProgressProps) {\n  const [collapsed, setCollapsed] = useState(defaultCollapsed);\n  const reducedMotion = useReducedMotion();\n  const completed = steps.filter(step => step.status === 'complete').length;\n  const remaining = steps.length - completed;\n  const style = { '--ui-step-duration': `${stepDuration}ms` } as CSSProperties;\n\n  return <div className={cx('ui-agent-progress', className)} data-collapsed={collapsed || undefined} data-complete={!remaining || undefined} style={style}>\n    <div className=\"ui-agent-progress__head\">\n      <svg className=\"ui-agent-progress__overall\" viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"10\" r=\"7\" /><circle cx=\"10\" cy=\"10\" r=\"7\" style={{ strokeDashoffset: 44 * (1 - Math.max(completed / Math.max(steps.length, 1), remaining ? .06 : 1)) }} /></svg>\n      <span className=\"ui-agent-progress__count\" aria-live=\"polite\"><AnimatePresence mode=\"wait\" initial={false}><motion.span key={remaining} initial={reducedMotion ? false : { opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: reducedMotion ? 0 : .18, ease: settleEase }}>{remaining ? `${remaining} steps left` : 'All steps complete'}</motion.span></AnimatePresence></span>\n      <button type=\"button\" aria-label={collapsed ? 'Expand progress' : 'Collapse progress'} aria-expanded={!collapsed} onClick={() => setCollapsed(value => !value)}>{collapsed ? <RiExpandVerticalLine size={16} aria-hidden /> : <RiSubtractLine size={16} aria-hidden />}</button>\n    </div>\n    <motion.div className=\"ui-agent-progress__steps\" initial={false} animate={{ height: collapsed ? 0 : 'auto', opacity: collapsed ? 0 : 1, marginTop: collapsed ? 0 : 9 }} transition={{ duration: reducedMotion ? 0 : .24, ease: [0.2, .75, .25, 1] }} inert={collapsed}>\n      <AnimatePresence initial={false}>{steps.slice(0, revealedCount ?? steps.length).map(step => <motion.button type=\"button\" key={step.id} disabled={!onStepClick} initial={reducedMotion ? false : { opacity: 0, height: 0, filter: 'blur(3px)' }} animate={{ opacity: 1, height: 32, filter: 'blur(0px)' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: reducedMotion ? 0 : .28, ease: settleEase }} className=\"ui-agent-progress__step\" data-status={step.status ?? 'pending'} onClick={() => onStepClick?.(step.id)}>\n        <span className=\"ui-agent-progress__mark\" aria-hidden=\"true\"><AnimatePresence mode=\"wait\" initial={false}><motion.span key={step.status ?? 'pending'} initial={reducedMotion ? false : { opacity: 0, scale: .65 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: .65 }} transition={{ duration: reducedMotion ? 0 : .2, ease: settleEase }}>{step.status === 'complete' ? <RiCheckLine size={11} /> : step.status === 'active' ? <svg viewBox=\"0 0 20 20\" data-controlled={step.progress !== undefined || undefined}><circle cx=\"10\" cy=\"10\" r=\"7\" /><circle cx=\"10\" cy=\"10\" r=\"7\" style={step.progress === undefined ? undefined : { strokeDashoffset: 44 * (1 - Math.min(1, Math.max(0, step.progress))) }} /></svg> : null}</motion.span></AnimatePresence></span>\n        <span className=\"ui-agent-progress__label\"><span className=\"ui-agent-progress__label-text\">{step.label}<motion.span className=\"ui-agent-progress__strike\" initial={false} animate={{ scaleX: step.status === 'complete' ? 1 : 0, opacity: step.status === 'complete' ? 1 : 0 }} transition={{ duration: reducedMotion ? 0 : .32, delay: reducedMotion ? 0 : step.status === 'complete' ? .08 : 0, ease: settleEase }} /></span></span>{step.duration && <small>{step.duration}</small>}\n      </motion.button>)}</AnimatePresence>\n    </motion.div>\n  </div>;\n}\n",
+      "sha256": "ca4259ff62bd3acc52f9447ba97d47f9201c7de850749953f41c7b973d26a329",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 249,
+          "end": 259
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-agent-progress",
+      "ui-agent-progress__count",
+      "ui-agent-progress__head",
+      "ui-agent-progress__label",
+      "ui-agent-progress__label-text",
+      "ui-agent-progress__mark",
+      "ui-agent-progress__overall",
+      "ui-agent-progress__step",
+      "ui-agent-progress__steps",
+      "ui-agent-progress__strike",
+      "ui-step-duration"
+    ],
+    "prefixes": []
+  }
+}

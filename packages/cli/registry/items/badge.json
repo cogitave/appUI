@@ -1,0 +1,60 @@
+{
+  "name": "badge",
+  "title": "Badge",
+  "group": "Base",
+  "type": "component",
+  "description": "Small count labels for navigation and unread totals. The primary color sits comfortably on selected surfaces.",
+  "sections": [
+    "Preview",
+    "Colors",
+    "In navigation"
+  ],
+  "example": "<Badge color=\"neutral\">91</Badge>\n<Badge color=\"primary\">152</Badge>",
+  "entryFiles": [
+    "components/base/badges/badge.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/badges/badge.tsx",
+      "names": [
+        "Badge",
+        "BadgeColor",
+        "BadgeProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/badges/badge.tsx",
+      "content": "import type { HTMLAttributes } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type BadgeColor = 'primary' | 'neutral' | 'new';\nexport type BadgeProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & { color?: BadgeColor; variant?: 'count' | 'label' | 'pill' | 'subtle' | 'index' };\n\nexport function Badge({ color = 'neutral', variant = 'count', className, ...props }: BadgeProps) {\n  return <span data-color={color} data-variant={variant} className={cx('ui-badge', className)} {...props} />;\n}\n",
+      "sha256": "86b64775ebecc2e54ff2a0b217626324821a72bfbce71fc355e7ec5a94f16178",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 65,
+          "end": 75
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-badge"
+    ],
+    "prefixes": []
+  }
+}

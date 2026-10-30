@@ -1,0 +1,61 @@
+{
+  "name": "streaming-text",
+  "title": "Streaming Text",
+  "group": "Base",
+  "type": "component",
+  "description": "Show incoming text as it arrives, with a small fade on each appended part and an optional cursor. Content stays readable when motion is reduced.",
+  "sections": [
+    "Preview",
+    "Cursor and motion",
+    "Incoming chunks"
+  ],
+  "example": "<StreamingText text={response} isStreaming={isRunning} />",
+  "entryFiles": [
+    "components/base/streaming-text/streaming-text.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/streaming-text/streaming-text.tsx",
+      "names": [
+        "StreamingText",
+        "StreamingTextProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/streaming-text/streaming-text.tsx",
+      "content": "'use client';\n\nimport { useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type StreamingTextProps = { text: string; isStreaming?: boolean; showCursor?: boolean; animate?: boolean; className?: string; };\n\n/** Display incoming text immediately; animate only the latest appended part. */\nexport function StreamingText({text,isStreaming=false,showCursor=true,animate=true,className}: StreamingTextProps) {\n  const [snapshot,setSnapshot] = useState({text,prefix:text.length});\n  let current = snapshot;\n  if(snapshot.text !== text) {\n    current = {text,prefix:text.startsWith(snapshot.text) ? snapshot.text.length : 0};\n    setSnapshot(current);\n  }\n  return <span className={cx('ui-streaming-text',className)} data-streaming={isStreaming || undefined} aria-busy={isStreaming || undefined}>\n    {text.slice(0,current.prefix)}<span key={`${current.prefix}:${text.length}`} className={animate && isStreaming ? 'ui-streaming-text__incoming' : undefined}>{text.slice(current.prefix)}</span>{showCursor && isStreaming && <span className=\"ui-streaming-text__cursor\" aria-hidden/>}\n  </span>;\n}\n",
+      "sha256": "28bffc76433bca1bacd66125ffcf521c31fa43f9c3e2a9674c44d15d7644e3de",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 69,
+          "end": 79
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-streaming-text",
+      "ui-streaming-text__cursor",
+      "ui-streaming-text__incoming"
+    ],
+    "prefixes": []
+  }
+}

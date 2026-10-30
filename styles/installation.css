@@ -1,0 +1,31 @@
+.ui-installation { display: grid; gap: 24px; min-width: 0; padding-top: 48px; scroll-margin-top: 68px; }
+.ui-installation__heading { display: grid; gap: 10px; }
+.ui-installation h2 { margin: 0; color: var(--text-strong); font-size: 20px; font-weight: 500; line-height: 26px; }
+.ui-installation__heading > p { margin: 0; color: var(--text-muted); font-size: 16px; font-weight: 500; line-height: 22px; }
+.ui-installation__heading > div, .ui-installation__note { margin: 0; color: var(--text-muted); font-size: 14px; line-height: 20px; }
+.ui-installation a { color: var(--accent-label); }
+.ui-installation a:hover { text-decoration: underline; }
+.ui-installation__card { min-width: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 28px; background: var(--surface-soft); }
+.ui-installation__intro { display: flex; align-items: flex-start; gap: 16px; padding: 24px; background: var(--surface-base); }
+.ui-installation__intro > div { flex: 1; min-width: 0; }
+.ui-installation__intro h3 { margin: 0; color: var(--text-strong); font-size: 18px; font-weight: 500; line-height: 26px; }
+.ui-installation__intro p { margin: 8px 0 0; color: var(--text-muted); font-size: 14px; line-height: 20px; }
+.ui-installation__intro > .ui-badge { flex: none; }
+.ui-installation__steps { display: grid; gap: 4px; padding: 4px; }
+.ui-installation__step { display: grid; gap: 12px; min-width: 0; padding: 24px 20px 20px; border-radius: 24px; background: var(--surface-base); }
+.ui-installation__step > header { display: flex; align-items: center; gap: 12px; }
+.ui-installation__step > header > span { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 10px; background: var(--surface-soft); color: var(--text-subtle); font-size: 12px; }
+.ui-installation__step h3 { margin: 0; color: var(--text-strong); font-size: 14px; font-weight: 500; line-height: 20px; }
+.ui-installation__step p { margin: 2px 0 0; color: var(--text-muted); font-size: 14px; line-height: 20px; }
+.ui-installation__card > footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; }
+.ui-installation__card > footer strong { color: var(--text-muted); font-size: 14px; line-height: 20px; font-weight: 500; }
+.ui-installation__card > footer p { margin: 2px 0 0; color: var(--text-muted); font-size: 14px; line-height: 20px; }
+.ui-installation__note code { font-family: var(--font-mono-source), monospace; font-size: 12px; }
+@media (max-width: 620px) {
+ .ui-installation { padding-top: 32px; }
+ .ui-installation__intro { padding: 20px 16px; gap: 12px; flex-wrap: wrap; }
+ .ui-installation__intro > div { flex-basis: calc(100% - 68px); }
+ .ui-installation__intro > .ui-badge { margin-left: 68px; }
+ .ui-installation__step { padding: 20px 16px; }
+ .ui-installation__card > footer { flex-wrap: wrap; padding: 20px; }
+}

@@ -1,0 +1,93 @@
+{
+  "name": "accordion",
+  "title": "Accordion",
+  "group": "Base",
+  "type": "component",
+  "description": "Related sections with single or multiple expansion, keyboard navigation and a smooth change in layout height.",
+  "sections": [
+    "Preview",
+    "Multiple sections",
+    "Variants",
+    "Disabled section"
+  ],
+  "example": "<Accordion\n  items={sections}\n  defaultExpandedKeys={['overview']}\n  allowsMultipleExpanded\n  onExpandedChange={setExpandedKeys}\n/>",
+  "entryFiles": [
+    "components/base/accordion/accordion.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/accordion/accordion.tsx",
+      "names": [
+        "Accordion",
+        "AccordionItem",
+        "AccordionProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/accordion/accordion.tsx",
+      "content": "'use client';\n\nimport { useId, useRef, useState, type ReactNode } from 'react';\nimport { RiArrowDownSLine } from '@remixicon/react';\nimport { Collapsible } from '@/components/base/collapsible/collapsible';\nimport { cx } from '@/utils/cx';\n\nexport type AccordionItem = { id: string; title: string; description?: string; leading?: ReactNode; content: ReactNode; isDisabled?: boolean };\nexport type AccordionProps = {\n  items: AccordionItem[];\n  expandedKeys?: string[];\n  defaultExpandedKeys?: string[];\n  onExpandedChange?: (keys: string[]) => void;\n  allowsMultipleExpanded?: boolean;\n  variant?: 'bordered' | 'separated' | 'plain';\n  size?: 'medium' | 'small';\n  headingLevel?: 2 | 3 | 4;\n  className?: string;\n  'aria-label'?: string;\n};\n\nexport function Accordion({ items, expandedKeys, defaultExpandedKeys = [], onExpandedChange, allowsMultipleExpanded = false, variant = 'bordered', size = 'medium', headingLevel = 3, className, 'aria-label': label }: AccordionProps) {\n  const id = useId(), root = useRef<HTMLDivElement>(null);\n  const [internalKeys, setInternalKeys] = useState(defaultExpandedKeys);\n  const keys = expandedKeys ?? internalKeys;\n  const Heading = headingLevel === 2 ? 'h2' : headingLevel === 4 ? 'h4' : 'h3';\n  function toggle(itemId: string) {\n    const next = keys.includes(itemId) ? keys.filter(key => key !== itemId) : allowsMultipleExpanded ? [...keys, itemId] : [itemId];\n    if (expandedKeys === undefined) setInternalKeys(next);\n    onExpandedChange?.(next);\n  }\n  return <div ref={root} className={cx('ui-accordion', className)} data-variant={variant} data-size={size} aria-label={label} role={label ? 'group' : undefined}>\n    {items.map((item, index) => {\n      const open = keys.includes(item.id), triggerId = `${id}-trigger-${index}`, panelId = `${id}-panel-${index}`;\n      return <div className=\"ui-accordion__item\" key={item.id} data-open={open || undefined}>\n        <Heading className=\"ui-accordion__heading\"><button type=\"button\" id={triggerId} aria-expanded={open} aria-controls={panelId} disabled={item.isDisabled} className=\"ui-accordion__trigger\" onClick={() => toggle(item.id)} onKeyDown={event => {\n          if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;\n          event.preventDefault();\n          const buttons = [...root.current!.querySelectorAll<HTMLButtonElement>('.ui-accordion__trigger:not(:disabled)')];\n          const current = buttons.indexOf(event.currentTarget), target = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (current + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;\n          buttons[target]?.focus();\n        }}>\n          {item.leading && <span className=\"ui-accordion__leading\" aria-hidden>{item.leading}</span>}<span className=\"ui-accordion__label\"><strong>{item.title}</strong>{item.description && <span>{item.description}</span>}</span><RiArrowDownSLine size={18} aria-hidden/>\n        </button></Heading>\n        <Collapsible isOpen={open} id={panelId} role=\"region\" aria-labelledby={triggerId}><div className=\"ui-accordion__body\">{item.content}</div></Collapsible>\n      </div>;\n    })}\n  </div>;\n}\n",
+      "sha256": "ad154ffa6ddfd192b9f77e606a95a3cf825145bb3322084dce8ea2cc09b3c2c8",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/collapsible/collapsible",
+          "target": "components/base/collapsible/collapsible.tsx",
+          "start": 162,
+          "end": 203
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 226,
+          "end": 236
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/collapsible/collapsible.tsx",
+      "content": "import type { HTMLAttributes, ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CollapsibleProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & { isOpen: boolean; children: ReactNode };\n\n/** Keep descendants mounted while hiding their focus targets and animating flow. */\nexport function Collapsible({ isOpen, children, className, ...props }: CollapsibleProps) {\n  return <div {...props} className={cx('ui-collapsible', className)} data-open={isOpen || undefined} aria-hidden={!isOpen} inert={!isOpen}>\n    <div className=\"ui-collapsible__inner\"><div className=\"ui-collapsible__content\">{children}</div></div>\n  </div>;\n}\n",
+      "sha256": "639642d279efcb03d280423ca16442c74c8d97c0a83d3692047ac43d0748fa3c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-accordion",
+      "ui-accordion__body",
+      "ui-accordion__heading",
+      "ui-accordion__item",
+      "ui-accordion__label",
+      "ui-accordion__leading",
+      "ui-accordion__trigger",
+      "ui-collapsible",
+      "ui-collapsible__content",
+      "ui-collapsible__inner"
+    ],
+    "prefixes": []
+  }
+}

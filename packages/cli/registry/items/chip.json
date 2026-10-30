@@ -1,0 +1,62 @@
+{
+  "name": "chip",
+  "title": "Chip",
+  "group": "Base",
+  "type": "component",
+  "description": "Compact color labels for statuses, values, and tags. Three emphasis levels cover nine semantic color pairs.",
+  "sections": [
+    "Preview",
+    "Variants and colors",
+    "Outline",
+    "Status dot"
+  ],
+  "example": "<Chip variant=\"bold\" color=\"lime\">+12.5%</Chip>\n<Chip variant=\"subtle\" color=\"cyan\">$3,252</Chip>\n<Chip variant=\"caption\" color=\"rose\">Backend Engineer</Chip>",
+  "entryFiles": [
+    "components/base/badges/chip.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/badges/chip.tsx",
+      "names": [
+        "Chip",
+        "ChipColor",
+        "ChipProps",
+        "ChipVariant"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/badges/chip.tsx",
+      "content": "import type { HTMLAttributes } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type ChipVariant = 'bold' | 'subtle' | 'caption' | 'outline';\nexport type ChipColor = 'lime' | 'rose' | 'yellow' | 'cyan' | 'blue' | 'purple' | 'neutral' | 'gray' | 'soft' | 'primary';\n\nexport type ChipProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & {\n  variant?: ChipVariant;\n  color?: ChipColor;\n};\n\nexport function Chip({ variant = 'bold', color = 'neutral', className, ...props }: ChipProps) {\n  return <span data-variant={variant} data-color={color} className={cx('ui-chip', className)} {...props} />;\n}\n",
+      "sha256": "6fdd36c4971d55e3438e69fd153353f6e2f259b45a47ad12122d3836f289cb0d",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 65,
+          "end": 75
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-chip"
+    ],
+    "prefixes": []
+  }
+}

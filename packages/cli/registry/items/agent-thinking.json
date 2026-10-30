@@ -1,0 +1,68 @@
+{
+  "name": "agent-thinking",
+  "title": "Agent Thinking",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A lightweight status indicator for work in progress, with five motion variants and an elapsed timer.",
+  "sections": [
+    "Preview",
+    "Variants",
+    "Label and timer"
+  ],
+  "example": "<AgentThinking variant=\"wave\" label=\"Thinking\" />",
+  "entryFiles": [
+    "components/blocks/agent-thinking/agent-thinking.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/agent-thinking/agent-thinking.tsx",
+      "names": [
+        "AgentThinking",
+        "AgentThinkingProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/blocks/agent-thinking/agent-thinking.tsx",
+      "content": "'use client';\n\nimport { useEffect, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AgentThinkingProps = {\n  variant?: 'wave' | 'spin' | 'stars' | 'infinity' | 'orb';\n  label?: string;\n  active?: boolean;\n  showTimer?: boolean;\n  shimmer?: boolean;\n  tone?: 'subtle' | 'accent';\n  className?: string;\n};\n\nconst orbitOrder = [0, 1, 2, 7, -1, 3, 6, 5, 4];\n\nfunction ThinkingIndicator({ variant }: { variant: NonNullable<AgentThinkingProps['variant']> }) {\n  if (variant === 'wave' || variant === 'spin') {\n    return <span className=\"ui-agent-thinking__dots\">{Array.from({ length: 9 }, (_, index) => <i key={index} style={{ animationDelay: variant === 'wave' ? `${(Math.floor(index / 3) + index % 3) * 95}ms` : `${orbitOrder[index] * -165}ms` }} />)}</span>;\n  }\n  if (variant === 'stars') return <span className=\"ui-agent-thinking__stars\">{Array.from({ length: 5 }, (_, index) => <i key={index} style={{ animationDelay: `${index * -320}ms` }} />)}</span>;\n  if (variant === 'infinity') return <svg className=\"ui-agent-thinking__infinity\" viewBox=\"0 0 30 18\" fill=\"none\" aria-hidden=\"true\"><path className=\"ui-agent-thinking__infinity-track\" d=\"M15 9C10 1 1 1 1 9s9 8 14 0c5-8 14-8 14 0s-9 8-14 0\" pathLength=\"100\" /><path className=\"ui-agent-thinking__infinity-head\" d=\"M15 9C10 1 1 1 1 9s9 8 14 0c5-8 14-8 14 0s-9 8-14 0\" pathLength=\"100\" /></svg>;\n  return <span className=\"ui-agent-thinking__orb\"><i /><i /><i /></span>;\n}\n\nexport function AgentThinking({ variant = 'wave', label = 'Thinking', active = true, showTimer = true, shimmer = true, tone = 'subtle', className }: AgentThinkingProps) {\n  const [elapsed, setElapsed] = useState(0);\n  useEffect(() => {\n    if (!active || !showTimer) return;\n    const start = performance.now();\n    const timer = window.setInterval(() => setElapsed((performance.now() - start) / 1000), 100);\n    return () => window.clearInterval(timer);\n  }, [active, showTimer]);\n\n  return <div className={cx('ui-agent-thinking', className)} data-variant={variant} data-active={active} data-tone={tone} role=\"status\" aria-live=\"polite\"><span className=\"ui-agent-thinking__indicator\" aria-hidden=\"true\"><ThinkingIndicator variant={variant} /></span><span className={cx('ui-agent-thinking__label', shimmer && active && 'ui-agent-thinking__label--shimmer')}>{active ? label : 'Ready'}</span>{active && showTimer && <time aria-hidden=\"true\">{elapsed.toFixed(1)}s</time>}</div>;\n}\n",
+      "sha256": "4efd3c824aab68812ccf45bd6c583a4157093720b11e96355696467b87116ccf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 80,
+          "end": 90
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-agent-thinking",
+      "ui-agent-thinking__dots",
+      "ui-agent-thinking__indicator",
+      "ui-agent-thinking__infinity",
+      "ui-agent-thinking__infinity-head",
+      "ui-agent-thinking__infinity-track",
+      "ui-agent-thinking__label",
+      "ui-agent-thinking__label--shimmer",
+      "ui-agent-thinking__orb",
+      "ui-agent-thinking__stars"
+    ],
+    "prefixes": []
+  }
+}

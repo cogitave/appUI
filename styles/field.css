@@ -1,0 +1,49 @@
+.ui-field, .ui-field-group, .ui-field__layout { width: 100%; min-width: 0; }
+.ui-field__layout > :is(.ui-input-field, .ui-textarea-field, .ui-select, .ui-combobox, .ui-number-field) { width: 100%; min-width: 0; }
+.ui-field { container: ui-field / inline-size; }
+.ui-field-group { container: ui-field-group / inline-size; }
+.ui-field-group__content { display: grid; grid-template-columns: minmax(0,1fr); align-items: start; gap: 20px; min-width: 0; transition: gap var(--motion-standard) var(--motion-ease); }
+.ui-field-group[data-density='compact'] > .ui-animated-height > .ui-animated-height__content > .ui-field-group__content { gap: 12px; }
+.ui-field__layout[data-orientation='horizontal'] > :is(.ui-input-field, .ui-textarea-field, .ui-select, .ui-combobox, .ui-number-field) { display: grid; grid-template-columns: minmax(0,min(32%,156px)) minmax(0,1fr); align-items: start; gap: 6px 16px; }
+.ui-field__layout[data-orientation='horizontal'] > :is(.ui-input-field, .ui-textarea-field, .ui-select, .ui-combobox, .ui-number-field) > :is(.ui-input-field__label, .ui-select__label) { grid-column: 1; grid-row: 1; padding-top: 9px; overflow-wrap: anywhere; }
+.ui-field__layout[data-orientation='horizontal'] > :is(.ui-input-field, .ui-textarea-field, .ui-select, .ui-combobox, .ui-number-field) > :is(.ui-input-field__control, .ui-textarea-field__control, .ui-textarea-field__surface, .ui-select__trigger, .ui-combobox__control, .ui-number-field__control) { grid-column: 2; grid-row: 1; }
+.ui-field__layout[data-orientation='horizontal'] > :is(.ui-input-field, .ui-textarea-field, .ui-select, .ui-combobox, .ui-number-field) > :is(.ui-field-feedback, .ui-textarea-field__foot) { grid-column: 2; grid-row: 2; }
+.ui-field__layout[data-orientation='horizontal'] > .ui-input-field[data-size='small'] > .ui-input-field__label,
+.ui-field__layout[data-orientation='horizontal'] > :is(.ui-combobox,.ui-number-field)[data-size='small'] > .ui-input-field__label { padding-top: 6px; }
+.ui-field__layout[data-orientation='horizontal'] > .ui-input-field[data-size='large'] > .ui-input-field__label { padding-top: 12px; }
+.ui-field__layout[data-orientation='horizontal'] > .ui-select[data-size='small'] > .ui-select__label { padding-top: 6px; }
+.ui-field__layout[data-orientation='horizontal'] > .ui-select[data-size='large'] > .ui-select__label { padding-top: 12px; }
+.ui-field-set { min-width: 0; width: 100%; margin: 0; padding: 0; border: 0; color: var(--text-main); }
+.ui-field-set__legend { max-width: 100%; padding: 0; color: var(--text-strong); font-size: var(--text-headline-medium); font-weight: var(--text-headline-medium--font-weight); line-height: var(--text-headline-medium--line-height); letter-spacing: var(--text-headline-medium--letter-spacing); overflow-wrap: anywhere; }
+.ui-field-set__body { display: grid; align-content: start; min-width: 0; gap: 16px; padding-top: 12px; }
+.ui-field-set__description { margin: 0; color: var(--text-muted); font-size: var(--text-body-2-regular); font-weight: var(--text-body-2-regular--font-weight); line-height: var(--text-body-2-regular--line-height); letter-spacing: var(--text-body-2-regular--letter-spacing); overflow-wrap: anywhere; }
+.ui-field-set[data-variant='outline'], .ui-field-set[data-variant='soft'] { padding: 16px; border: 1px solid var(--border-subtle); border-radius: 14px; }
+.ui-field-set[data-variant='soft'] { background: var(--surface-muted); border-color: transparent; }
+.ui-field-set[data-variant='outline'] > .ui-field-set__legend, .ui-field-set[data-variant='soft'] > .ui-field-set__legend { padding-inline: 6px; margin-inline: -6px; }
+.ui-field-set:disabled > .ui-field-set__legend { color: var(--text-subtle); }
+@container ui-field (min-width: 520px) {
+  .ui-field__layout[data-orientation='responsive'] > :is(.ui-input-field, .ui-textarea-field, .ui-select, .ui-combobox, .ui-number-field) { display: grid; grid-template-columns: minmax(0,156px) minmax(0,1fr); align-items: start; gap: 6px 16px; }
+  .ui-field__layout[data-orientation='responsive'] > :is(.ui-input-field, .ui-textarea-field, .ui-select, .ui-combobox, .ui-number-field) > :is(.ui-input-field__label, .ui-select__label) { grid-column: 1; grid-row: 1; padding-top: 9px; overflow-wrap: anywhere; }
+  .ui-field__layout[data-orientation='responsive'] > :is(.ui-input-field, .ui-textarea-field, .ui-select, .ui-combobox, .ui-number-field) > :is(.ui-input-field__control, .ui-textarea-field__control, .ui-textarea-field__surface, .ui-select__trigger, .ui-combobox__control, .ui-number-field__control) { grid-column: 2; grid-row: 1; }
+  .ui-field__layout[data-orientation='responsive'] > :is(.ui-input-field, .ui-textarea-field, .ui-select, .ui-combobox, .ui-number-field) > :is(.ui-field-feedback, .ui-textarea-field__foot) { grid-column: 2; grid-row: 2; }
+  .ui-field__layout[data-orientation='responsive'] > :is(.ui-input-field,.ui-combobox,.ui-number-field)[data-size='small'] > .ui-input-field__label { padding-top: 6px; }
+  .ui-field__layout[data-orientation='responsive'] > .ui-input-field[data-size='large'] > .ui-input-field__label { padding-top: 12px; }
+  .ui-field__layout[data-orientation='responsive'] > .ui-select[data-size='small'] > .ui-select__label { padding-top: 6px; }
+  .ui-field__layout[data-orientation='responsive'] > .ui-select[data-size='large'] > .ui-select__label { padding-top: 12px; }
+}
+@container ui-field-group (min-width: 520px) {
+  .ui-field-group[data-columns='2'] > .ui-animated-height > .ui-animated-height__content > .ui-field-group__content { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@container ui-field-group (min-width: 780px) {
+  .ui-field-group[data-columns='3'] > .ui-animated-height > .ui-animated-height__content > .ui-field-group__content { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@container ui-field-group (min-width: 520px) and (max-width: 779px) {
+  .ui-field-group[data-columns='3'] > .ui-animated-height > .ui-animated-height__content > .ui-field-group__content { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
+.ui-field-set { transition: background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease); }
+.ui-field-set__legend { transition: color var(--motion-fast) var(--motion-ease); }
+.ui-field-set :is(.ui-input-field,.ui-textarea-field,.ui-select,.ui-combobox,.ui-number-field,.ui-radio-group,.ui-slider,.ui-otp,.ui-checkbox,.ui-switch,.ui-radio) { transition: opacity var(--motion-fast) var(--motion-ease); }
+.ui-field-set :is(.ui-checkbox-card,.ui-switch-card,.ui-radio-card) { transition: border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease); }
+
+.ui-field-set :is(.ui-input-field__control,.ui-select__trigger,.ui-date-trigger) { transition: border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease); }

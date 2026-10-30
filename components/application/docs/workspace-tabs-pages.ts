@@ -1,0 +1,3 @@
+export const workspaceTabsPages={
+  'workspace-tabs':{title:'Workspace Tabs',group:'Blocks',description:'Open documents and conversations in shared accessible tabs. Custom leading content, toolbar/footer slots, separate close buttons, unsaved indicators, contained scrolling and three surfaces work with ordinary keyboard navigation.',sections:['Preview','Surfaces','Density','Manual activation','Unsaved work','Right to left'],snippet:`<WorkspaceTabs\n  items={openDocuments}\n  selectedId={activeId}\n  onSelectionChange={setActiveId}\n  onClose={closeDocument}\n  onNewTab={createDocument}\n  renderPanel={document => <DocumentEditor id={document.id} />}\n/>`},
+} as const;

@@ -1,0 +1,276 @@
+{
+  "name": "calendar",
+  "title": "Calendar",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A month grid with colored events, month navigation, overflow counts, event details, and a new-event action.",
+  "sections": [
+    "Preview",
+    "Events",
+    "Month navigation"
+  ],
+  "example": "<Calendar events={events} defaultMonth={new Date(2026, 7, 1)}\n  onNewEvent={createEvent} onEventClick={openEvent} />",
+  "entryFiles": [
+    "components/blocks/calendar/calendar.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/calendar/calendar.tsx",
+      "names": [
+        "Calendar",
+        "CalendarEvent",
+        "CalendarNotification",
+        "CalendarProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/avatar/avatar.tsx",
+      "content": "'use client';\n\nimport type { HTMLAttributes } from 'react';\nimport { useEffect, useRef, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';\nexport type AvatarColor = 'neutral' | 'blue' | 'lime' | 'pink';\n\nexport type AvatarProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & {\n  size?: AvatarSize;\n  color?: AvatarColor;\n  initials?: string;\n  src?: string;\n  alt?: string;\n};\n\nexport function Avatar({ size = 'md', color = 'neutral', initials, src, alt, className, ...props }: AvatarProps) {\n  const [failedSource, setFailedSource] = useState<string | null>(null);\n  const imageRef = useRef<HTMLImageElement>(null);\n  const showImage = Boolean(src && src !== failedSource);\n\n  useEffect(() => {\n    const image = imageRef.current;\n    if (!image || !src) return;\n    const fail = () => setFailedSource(src);\n    if (image.complete && image.naturalWidth === 0) fail();\n    image.addEventListener('error', fail);\n    return () => image.removeEventListener('error', fail);\n  }, [src, showImage]);\n\n  return (\n    <span role=\"img\" aria-label={alt || initials || 'Avatar'} data-size={size} data-color={color} className={cx('ui-avatar', className)} {...props}>\n      <span className=\"ui-avatar__initials\" aria-hidden=\"true\">{initials}</span>\n      {showImage && <img ref={imageRef} src={src} alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\" onError={() => setFailedSource(src!)} />}\n    </span>\n  );\n}\n",
+      "sha256": "c6e2f1f5909af8da88f8ba420c072d1b421c3ae4a00527fe823ff3e760ccc13c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 133,
+          "end": 143
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/dropdown/dropdown.tsx",
+      "content": "'use client';\n\nimport { createContext, useContext, useLayoutEffect, useRef, useState } from 'react';\nimport type { ComponentProps, ReactNode } from 'react';\nimport { Button as AriaButton, Dialog, DialogTrigger, Popover } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { IconButton, type IconButtonProps } from '@/components/base/buttons/icon-button';\n\nconst DropdownContext = createContext<{ close: () => void; isOpen: boolean } | null>(null);\n\nexport interface DropdownProps {\n  isOpen?: boolean;\n  defaultOpen?: boolean;\n  onOpenChange?: (isOpen: boolean) => void;\n  children: ReactNode;\n}\n\nexport function Dropdown({ isOpen, defaultOpen = false, onOpenChange, children }: DropdownProps) {\n  const [internalOpen, setInternalOpen] = useState(defaultOpen);\n  const open = isOpen === undefined ? internalOpen : isOpen;\n  function setOpen(next: boolean) {\n    if (isOpen === undefined) setInternalOpen(next);\n    onOpenChange?.(next);\n  }\n  return <DropdownContext.Provider value={{ close: () => setOpen(false), isOpen: open }}><DialogTrigger isOpen={open} onOpenChange={setOpen}>{children}</DialogTrigger></DropdownContext.Provider>;\n}\n\nexport type DropdownTriggerProps = Omit<ComponentProps<typeof AriaButton>, 'className'> & { className?: string };\nexport function DropdownTrigger({ className, ...props }: DropdownTriggerProps) {\n  return <AriaButton {...props} className={cx('ui-dropdown-trigger', className)} />;\n}\n\n// Icon triggers use the same dimensions as every other icon button.\nexport function DropdownIconTrigger(props: IconButtonProps) {\n  return <IconButton {...props} />;\n}\n\nexport interface DropdownPopoverProps {\n  'aria-label': string;\n  placement?: ComponentProps<typeof Popover>['placement'];\n  triggerRef?: ComponentProps<typeof Popover>['triggerRef'];\n  isOpen?: boolean;\n  onOpenChange?: (open: boolean) => void;\n  offset?: number;\n  className?: string;\n  children: ReactNode;\n}\n\nexport function DropdownPopover({ 'aria-label': ariaLabel, placement = 'bottom start', triggerRef, isOpen, onOpenChange, offset = 5, className, children }: DropdownPopoverProps) {\n  const context = useContext(DropdownContext);\n  const open = isOpen ?? context?.isOpen;\n  const dialogRef = useRef<HTMLElement>(null);\n  useLayoutEffect(() => {\n    if (!open) return;\n    // An interrupted exit keeps the popover mounted, so its focus scope does\n    // not mount again. Restore focus inside on every opening, including reopens.\n    const frame = requestAnimationFrame(() => {\n      const dialog = dialogRef.current;\n      if (dialog && (!dialog.contains(document.activeElement) || document.activeElement === dialog)) {\n        (dialog.querySelector<HTMLElement>('[role=\"menuitem\"]:not(:disabled), input:not([disabled]), textarea:not([disabled])') ?? dialog).focus({ preventScroll: true });\n      }\n    });\n    return () => cancelAnimationFrame(frame);\n  }, [open]);\n  return <Popover placement={placement} data-align={placement.split(' ')[1] ?? 'center'} triggerRef={triggerRef} isOpen={isOpen} onOpenChange={onOpenChange} offset={offset} className={cx('ui-dropdown-popover', className)}>{({isExiting})=><div className=\"ui-dropdown-content\" onKeyDown={event => {\n    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;\n    // Native text/range controls keep their own navigation keys.\n    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;\n    const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('.ui-dropdown-item:not(:disabled), [role=\"menuitem\"]:not(:disabled)'));\n    if (!items.length) return;\n    event.preventDefault();\n    const active = items.indexOf(document.activeElement as HTMLButtonElement);\n    const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : event.key === 'ArrowDown' ? (active + 1) % items.length : (active - 1 + items.length) % items.length;\n    items[next].focus();\n  }}><Dialog inert={isExiting} ref={dialogRef} aria-label={ariaLabel} className=\"ui-dropdown-dialog\"><div>{children}</div></Dialog></div>}</Popover>;\n}\n\nexport function DropdownGroup({ label, children, className }: { label?: string; children: ReactNode; className?: string }) {\n  return <div className={cx('ui-dropdown-group', className)}>{label && <span className=\"ui-dropdown-group__label\">{label}</span>}<div className=\"ui-dropdown-group__items\">{children}</div></div>;\n}\n\nexport interface DropdownItemProps {\n  selected?: boolean;\n  isDisabled?: boolean;\n  closeOnSelect?: boolean;\n  onSelect?: () => void;\n  className?: string;\n  children: ReactNode;\n}\n\nexport function DropdownItem({ selected, isDisabled, closeOnSelect = true, onSelect, className, children }: DropdownItemProps) {\n  const context = useContext(DropdownContext);\n  return <button type=\"button\" disabled={isDisabled} aria-pressed={selected || undefined} className={cx('ui-dropdown-item', className)} onClick={() => { onSelect?.(); if (closeOnSelect) context?.close(); }}>{children}</button>;\n}\n\nexport function DropdownDivider({ className }: { className?: string }) {\n  return <div role=\"separator\" aria-orientation=\"horizontal\" className={cx('ui-dropdown-divider', className)} />;\n}\n",
+      "sha256": "f794de32413632031206cfee27d00e2a72bc1949e99b5e376ba6b171ac06088a",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 271,
+          "end": 281
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 334,
+          "end": 371
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/calendar/calendar.tsx",
+      "content": "'use client';\n\nimport { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';\nimport { createPortal } from 'react-dom';\nimport { RiAddLine, RiArrowLeftSLine, RiArrowRightLine, RiArrowRightSLine, RiCloseLine, RiGlobalLine, RiGroupLine, RiInbox2Line, RiNotification3Line, RiTimeLine, RiVideoChatLine } from '@remixicon/react';\nimport { Dropdown, DropdownIconTrigger, DropdownPopover } from '@/components/base/dropdown/dropdown';\nimport { NotificationCenter, type InboxNotification } from '@/components/blocks/notification-center/notification-center';\nimport { cx } from '@/utils/cx';\n\nexport type CalendarEvent = {\n  id: string;\n  title: string;\n  date: string;\n  time?: string;\n  endTime?: string;\n  color?: 'blue' | 'pink' | 'lime' | 'purple' | 'cyan';\n  description?: string;\n  attendees?: string[];\n  meetingUrl?: string;\n  meetingCode?: string;\n  meetingProvider?: string;\n  timezone?: string;\n  reminder?: string;\n};\nexport type CalendarNotification = Pick<InboxNotification, 'id' | 'title'> & Partial<Pick<InboxNotification, 'category' | 'time' | 'avatar' | 'status' | 'action' | 'secondaryAction'>> & { detail?: string; read?: boolean };\nexport type CalendarProps = {\n  events: CalendarEvent[];\n  notifications?: CalendarNotification[];\n  month?: Date;\n  defaultMonth?: Date;\n  onNotificationReadChange?: (id: string, read: boolean) => void;\n  onMonthChange?: (month: Date) => void;\n  onNewEvent?: (date?: string) => void;\n  onEventClick?: (event: CalendarEvent) => void;\n  onJoinMeeting?: (event: CalendarEvent) => void;\n  className?: string;\n};\n\nconst weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];\nconst keyOf = (date: Date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');\nconst monthName = (date: Date) => new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(date);\nconst eventDate = (value: string) => new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(value + 'T12:00:00'));\nfunction durationText(start: string, end: string) {\n  const [startHours, startMinutes] = start.split(':').map(Number);\n  const [endHours, endMinutes] = end.split(':').map(Number);\n  const minutes = ((endHours * 60 + endMinutes) - (startHours * 60 + startMinutes) + 1440) % 1440;\n  return [Math.floor(minutes / 60) ? Math.floor(minutes / 60) + 'h' : '', minutes % 60 ? minutes % 60 + 'm' : ''].join('');\n}\n\nexport function Calendar({ events, notifications = [], month, defaultMonth = new Date(), onMonthChange, onNewEvent, onEventClick, onJoinMeeting, onNotificationReadChange, className }: CalendarProps) {\n  const [internalMonth, setInternalMonth] = useState(new Date(defaultMonth.getFullYear(), defaultMonth.getMonth(), 1));\n  const [selected, setSelected] = useState<CalendarEvent | null>(null);\n  const [feed, setFeed] = useState<'notifications' | 'inbox' | null>(null);\n  const [readIds, setReadIds] = useState<string[]>([]);\n  const [popoverPosition, setPopoverPosition] = useState({ left: 0, top: 0 });\n  const gridRef = useRef<HTMLDivElement>(null);\n  const anchorRef = useRef<HTMLButtonElement>(null);\n  const popoverRef = useRef<HTMLElement>(null);\n  const current = month ?? internalMonth;\n  const first = new Date(current.getFullYear(), current.getMonth(), 1);\n  const gridStart = new Date(first.getFullYear(), first.getMonth(), 1 - first.getDay());\n  const days = Array.from({ length: 42 }, (_, index) => new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index));\n  const byDate = useMemo(() => {\n    const grouped = new Map<string, CalendarEvent[]>();\n    for (const event of events) grouped.set(event.date, [...(grouped.get(event.date) ?? []), event]);\n    return grouped;\n  }, [events]);\n  const notificationItems: InboxNotification[] = notifications.map(item => ({ ...item, category: item.category ?? 'activity', time: item.time ?? '', description: item.detail ?? '', unread: !item.read && !readIds.includes(item.id) }));\n  const unread = notificationItems.filter(item => item.unread).length;\n  function markRead(ids: string[]) {\n    setReadIds(current => [...new Set([...current, ...ids])]);\n    ids.forEach(id => onNotificationReadChange?.(id, true));\n  }\n  const monthEvents = events.filter(item => item.date.slice(0, 7) === keyOf(first).slice(0, 7)).slice(0, 4);\n\n  function move(offset: number) {\n    const next = new Date(first.getFullYear(), first.getMonth() + offset, 1);\n    if (!month) setInternalMonth(next);\n    onMonthChange?.(next);\n    setSelected(null);\n    setFeed(null);\n  }\n\n  function positionPopover() {\n    const anchor = anchorRef.current?.getBoundingClientRect();\n    if (!anchor) return;\n    const width = Math.min(302, window.innerWidth - 24);\n    const left = window.innerWidth < 680 ? Math.max(12, (window.innerWidth - width) / 2) : Math.min(window.innerWidth - width - 12, anchor.right + 8);\n    const gridTop = gridRef.current?.getBoundingClientRect().top ?? anchor.top;\n    const desiredTop = Math.max(gridTop, anchor.top - 104);\n    const actualHeight = popoverRef.current?.getBoundingClientRect().height ?? 412;\n    const top = Math.max(12, Math.min(desiredTop, window.innerHeight - actualHeight - 12));\n    setPopoverPosition({ left, top });\n  }\n\n  useLayoutEffect(() => {\n    if (!selected) return;\n    positionPopover();\n    window.addEventListener('resize', positionPopover);\n    window.addEventListener('scroll', positionPopover, true);\n    return () => {\n      window.removeEventListener('resize', positionPopover);\n      window.removeEventListener('scroll', positionPopover, true);\n    };\n  }, [selected]);\n\n  useEffect(() => {\n    if (!selected) return;\n    function dismiss(event: PointerEvent) {\n      const target = event.target as Node;\n      if (!popoverRef.current?.contains(target) && !gridRef.current?.contains(target)) setSelected(null);\n    }\n    function onKeyDown(event: KeyboardEvent) { if (event.key === 'Escape') setSelected(null); }\n    document.addEventListener('pointerdown', dismiss);\n    document.addEventListener('keydown', onKeyDown);\n    return () => {\n      document.removeEventListener('pointerdown', dismiss);\n      document.removeEventListener('keydown', onKeyDown);\n    };\n  }, [selected]);\n\n  function openEvent(event: CalendarEvent, anchor: HTMLButtonElement) {\n    anchorRef.current = anchor;\n    setSelected(event);\n    setFeed(null);\n    onEventClick?.(event);\n  }\n\n  return <div className={cx('ui-calendar', className)}>\n    <div className=\"ui-calendar__head\">\n      <h2>{monthName(first)}</h2>\n      <div className=\"ui-calendar__head-actions\">\n        <div className=\"ui-calendar__feed-wrap\">\n          <Dropdown isOpen={feed === 'notifications'} onOpenChange={open => setFeed(current => open ? 'notifications' : current === 'notifications' ? null : current)}>\n            <DropdownIconTrigger icon={RiNotification3Line} aria-label=\"Notifications\" badge={unread} />\n            <DropdownPopover aria-label=\"Calendar notifications\" placement=\"bottom end\" offset={8} className=\"ui-calendar__notifications-popover\">\n              <NotificationCenter items={notificationItems} onReadChange={id => markRead([id])} onMarkAllRead={() => markRead(notificationItems.filter(item => item.unread).map(item => item.id))} />\n            </DropdownPopover>\n          </Dropdown>\n          <Dropdown isOpen={feed === 'inbox'} onOpenChange={open => setFeed(current => open ? 'inbox' : current === 'inbox' ? null : current)}>\n            <DropdownIconTrigger icon={RiInbox2Line} aria-label=\"Inbox\" />\n            <DropdownPopover aria-label=\"Events this month\" placement=\"bottom end\" offset={8} className=\"ui-calendar__inbox-popover\"><div className=\"ui-calendar__inbox\"><strong>Events this month</strong>{monthEvents.length ? monthEvents.map(item => <div key={item.id}><b>{item.title}</b><small>{eventDate(item.date)}</small></div>) : <p>No events this month</p>}</div></DropdownPopover>\n          </Dropdown>\n        </div>\n        <div className=\"ui-calendar__tools\"><button type=\"button\" aria-label=\"Previous month\" onClick={() => move(-1)}><RiArrowLeftSLine size={18} aria-hidden /></button><span>{monthName(first)}</span><button type=\"button\" aria-label=\"Next month\" onClick={() => move(1)}><RiArrowRightSLine size={18} aria-hidden /></button></div>\n        {onNewEvent && <button className=\"ui-calendar__new\" type=\"button\" onClick={() => onNewEvent()}><RiAddLine size={17} aria-hidden /> New event</button>}\n      </div>\n    </div>\n    <div className=\"ui-calendar__scroller\"><div className=\"ui-calendar__grid\" ref={gridRef}>\n      <div className=\"ui-calendar__weekdays\">{weekdays.map(day => <span key={day}>{day}</span>)}</div>\n      <div className=\"ui-calendar__days\">{days.map(date => {\n        const key = keyOf(date);\n        const dayEvents = byDate.get(key) ?? [];\n        const outside = date.getMonth() !== first.getMonth();\n        return <div key={key} className=\"ui-calendar__day\" data-outside={outside || undefined} data-today={key === keyOf(new Date()) || undefined}>\n          <button className=\"ui-calendar__day-number\" type=\"button\" disabled={!onNewEvent} aria-label={new Intl.DateTimeFormat('en', { dateStyle: 'full' }).format(date)} onClick={() => { setSelected(null); onNewEvent?.(key); }}>{date.getDate()}</button>\n          <div className=\"ui-calendar__events\">\n            {dayEvents.length > 4 && <button className=\"ui-calendar__more\" type=\"button\" onClick={event => openEvent(dayEvents[4], event.currentTarget)}>+{dayEvents.length - 4} more</button>}\n            {dayEvents.slice(0, 4).map(event => <button key={event.id} type=\"button\" data-color={event.color ?? 'blue'} aria-label={[event.title, key, event.time].filter(Boolean).join(' · ')} onClick={click => openEvent(event, click.currentTarget)}><span>{event.title}</span>{event.time && <time>{event.time}</time>}</button>)}\n          </div>\n        </div>;\n      })}</div>\n    </div></div>\n    {selected && typeof document !== 'undefined' && createPortal(<aside className=\"ui-calendar__popover\" ref={popoverRef} role=\"dialog\" aria-modal=\"false\" aria-label={selected.title + ' details'} style={popoverPosition}>\n      <div className=\"ui-calendar__popover-head\"><div><strong>{selected.title}</strong><span>{eventDate(selected.date)}</span></div><button type=\"button\" aria-label=\"Close event details\" onClick={() => setSelected(null)}><RiCloseLine size={17} /></button></div>\n      {selected.meetingProvider && <div className=\"ui-calendar__popover-row ui-calendar__popover-meeting\"><RiVideoChatLine size={16} aria-hidden /><span>{selected.meetingProvider}</span>{selected.meetingCode && <code>{selected.meetingCode}</code>}{(selected.meetingUrl || onJoinMeeting) && (selected.meetingUrl ? <a href={selected.meetingUrl} target=\"_blank\" rel=\"noreferrer\">Join</a> : <button type=\"button\" onClick={() => onJoinMeeting?.(selected)}>Join</button>)}</div>}\n      {selected.time && <div className=\"ui-calendar__popover-row\"><RiTimeLine size={16} aria-hidden /><span>{selected.time}</span>{selected.endTime && <><RiArrowRightLine size={16} aria-hidden /><span>{selected.endTime}</span></>}{selected.endTime && <small>{durationText(selected.time, selected.endTime)}</small>}</div>}\n      {selected.timezone && <div className=\"ui-calendar__popover-row\"><RiGlobalLine size={16} aria-hidden /><span>{selected.timezone}</span></div>}\n      {selected.attendees?.length ? <div className=\"ui-calendar__popover-row ui-calendar__popover-participants\"><div className=\"ui-calendar__popover-section-title\"><RiGroupLine size={16} aria-hidden /><span>Participants</span></div>{selected.attendees.map((person, index) => <div className=\"ui-calendar__person\" key={person}><span data-index={index % 4}>{person[0]?.toUpperCase()}</span>{person}</div>)}</div> : null}\n      {selected.reminder && <div className=\"ui-calendar__popover-row\"><RiNotification3Line size={16} aria-hidden /><span>Reminders</span><b>{selected.reminder}</b></div>}\n      {selected.description && <p className=\"ui-calendar__popover-description\">{selected.description}</p>}\n    </aside>, document.body)}\n  </div>;\n}\n",
+      "sha256": "e3bc7e88c086759dc0f6fae0533a6087fe4b81c44a6e85898dcf4dde76d43b22",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/dropdown/dropdown",
+          "target": "components/base/dropdown/dropdown.tsx",
+          "start": 405,
+          "end": 440
+        },
+        {
+          "kind": "module",
+          "value": "@/components/blocks/notification-center/notification-center",
+          "target": "components/blocks/notification-center/notification-center.tsx",
+          "start": 503,
+          "end": 562
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 585,
+          "end": 595
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/notification-center/notification-center.tsx",
+      "content": "'use client';\n\nimport { useState } from 'react';\nimport { motion, AnimatePresence, useReducedMotion } from 'motion/react';\nimport { RiCheckDoubleLine, RiNotification3Line } from '@remixicon/react';\nimport { Avatar } from '@/components/base/avatar/avatar';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type InboxNotification = { id: string; category: 'mentions' | 'system' | 'activity'; title: string; description: string; time: string; group?: string; unread?: boolean; status?: 'neutral' | 'information' | 'success' | 'error'; icon?: IconComponent; avatar?: { src?: string; alt: string; initials: string }; action?: { label: string; variant?: 'primary' | 'secondary' | 'danger'; onPress: () => void }; secondaryAction?: { label: string; variant?: 'primary' | 'secondary' | 'danger'; onPress: () => void } };\ntype Filter = 'all' | 'mentions' | 'system';\nexport type NotificationCenterProps = { items: InboxNotification[]; tab?: Filter; defaultTab?: Filter; onTabChange?: (tab: Filter) => void; onReadChange?: (id: string, read: boolean) => void; onMarkAllRead?: () => void; onAction?: (notificationId: string, actionLabel: string) => void; className?: string };\nexport function NotificationCenter({ items, tab, defaultTab = 'all', onTabChange, onReadChange, onMarkAllRead, onAction, className }: NotificationCenterProps) {\n  const [internalFilter, setInternalFilter] = useState<Filter>(defaultTab);\n  const filter = tab ?? internalFilter;\n  const [readIds, setReadIds] = useState<string[]>([]);\n  const reducedMotion = useReducedMotion();\n  const unread = items.filter(item => item.unread && !readIds.includes(item.id)).length;\n  const visible = items.filter(item => filter === 'all' || item.category === filter);\n  function markRead(id: string) { if (readIds.includes(id)) return; setReadIds(current => [...current,id]); onReadChange?.(id,true); }\n  function markAll() { if (!unread) return; setReadIds(items.map(item => item.id)); onMarkAllRead?.(); }\n  return <div className={cx('ui-notification-center', className)}><header><div><h2>Notifications</h2><p>{unread} unread</p></div><button type=\"button\" aria-disabled={!unread} onClick={markAll}>Mark all read</button></header><div className=\"ui-notification-center__tabs\" role=\"tablist\" aria-label=\"Notification filter\">{(['all','mentions','system'] as const).map(item => <button key={item} type=\"button\" role=\"tab\" aria-selected={filter === item} onClick={() => { if (tab === undefined) setInternalFilter(item); onTabChange?.(item); }}>{item[0].toUpperCase()+item.slice(1)} <span>{item === 'all' ? items.length : items.filter(entry => entry.category === item).length}</span></button>)}</div><div className=\"ui-notification-center__list\"><AnimatePresence mode=\"popLayout\" initial={false}>{visible.length ? visible.map(item => {\n    const Icon = item.icon ?? RiNotification3Line;\n    const actions = [item.action, item.secondaryAction].filter(action => action !== undefined);\n    return <motion.article key={item.id} className=\"ui-notification-center__item\" layout initial={reducedMotion ? false : { opacity: 0, y: 8, filter: 'blur(3px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={reducedMotion ? undefined : { opacity: 0, y: -8, filter: 'blur(3px)' }} transition={{ duration: reducedMotion ? 0 : .28, ease: [0.2, .75, .25, 1] }} data-unread={item.unread && !readIds.includes(item.id) || undefined} data-status={item.status ?? 'neutral'}><div className=\"ui-notification-center__avatar\">{item.avatar ? <Avatar size=\"md\" src={item.avatar.src} alt={item.avatar.alt} initials={item.avatar.initials} /> : <Icon size={20} aria-hidden />}</div><div className=\"ui-notification-center__copy\"><div className=\"ui-notification-center__headline\"><strong>{item.title}</strong><div className=\"ui-notification-center__meta\"><time>{item.time}</time>{item.unread && !readIds.includes(item.id) && <button type=\"button\" aria-label={`Mark ${item.title} as read`} onClick={() => markRead(item.id)} />}</div></div><p>{item.description}</p>{actions.length > 0 && <div className=\"ui-notification-center__actions\">{actions.map((action, index) => <button key={`${item.id}-${index}`} type=\"button\" data-variant={action.variant ?? (index === 0 ? 'primary' : 'secondary')} onClick={() => { action.onPress(); onAction?.(item.id, action.label); markRead(item.id); }}>{action.label}</button>)}</div>}</div></motion.article>;\n  }) : <div className=\"ui-notification-center__empty\" key=\"empty\"><RiCheckDoubleLine size={25} aria-hidden /><strong>All caught up</strong><span>There’s nothing new in this view.</span></div>}</AnimatePresence></div></div>;\n}\n",
+      "sha256": "c3fb282da4224bab12b47488b5c4e2871760bc720bcbc1c368d5ce5cac4235e2",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/avatar/avatar",
+          "target": "components/base/avatar/avatar.tsx",
+          "start": 222,
+          "end": 253
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 292,
+          "end": 327
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 350,
+          "end": 360
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "react-dom": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-avatar",
+      "ui-avatar__initials",
+      "ui-calendar",
+      "ui-calendar__day",
+      "ui-calendar__day-number",
+      "ui-calendar__days",
+      "ui-calendar__events",
+      "ui-calendar__feed-wrap",
+      "ui-calendar__grid",
+      "ui-calendar__head",
+      "ui-calendar__head-actions",
+      "ui-calendar__inbox",
+      "ui-calendar__inbox-popover",
+      "ui-calendar__more",
+      "ui-calendar__new",
+      "ui-calendar__notifications-popover",
+      "ui-calendar__person",
+      "ui-calendar__popover",
+      "ui-calendar__popover-description",
+      "ui-calendar__popover-head",
+      "ui-calendar__popover-meeting",
+      "ui-calendar__popover-participants",
+      "ui-calendar__popover-row",
+      "ui-calendar__popover-section-title",
+      "ui-calendar__scroller",
+      "ui-calendar__tools",
+      "ui-calendar__weekdays",
+      "ui-dropdown-content",
+      "ui-dropdown-dialog",
+      "ui-dropdown-divider",
+      "ui-dropdown-group",
+      "ui-dropdown-group__items",
+      "ui-dropdown-group__label",
+      "ui-dropdown-item",
+      "ui-dropdown-popover",
+      "ui-dropdown-trigger",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-notification-center",
+      "ui-notification-center__actions",
+      "ui-notification-center__avatar",
+      "ui-notification-center__copy",
+      "ui-notification-center__empty",
+      "ui-notification-center__headline",
+      "ui-notification-center__item",
+      "ui-notification-center__list",
+      "ui-notification-center__meta",
+      "ui-notification-center__tabs",
+      "ui-spinner"
+    ],
+    "prefixes": []
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "name": "file-upload",
+  "title": "File Upload",
+  "group": "Base",
+  "type": "component",
+  "description": "A keyboard-accessible dropzone with file type and size validation, visible progress, and clear completion feedback.",
+  "sections": [
+    "Preview",
+    "Validation",
+    "Progress"
+  ],
+  "example": "<FileUpload accept=\".pdf,.png\" maxSize={8 * 1024 * 1024}\n  onFilesAccepted={setFiles} onReject={setError} />",
+  "entryFiles": [
+    "components/base/file-upload/file-upload.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/file-upload/file-upload.tsx",
+      "names": [
+        "FileUpload",
+        "FileUploadProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/file-upload/file-upload.tsx",
+      "content": "'use client';\n\nimport { useRef, useState } from 'react';\nimport { RiCheckLine, RiFileLine, RiUploadCloud2Line } from '@remixicon/react';\nimport { cx } from '@/utils/cx';\n\nexport type FileUploadProps = {\n  accept?: string;\n  maxSize?: number;\n  multiple?: boolean;\n  isDisabled?: boolean;\n  progress?: number;\n  onFilesAccepted?: (files: File[]) => void;\n  onReject?: (message: string) => void;\n  className?: string;\n  label?: string;\n  hint?: string;\n};\n\nfunction matchesAccept(file: File, accept: string) {\n  if (!accept) return true;\n  return accept.split(',').some(part => {\n    const rule = part.trim().toLowerCase();\n    if (rule.startsWith('.')) return file.name.toLowerCase().endsWith(rule);\n    if (rule.endsWith('/*')) return file.type.toLowerCase().startsWith(rule.slice(0, -1));\n    return file.type.toLowerCase() === rule;\n  });\n}\n\nexport function FileUpload({ accept = '.pdf,.jpg,.jpeg,.png,.xlsx', maxSize = 8 * 1024 * 1024, multiple = false, isDisabled = false, progress, onFilesAccepted, onReject, className, label = 'Drag and drop to upload or select', hint = 'PDF, JPG, PNG, XLSX (max 8 MB)' }: FileUploadProps) {\n  const inputRef = useRef<HTMLInputElement>(null);\n  const [isDragging, setDragging] = useState(false);\n  const [error, setError] = useState('');\n  const [selected, setSelected] = useState<File[]>([]);\n\n  function receive(files: FileList | null) {\n    if (!files || isDisabled) return;\n    const next = Array.from(files);\n    const invalid = next.find(file => !matchesAccept(file, accept) || file.size > maxSize);\n    if (invalid) {\n      const message = invalid.size > maxSize ? `${invalid.name} exceeds the ${Math.round(maxSize / 1024 / 1024)} MB limit.` : `${invalid.name} is not a supported file type.`;\n      setError(message);\n      onReject?.(message);\n      return;\n    }\n    const accepted = multiple ? next : next.slice(0, 1);\n    setError('');\n    setSelected(accepted);\n    onFilesAccepted?.(accepted);\n  }\n\n  const completed = progress === 100;\n  return <div className={cx('ui-file-upload', className)} data-dragging={isDragging || undefined} data-disabled={isDisabled || undefined} data-error={Boolean(error) || undefined}>\n    <input ref={inputRef} className=\"ui-file-upload__input\" type=\"file\" accept={accept} multiple={multiple} disabled={isDisabled} aria-label={label} onChange={event => { receive(event.currentTarget.files); event.currentTarget.value = ''; }} />\n    <div className=\"ui-file-upload__dropzone\" role=\"button\" tabIndex={isDisabled ? -1 : 0} aria-disabled={isDisabled} onClick={() => inputRef.current?.click()} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inputRef.current?.click(); } }} onDragEnter={event => { event.preventDefault(); if (!isDisabled) setDragging(true); }} onDragOver={event => event.preventDefault()} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={event => { event.preventDefault(); setDragging(false); receive(event.dataTransfer.files); }}>\n      <span className=\"ui-file-upload__icon\">{completed ? <RiCheckLine size={22} aria-hidden /> : selected.length ? <RiFileLine size={22} aria-hidden /> : <RiUploadCloud2Line size={22} aria-hidden />}</span>\n      <strong>{selected.length ? selected.map(file => file.name).join(', ') : label}</strong>\n      <small>{error || (selected.length ? `${selected.length} ${selected.length === 1 ? 'file' : 'files'} ready` : hint)}</small>\n      {progress !== undefined && selected.length > 0 && <span className=\"ui-file-upload__progress\" aria-label=\"Upload progress\" role=\"progressbar\" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.max(0, Math.min(100, progress))}%` }} /></span>}\n    </div>\n    <span className=\"ui-file-upload__status\" role=\"status\">{error || (selected.length ? `${selected.length} file selected.` : '')}</span>\n  </div>;\n}\n",
+      "sha256": "0bcb67aa3bdf804e79197c106fc05260537d0527bf950488bac411443ae0f790",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 157,
+          "end": 167
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-file-upload",
+      "ui-file-upload__dropzone",
+      "ui-file-upload__icon",
+      "ui-file-upload__input",
+      "ui-file-upload__progress",
+      "ui-file-upload__status"
+    ],
+    "prefixes": []
+  }
+}

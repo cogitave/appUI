@@ -1,0 +1,468 @@
+{
+  "name": "date-picker",
+  "title": "Date Picker",
+  "group": "Base",
+  "type": "component",
+  "description": "Choose a single day or a date range in a calendar that supports keyboard navigation, quick ranges, editable dates, and an explicit Apply action.",
+  "sections": [
+    "Preview",
+    "Meeting scheduler",
+    "Quick select",
+    "Controlled and uncontrolled",
+    "Disabled",
+    "Single date"
+  ],
+  "example": "<DateRangePicker\n  value={range}\n  onChange={setRange}\n  aria-label=\"Report dates\"\n/>\n\n<DatePicker onChange={setDate} aria-label=\"Due date\" />",
+  "entryFiles": [
+    "components/base/date-picker/date-picker.tsx",
+    "components/base/date-picker/date-range-picker.tsx",
+    "components/base/date-picker/meeting-scheduler.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/date-picker/date-picker.tsx",
+      "names": [
+        "DatePicker",
+        "DatePickerProps"
+      ]
+    },
+    {
+      "path": "components/base/date-picker/date-range-picker.tsx",
+      "names": [
+        "DateRangePicker",
+        "DateRangePickerProps",
+        "DateRangeValue"
+      ]
+    },
+    {
+      "path": "components/base/date-picker/meeting-scheduler.tsx",
+      "names": [
+        "MeetingScheduler",
+        "MeetingSchedulerProps",
+        "MeetingSelection"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/button.tsx",
+      "content": "'use client';\n\nimport type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\nimport { Spinner } from '@/components/base/spinner/spinner';\n\nexport type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline' | 'solid' | 'quiet';\nexport type ButtonSize = 'medium' | 'small' | 'xs';\n\ntype NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;\ntype ContentProps =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonProps = NativeButtonProps & ContentProps & {\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  trailingIcon?: IconComponent;\n  isLoading?: boolean;\n  loadingLabel?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\nconst base = 'ui-button inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none outline-none';\nconst sizes: Record<ButtonSize, string> = {\n  medium: 'h-9 rounded-[10px] px-2 gap-0.5',\n  small: 'h-8 rounded-lg px-2 gap-0.5',\n  xs: 'h-6 rounded-[5px] px-2 gap-0.5',\n};\nexport const buttonIconClassNames: Record<ButtonSize, string> = { medium: 'size-5', small: 'size-[18px]', xs: 'size-3.5' };\nexport function buttonClassNames(size: ButtonSize, iconOnly = false, className?: string) {\n  return cx(base, sizes[size], iconOnly && 'ui-button--icon-only !p-0', className);\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'medium',\n  iconOnly = false,\n  leadingIcon: LeadingIcon,\n  trailingIcon: TrailingIcon,\n  children,\n  className,\n  type = 'button',\n  isLoading = false,\n  loadingLabel,\n  disabled,\n  onClick,\n  onKeyDown,\n  ...props\n}: ButtonProps) {\n  return (\n    <button\n      {...props}\n      type={isLoading && type === 'submit' ? 'button' : type}\n      disabled={disabled}\n      aria-disabled={isLoading || props['aria-disabled'] || undefined}\n      aria-busy={isLoading || undefined}\n      aria-description={isLoading && loadingLabel ? loadingLabel : props['aria-description']}\n      data-variant={variant}\n      data-size={size}\n      data-icon-only={iconOnly || undefined}\n      data-loading={isLoading || undefined}\n      data-loading-label={loadingLabel !== undefined || undefined}\n      className={buttonClassNames(size, iconOnly, className)}\n      onClick={event => { if (isLoading || props['aria-disabled'] === true || props['aria-disabled'] === 'true') { event.preventDefault(); event.stopPropagation(); return; } onClick?.(event); }}\n      onKeyDown={event => { if (isLoading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); return; } onKeyDown?.(event); }}\n    >\n      {LeadingIcon && <span className=\"ui-button__leading-slot\" aria-hidden><LeadingIcon className={cx(buttonIconClassNames[size], 'ui-button__leading-icon')}/></span>}\n      {!iconOnly && <span className=\"ui-button__label\">{children}</span>}\n      {!iconOnly && TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n      <Spinner className=\"ui-button__busy-spinner\" size={size === 'xs' ? 'xs' : size === 'small' ? 'sm' : 'md'}/>\n    </button>\n  );\n}\n",
+      "sha256": "bcfc2d2db4debfd2c11dd8ba8b23a167c705ad3bf7d9151571e501ed195fe158",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 118,
+          "end": 153
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 176,
+          "end": 186
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 214,
+          "end": 247
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/date-picker/date-picker.tsx",
+      "content": "'use client';\n\nimport { useEffect, useState } from 'react';\nimport { Button as AriaButton, Calendar, Dialog, DialogTrigger, Popover } from 'react-aria-components';\nimport type { CalendarDate } from '@internationalized/date';\nimport { RiArrowDownSLine, RiCalendarLine } from '@remixicon/react';\nimport { Button } from '@/components/base/buttons/button';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { DateChipInput, formatTriggerDate, MonthPanel } from './shared';\n\nexport interface DatePickerProps {\n  value?: CalendarDate | null;\n  defaultValue?: CalendarDate | null;\n  onChange?: (value: CalendarDate | null) => void;\n  isDisabled?: boolean;\n  className?: string;\n  placeholder?: string;\n  'aria-label'?: string;\n}\n\nexport function DatePicker({ value, defaultValue = null, onChange, isDisabled: disabled, className, placeholder = 'Select date', 'aria-label': ariaLabel = 'Date' }: DatePickerProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const [internalValue, setInternalValue] = useState<CalendarDate | null>(defaultValue);\n  const committed = value === undefined ? internalValue : value;\n  const [pending, setPending] = useState<CalendarDate | null>(committed);\n  const [isOpen, setOpen] = useState(false);\n  const [openKey, setOpenKey] = useState(0);\n  useEffect(() => { if (isDisabled) setOpen(false); }, [isDisabled]);\n\n  function openChange(next: boolean) {\n    if (next) {\n      setPending(committed);\n      setOpenKey(key => key + 1);\n    }\n    setOpen(next);\n  }\n\n  function apply() {\n    if (!pending) return;\n    if (value === undefined) setInternalValue(pending);\n    onChange?.(pending);\n    setOpen(false);\n  }\n\n  return <DialogTrigger isOpen={isOpen} onOpenChange={openChange}>\n    <AriaButton isDisabled={isDisabled} aria-label={ariaLabel} className={cx('ui-date-trigger', className)}>\n      <RiCalendarLine size={18} aria-hidden />\n      <span>{committed ? formatTriggerDate(committed) : placeholder}</span>\n      <RiArrowDownSLine size={16} aria-hidden />\n    </AriaButton>\n    <Popover placement=\"bottom end\" offset={8} className=\"ui-date-popover ui-date-popover--single\">\n      {({isExiting})=><Dialog inert={isExiting || Boolean(isDisabled)} aria-label={ariaLabel} className=\"ui-date-dialog\">\n        <Calendar key={openKey} aria-label={ariaLabel} value={pending} onChange={setPending} className=\"ui-single-calendar\">\n          <MonthPanel showPrev showNext />\n          <div className=\"ui-date-footer\"><div className=\"ui-date-footer__summary\">{pending && <DateChipInput date={pending} label=\"Selected date\" onCommit={setPending} />}</div><div className=\"ui-date-footer__actions\"><Button variant=\"secondary\" onClick={() => openChange(false)}>Cancel</Button><Button disabled={!pending} onClick={apply}>Apply</Button></div></div>\n        </Calendar>\n      </Dialog>}\n    </Popover>\n  </DialogTrigger>;\n}\n",
+      "sha256": "d0c8a3ae978b1d4660061b5f1fa9898439afbbcc2f9dbac06e48b4277b7e4a0f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 318,
+          "end": 350
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 373,
+          "end": 383
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 420,
+          "end": 457
+        },
+        {
+          "kind": "module",
+          "value": "./shared",
+          "target": "components/base/date-picker/shared.tsx",
+          "start": 522,
+          "end": 530
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/date-picker/date-range-picker.tsx",
+      "content": "'use client';\n\nimport { useEffect, useState } from 'react';\nimport { Button as AriaButton, Dialog, DialogTrigger, Popover, RangeCalendar } from 'react-aria-components';\nimport { CalendarDate, endOfMonth, endOfYear, getLocalTimeZone, isSameDay, startOfMonth, startOfYear, today } from '@internationalized/date';\nimport { RiCalendarLine, RiArrowDownSLine } from '@remixicon/react';\nimport { Button } from '@/components/base/buttons/button';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { DateChipInput, formatTriggerDate, MonthPanel } from './shared';\n\nexport interface DateRangeValue { start: CalendarDate; end: CalendarDate }\nexport interface DateRangePickerProps {\n  value?: DateRangeValue | null;\n  defaultValue?: DateRangeValue | null;\n  onChange?: (value: DateRangeValue | null) => void;\n  isDisabled?: boolean;\n  className?: string;\n  placeholder?: string;\n  'aria-label'?: string;\n}\n\nfunction presets(): { label: string; range: DateRangeValue }[] {\n  const now = today(getLocalTimeZone());\n  const yesterday = now.subtract({ days: 1 });\n  const lastMonth = now.subtract({ months: 1 });\n  const lastYear = now.subtract({ years: 1 });\n  return [\n    { label: 'Today', range: { start: now, end: now } },\n    { label: 'Yesterday', range: { start: yesterday, end: yesterday } },\n    { label: 'Last week', range: { start: now.subtract({ days: 7 }), end: yesterday } },\n    { label: 'This month', range: { start: startOfMonth(now), end: endOfMonth(now) } },\n    { label: 'Last month', range: { start: startOfMonth(lastMonth), end: endOfMonth(lastMonth) } },\n    { label: 'This year', range: { start: startOfYear(now), end: endOfYear(now) } },\n    { label: 'Last year', range: { start: startOfYear(lastYear), end: endOfYear(lastYear) } },\n    { label: 'All time', range: { start: now.subtract({ years: 10 }), end: now } },\n  ];\n}\n\nfunction daysInRange(range: DateRangeValue) {\n  const difference = Date.UTC(range.end.year, range.end.month - 1, range.end.day) - Date.UTC(range.start.year, range.start.month - 1, range.start.day);\n  return Math.round(difference / 86_400_000) + 1;\n}\n\nexport function DateRangePicker({ value, defaultValue = null, onChange, isDisabled: disabled, className, placeholder = 'Select date range', 'aria-label': ariaLabel = 'Date range' }: DateRangePickerProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const [internalValue, setInternalValue] = useState<DateRangeValue | null>(defaultValue);\n  const committed = value === undefined ? internalValue : value;\n  const [pending, setPending] = useState<DateRangeValue | null>(committed);\n  const [isOpen, setOpen] = useState(false);\n  const [openKey, setOpenKey] = useState(0);\n  const [isCompact, setCompact] = useState(false);\n  const choices = presets();\n  useEffect(() => { if (isDisabled) setOpen(false); }, [isDisabled]);\n\n  useEffect(() => {\n    const query = window.matchMedia('(max-width: 880px)');\n    const update = () => setCompact(query.matches);\n    update();\n    query.addEventListener('change', update);\n    return () => query.removeEventListener('change', update);\n  }, []);\n\n  function openChange(next: boolean) {\n    if (next) {\n      setPending(committed);\n      setOpenKey(key => key + 1);\n    }\n    setOpen(next);\n  }\n\n  function apply() {\n    if (!pending) return;\n    if (value === undefined) setInternalValue(pending);\n    onChange?.(pending);\n    setOpen(false);\n  }\n\n  return <DialogTrigger isOpen={isOpen} onOpenChange={openChange}>\n    <AriaButton isDisabled={isDisabled} aria-label={ariaLabel} className={cx('ui-date-trigger', className)}>\n      <RiCalendarLine size={18} aria-hidden />\n      <span>{committed ? `${formatTriggerDate(committed.start)} – ${formatTriggerDate(committed.end)}` : placeholder}</span>\n      <RiArrowDownSLine size={16} aria-hidden />\n    </AriaButton>\n    <Popover placement=\"bottom end\" offset={8} className=\"ui-date-popover\">\n      {({isExiting})=><Dialog inert={isExiting || Boolean(isDisabled)} aria-label={ariaLabel} className=\"ui-date-dialog\">\n        <RangeCalendar key={openKey} aria-label={ariaLabel} visibleDuration={{ months: isCompact ? 1 : 2 }} value={pending} onChange={setPending} className=\"ui-range-calendar\">\n          <div className=\"ui-date-range-layout\">\n            <div className=\"ui-date-presets\" aria-label=\"Quick date ranges\">\n              {choices.map(({ label, range }) => <button key={label} type=\"button\" aria-pressed={!!pending && isSameDay(pending.start, range.start) && isSameDay(pending.end, range.end)} onClick={() => setPending(range)}>{label}</button>)}\n            </div>\n            <div className=\"ui-date-range-main\">\n              <div className=\"ui-date-range-months\"><MonthPanel showPrev showNext /><MonthPanel offset={1} showNext /></div>\n              <div className=\"ui-date-footer\">\n                <div className=\"ui-date-footer__summary\">\n                  {pending && <><DateChipInput date={pending.start} label=\"Start date\" onCommit={start => setPending({ start, end: start.compare(pending.end) > 0 ? start : pending.end })} /><span>–</span><DateChipInput date={pending.end} label=\"End date\" onCommit={end => setPending({ start: end.compare(pending.start) < 0 ? end : pending.start, end })} /><span className=\"ui-date-day-count\">{daysInRange(pending)} days selected</span></>}\n                </div>\n                <div className=\"ui-date-footer__actions\"><Button variant=\"secondary\" onClick={() => openChange(false)}>Cancel</Button><Button disabled={!pending} onClick={apply}>Apply</Button></div>\n              </div>\n            </div>\n          </div>\n        </RangeCalendar>\n      </Dialog>}\n    </Popover>\n  </DialogTrigger>;\n}\n",
+      "sha256": "dbc41d4841a372efd3be03bbabcd7d2505b77ad4979001af5499f9b558abcb20",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 404,
+          "end": 436
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 459,
+          "end": 469
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 506,
+          "end": 543
+        },
+        {
+          "kind": "module",
+          "value": "./shared",
+          "target": "components/base/date-picker/shared.tsx",
+          "start": 608,
+          "end": 616
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/date-picker/meeting-scheduler.tsx",
+      "content": "'use client';\n\nimport { useEffect, useMemo, useState } from 'react';\nimport { Button as AriaButton, Calendar, Dialog, DialogTrigger, Popover } from 'react-aria-components';\nimport { CalendarDate, getLocalTimeZone, today } from '@internationalized/date';\nimport { RiArrowDownSLine, RiCalendarLine, RiGlobalLine, RiTimeLine, RiVideoOnLine } from '@remixicon/react';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { MonthPanel } from './shared';\nimport { Select } from '@/components/base/select/select';\n\nexport interface MeetingSelection { date: CalendarDate; time: string; timezone: string }\nexport interface MeetingSchedulerProps {\n  host?: { name: string; initials: string; role?: string };\n  meeting?: { title: string; description?: string; durationMinutes: number; location?: string };\n  value?: MeetingSelection | null;\n  defaultValue?: MeetingSelection | null;\n  onChange?: (value: MeetingSelection) => void;\n  timezone?: string;\n  timezones?: string[];\n  startHour?: number;\n  endHour?: number;\n  slotMinutes?: number;\n  className?: string;\n  isDisabled?: boolean;\n}\n\nconst defaultHost = { name: 'Maya Chen', initials: 'MC', role: 'Product designer' };\nconst defaultMeeting = { title: 'Introductory call', description: 'A short conversation about what you are building.', durationMinutes: 30, location: 'Video meeting' };\n\nfunction timeLabel(time: string, is24Hour: boolean) {\n  if (is24Hour) return time;\n  const [hour, minute] = time.split(':').map(Number);\n  return `${hour % 12 || 12}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;\n}\n\nexport function MeetingScheduler({ host = defaultHost, meeting = defaultMeeting, value, defaultValue = null, onChange, timezone = Intl.DateTimeFormat().resolvedOptions().timeZone, timezones, startHour = 9, endHour = 18, slotMinutes = 30, className, isDisabled: disabled }: MeetingSchedulerProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const [internalValue, setInternalValue] = useState<MeetingSelection | null>(defaultValue);\n  const committed = value === undefined ? internalValue : value;\n  const [isOpen, setOpen] = useState(false);\n  const [date, setDate] = useState<CalendarDate>(committed?.date ?? today(getLocalTimeZone()));\n  const [selectedTime, setSelectedTime] = useState(committed?.time ?? '');\n  const [selectedTimezone, setSelectedTimezone] = useState(committed?.timezone ?? timezone);\n  const [is24Hour, set24Hour] = useState(true);\n  const [openKey, setOpenKey] = useState(0);\n  useEffect(() => { if (isDisabled) setOpen(false); }, [isDisabled]);\n  const availableTimezones = timezones?.length ? timezones : Array.from(new Set([timezone, 'UTC', 'America/New_York', 'Europe/London', 'Europe/Istanbul']));\n  const slots = useMemo(() => {\n    const result: string[] = [];\n    for (let minutes = startHour * 60; minutes < endHour * 60; minutes += slotMinutes) result.push(`${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`);\n    return result;\n  }, [startHour, endHour, slotMinutes]);\n\n  function openChange(next: boolean) {\n    if (next) {\n      setDate(committed?.date ?? today(getLocalTimeZone()));\n      setSelectedTime(committed?.time ?? '');\n      setSelectedTimezone(committed?.timezone ?? timezone);\n      setOpenKey(key => key + 1);\n    }\n    setOpen(next);\n  }\n\n  function chooseTime(time: string) {\n    setSelectedTime(time);\n    const next = { date, time, timezone: selectedTimezone };\n    if (value === undefined) setInternalValue(next);\n    onChange?.(next);\n    setOpen(false);\n  }\n\n  return <DialogTrigger isOpen={isOpen} onOpenChange={openChange}>\n    <AriaButton isDisabled={isDisabled} className={cx('ui-date-trigger', className)}><RiCalendarLine size={18} aria-hidden /><span>{committed ? `${committed.date.month}/${committed.date.day} · ${timeLabel(committed.time, is24Hour)}` : 'Schedule a meeting'}</span><RiArrowDownSLine size={16} aria-hidden /></AriaButton>\n    <Popover placement=\"bottom start\" offset={8} className=\"ui-date-popover ui-scheduler-popover\">\n      {({isExiting})=><Dialog inert={isExiting || Boolean(isDisabled)} aria-label=\"Schedule a meeting\" className=\"ui-date-dialog\">\n        <div className=\"ui-scheduler\">\n          <div className=\"ui-scheduler__details\">\n            <span className=\"ui-scheduler__avatar\" aria-hidden>{host.initials}</span>\n            <span className=\"ui-scheduler__host\">{host.name}</span>\n            {host.role && <span className=\"ui-scheduler__role\">{host.role}</span>}\n            <h3>{meeting.title}</h3>\n            {meeting.description && <p>{meeting.description}</p>}\n            <span className=\"ui-scheduler__info\"><RiTimeLine size={17} aria-hidden />{meeting.durationMinutes} minutes</span>\n            <span className=\"ui-scheduler__info\"><RiVideoOnLine size={17} aria-hidden />{meeting.location ?? 'Video meeting'}</span>\n          </div>\n          <Calendar key={openKey} aria-label=\"Meeting date\" value={date} onChange={setDate} minValue={today(getLocalTimeZone())} className=\"ui-scheduler__calendar\"><MonthPanel showPrev showNext /></Calendar>\n          <div className=\"ui-scheduler__times\">\n            <strong>Available times</strong>\n            <div className=\"ui-scheduler__timezone\"><Select aria-label=\"Time zone\" selectedKey={selectedTimezone} onSelectionChange={value=>{if(value)setSelectedTimezone(value);}} options={availableTimezones.map(item=>({id:item,label:item.replaceAll('_', ' '),leading:<RiGlobalLine size={16} aria-hidden/>}))}/></div>\n            <div className=\"ui-scheduler__format\" aria-label=\"Time format\"><button type=\"button\" aria-pressed={!is24Hour} onClick={() => set24Hour(false)}>12h</button><button type=\"button\" aria-pressed={is24Hour} onClick={() => set24Hour(true)}>24h</button></div>\n            <div className=\"ui-scheduler__slots\" aria-label=\"Available time slots\">{slots.map(time => <button key={time} type=\"button\" aria-pressed={selectedTime === time} onClick={() => chooseTime(time)}>{timeLabel(time, is24Hour)}</button>)}</div>\n          </div>\n        </div>\n      </Dialog>}\n    </Popover>\n  </DialogTrigger>;\n}\n",
+      "sha256": "c6b9bd194a0c5888f0cf0739214e46823dbcb296d37b82fc03fe84ba1f99ff48",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 384,
+          "end": 394
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 431,
+          "end": 468
+        },
+        {
+          "kind": "module",
+          "value": "./shared",
+          "target": "components/base/date-picker/shared.tsx",
+          "start": 499,
+          "end": 507
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/select/select",
+          "target": "components/base/select/select.tsx",
+          "start": 534,
+          "end": 565
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/date-picker/shared.tsx",
+      "content": "'use client';\n\nimport { useContext, useEffect, useState } from 'react';\nimport { Button as AriaButton, CalendarCell, CalendarGrid, CalendarGridBody, CalendarGridHeader, CalendarHeaderCell, CalendarStateContext, RangeCalendarStateContext } from 'react-aria-components';\nimport type { CalendarCellRenderProps } from 'react-aria-components';\nimport { CalendarDate, getLocalTimeZone } from '@internationalized/date';\nimport { RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\n\nexport function formatTriggerDate(date: CalendarDate) {\n  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date.toDate(getLocalTimeZone()));\n}\n\nexport function formatChipDate(date: CalendarDate) {\n  return `${String(date.day).padStart(2, '0')}/${String(date.month).padStart(2, '0')}/${date.year}`;\n}\n\nexport function parseChipDate(value: string) {\n  const match = /^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})$/.exec(value.trim());\n  if (!match) return null;\n  const day = Number(match[1]);\n  const month = Number(match[2]);\n  const year = Number(match[3]);\n  const test = new Date(Date.UTC(year, month - 1, day));\n  if (test.getUTCFullYear() !== year || test.getUTCMonth() !== month - 1 || test.getUTCDate() !== day) return null;\n  return new CalendarDate(year, month, day);\n}\n\nexport function DateChipInput({ date, label, onCommit }: { date: CalendarDate; label: string; onCommit: (value: CalendarDate) => void }) {\n  const formatted = formatChipDate(date);\n  const [draft, setDraft] = useState(formatted);\n  useEffect(() => setDraft(formatted), [formatted]);\n\n  function commit() {\n    const parsed = parseChipDate(draft);\n    if (parsed) onCommit(parsed);\n    else setDraft(formatted);\n  }\n\n  return <input className=\"ui-date-chip\" type=\"text\" inputMode=\"numeric\" aria-label={label} value={draft} onChange={event => setDraft(event.target.value)} onBlur={commit} onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); if (event.key === 'Escape') setDraft(formatted); }} />;\n}\n\nfunction DayCell({ state, isRange }: { state: CalendarCellRenderProps; isRange: boolean }) {\n  if (state.isOutsideMonth) return <span className=\"ui-calendar-day is-outside\" aria-hidden=\"true\" />;\n  const edge = isRange ? state.isSelectionStart || state.isSelectionEnd : state.isSelected;\n  return <span className=\"ui-calendar-day\" data-selected={state.isSelected || undefined} data-edge={edge || undefined} data-disabled={state.isDisabled || undefined} data-focus-visible={state.isFocusVisible || undefined}>{state.formattedDate}</span>;\n}\n\nexport function MonthPanel({ offset = 0, showPrev = false, showNext = false }: { offset?: number; showPrev?: boolean; showNext?: boolean }) {\n  const rangeState = useContext(RangeCalendarStateContext);\n  const singleState = useContext(CalendarStateContext);\n  const state = rangeState ?? singleState;\n  const month = state?.visibleRange.start.add({ months: offset });\n  const title = month ? new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(month.toDate(getLocalTimeZone())) : '';\n\n  return <div className=\"ui-month-panel\">\n    <div className=\"ui-month-panel__heading\">\n      {showPrev ? <AriaButton slot=\"previous\" aria-label=\"Previous month\" className=\"ui-month-panel__nav\"><RiArrowLeftSLine size={19} aria-hidden /></AriaButton> : <span className=\"ui-month-panel__spacer\" />}\n      <strong>{title}</strong>\n      {showNext ? <AriaButton slot=\"next\" aria-label=\"Next month\" className=\"ui-month-panel__nav ui-month-panel__nav--next\"><RiArrowRightSLine size={19} aria-hidden /></AriaButton> : <span className=\"ui-month-panel__spacer\" />}\n    </div>\n    <CalendarGrid offset={{ months: offset }} weekdayStyle=\"short\" className=\"ui-month-panel__grid\">\n      <CalendarGridHeader>{day => <CalendarHeaderCell className=\"ui-month-panel__weekday\">{day.slice(0, 2)}</CalendarHeaderCell>}</CalendarGridHeader>\n      <CalendarGridBody>{date => <CalendarCell date={date} className=\"ui-month-panel__cell\">{cellState => <DayCell state={cellState} isRange={rangeState != null} />}</CalendarCell>}</CalendarGridBody>\n    </CalendarGrid>\n  </div>;\n}\n",
+      "sha256": "9a3159123dc3babf8aed5aab41d9e57984225205b3846c368bd7a8cfc6f8ce37",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/field-feedback.tsx",
+      "content": "'use client';\n\nimport { useContext, useLayoutEffect, useRef, useState } from 'react';\nimport { FieldError, FieldErrorContext, Text } from 'react-aria-components';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\n\nfunction ErrorContent({ error }: { error?: string }) {\n  const present = useIsPresent();\n  const element = useRef<HTMLElement>(null);\n  const [snapshot, setSnapshot] = useState(error ?? '');\n  useLayoutEffect(() => {\n    if (present && element.current) {\n      const text = element.current.textContent ?? '';\n      setSnapshot(previous => previous === text ? previous : text);\n    }\n  });\n  return <div className=\"ui-field-feedback__error\" inert={!present} aria-hidden={!present || undefined}>\n    {present ? <FieldError ref={element} className=\"ui-input-field__message\">{error}</FieldError> : <span className=\"ui-input-field__message\">{snapshot}</span>}\n  </div>;\n}\n\n/** Keep native validation messages associated while animating their actual layout. */\nexport function FieldFeedback({ hint, error }: { hint?: string; error?: string }) {\n  const validation = useContext(FieldErrorContext);\n  const reduced = useReducedMotion();\n  const invalid = validation?.isInvalid ?? Boolean(error);\n  const showHint = Boolean(hint && !error);\n  return <div className=\"ui-field-feedback\" data-content={invalid || showHint || undefined}>\n    <AnimatedHeight>\n      {showHint && <Text slot=\"description\" className=\"ui-input-field__message\">{hint}</Text>}\n      <AnimatePresence initial={false} mode=\"popLayout\">\n        {invalid && <motion.div key=\"error\" initial={{ opacity: 0, y: reduced ? 0 : 2 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -2 }} transition={{ duration: reduced ? 0 : .16, ease: [.2, .75, .25, 1] }}>\n          <ErrorContent error={error}/>\n        </motion.div>}\n      </AnimatePresence>\n    </AnimatedHeight>\n  </div>;\n}\n",
+      "sha256": "91b0aa0dcdb56c7d7e4a4923a1ac4ba946de997ab1d233e364d75f36f1a00056",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 283,
+          "end": 332
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/scroll-area/scroll-area.tsx",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type Ref, type RefObject } from 'react';\nimport { RiArrowDownSLine, RiArrowUpSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type ScrollAreaViewportProps = { ref: Ref<HTMLDivElement>; className: string; children: ReactNode };\nexport type ScrollAreaProps = {\n  children?: ReactNode;\n  label: string;\n  className?: string;\n  viewportClassName?: string;\n  orientation?: 'vertical' | 'horizontal' | 'both';\n  /** Let a collection own the scroll viewport, keeping its keyboard scrolling native. */\n  renderViewport?: (props: ScrollAreaViewportProps) => ReactElement;\n  /** Keep a pointer action in a searchable input without stealing its focus. */\n  preservePointerFocus?: boolean;\n  /** Restore a virtual collection's input when a focused edge disappears. */\n  focusRef?: RefObject<HTMLElement | null>;\n  /** Keep arrow controls outside the item viewport in constrained collections. */\n  indicatorPlacement?: 'overlay' | 'gutter';\n};\n\n/** Keep native scrolling, with directional controls only when content overflows. */\nexport function ScrollArea({ children, label, className, viewportClassName, renderViewport, orientation = 'vertical', preservePointerFocus = false, focusRef, indicatorPlacement='overlay' }: ScrollAreaProps) {\n  const viewport = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);\n  const [mountedViewport, setMountedViewport] = useState<HTMLDivElement | null>(null);\n  const setViewport = useCallback((element: HTMLDivElement | null) => {\n    viewport.current = element;\n    setMountedViewport(element);\n  }, []);\n  const [edges, setEdges] = useState({ up: false, down: false, left: false, right: false });\n  const measuredEdges = useRef(edges);\n  useLayoutEffect(() => {\n    const el = mountedViewport;\n    if (!el) return;\n    function measure() {\n      if (!el) return;\n      const up = orientation !== 'horizontal' && el.scrollTop > 1, down = orientation !== 'horizontal' && el.scrollHeight - el.clientHeight - el.scrollTop > 1;\n      const rtl = getComputedStyle(el).direction === 'rtl', maximum = el.scrollWidth - el.clientWidth;\n      const left = orientation !== 'vertical' && (rtl ? maximum + el.scrollLeft : el.scrollLeft) > 1;\n      const right = orientation !== 'vertical' && (rtl ? -el.scrollLeft : maximum - el.scrollLeft) > 1;\n      const next = { up, down, left, right };\n      const focusedEdge = document.activeElement?.closest('.ui-scroll-area__edge');\n      const direction = focusedEdge?.getAttribute('data-direction') as keyof typeof next | undefined;\n      if (focusedEdge && el.parentElement?.contains(focusedEdge) && direction && !next[direction]) (focusRef?.current ?? el).focus({ preventScroll: true });\n      if (Object.keys(next).some(key => measuredEdges.current[key as keyof typeof next] !== next[key as keyof typeof next])) {\n        measuredEdges.current = next;\n        setEdges(measuredEdges.current);\n      }\n    }\n    const observer = new ResizeObserver(measure);\n    const observed = new Set<Element>();\n    function observeContent() {\n      if (!el) return;\n      // A collection may not allow a wrapper between itself and its sections.\n      // Observe those sections directly so filtering and density changes are measured.\n      const next = new Set<Element>([el, ...el.children]);\n      for (const child of observed) if (!next.has(child)) { observer.unobserve(child); observed.delete(child); }\n      for (const child of next) if (!observed.has(child)) { observer.observe(child); observed.add(child); }\n      measure();\n    }\n    const mutations = new MutationObserver(observeContent);\n    mutations.observe(el, { childList: true, subtree: true });\n    observeContent();\n    el.addEventListener('scroll', measure, { passive: true });\n    return () => { observer.disconnect(); mutations.disconnect(); el.removeEventListener('scroll', measure); };\n  }, [focusRef, mountedViewport, orientation]);\n  function scroll(direction: number, horizontal = false) {\n    const el = viewport.current;\n    if (!el) return;\n    el.scrollBy({ [horizontal ? 'left' : 'top']: direction * Math.max(80, (horizontal ? el.clientWidth : el.clientHeight) * .7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });\n  }\n  return <div className={cx('ui-scroll-area', className)} data-orientation={orientation} data-indicator-placement={indicatorPlacement} data-overflow-y={edges.up || edges.down || undefined}>\n    {renderViewport ? renderViewport({ ref: setViewport, className: cx('ui-scroll-area__viewport', viewportClassName), children }) : <div ref={setViewport} className={cx('ui-scroll-area__viewport', viewportClassName)} role=\"region\" aria-label={label} tabIndex={0}><div ref={content} className=\"ui-scroll-area__content\">{children}</div></div>}\n    <div className=\"ui-scroll-area__edge\" data-direction=\"up\" data-visible={edges.up || undefined} aria-hidden={!edges.up}><IconButton icon={RiArrowUpSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} up`} disabled={!edges.up} tabIndex={edges.up ? 0 : -1} onClick={() => scroll(-1)}/></div>\n    <div className=\"ui-scroll-area__edge\" data-direction=\"down\" data-visible={edges.down || undefined} aria-hidden={!edges.down}><IconButton icon={RiArrowDownSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} down`} disabled={!edges.down} tabIndex={edges.down ? 0 : -1} onClick={() => scroll(1)}/></div>\n    {orientation !== 'vertical' && <>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"left\" data-visible={edges.left || undefined} aria-hidden={!edges.left}><IconButton icon={RiArrowLeftSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} left`} disabled={!edges.left} tabIndex={edges.left ? 0 : -1} onClick={() => scroll(-1, true)}/></div>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"right\" data-visible={edges.right || undefined} aria-hidden={!edges.right}><IconButton icon={RiArrowRightSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} right`} disabled={!edges.right} tabIndex={edges.right ? 0 : -1} onClick={() => scroll(1, true)}/></div>\n    </>}\n  </div>;\n}\n",
+      "sha256": "6a0b95325225bbeb5dbcfb3fc4d3069c72e5d022d897f9e6bee1e96c34243bcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 282,
+          "end": 319
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 342,
+          "end": 352
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/select/select.tsx",
+      "content": "'use client';\n\nimport { Select as AriaSelect, Label, Button, SelectValue, Popover, ListBox, ListBoxItem, SelectStateContext, type SelectProps as AriaSelectProps } from 'react-aria-components';\nimport { RiArrowDownSLine, RiCheckLine } from '@remixicon/react';\nimport {useOverlayPosition,usePreventScroll} from 'react-aria';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { useCallback, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';\nimport { ScrollArea } from '@/components/base/scroll-area/scroll-area';\nimport {useAnchorScrollGuard} from '@/hooks/use-anchor-scroll-guard';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\n\nfunction DisabledSelectCloser({isDisabled}:{isDisabled?:boolean}) {\n  const state=useContext(SelectStateContext);\n  usePreventScroll({isDisabled:!state?.isOpen});\n  useEffect(()=>{if(isDisabled&&state?.isOpen)state.close();},[isDisabled,state]);\n  return null;\n}\n\nfunction SelectTrigger({trigger,className,children}:{trigger:RefObject<HTMLButtonElement|null>;className?:string;children:ReactNode}) {\n  const state=useContext(SelectStateContext);\n  const dismissPress=useRef(false);\n  return <Button ref={trigger} render={domProps=><button {...domProps} aria-invalid={state?.displayValidation.isInvalid || undefined} onPointerDownCapture={event=>{\n    // Native select-style mouse presses open on down. A second press closes\n    // through the public state, before the native opening handler can run.\n    dismissPress.current=Boolean(state?.isOpen)&&event.button===0;\n    if(dismissPress.current){event.preventDefault();event.stopPropagation();state?.close();trigger.current?.focus({preventScroll:true});}\n  }} onClickCapture={event=>{if(dismissPress.current){event.preventDefault();event.stopPropagation();dismissPress.current=false;}}}/>} className={className}>{children}</Button>;\n}\n\nfunction SelectExitFocus({isExiting,trigger,surface,restore,children}:{isExiting:boolean;trigger:RefObject<HTMLButtonElement|null>;surface:RefObject<HTMLElement|null>;restore:RefObject<boolean>;children:ReactNode}) {\n  const state=useContext(SelectStateContext);\n  useEffect(()=>{\n    if(!state?.isOpen||isExiting)return;\n    const focusOnOpening=()=>{\n      const list=surface.current?.querySelector<HTMLElement>('[role=\"listbox\"]');\n      if(!list||list.contains(document.activeElement))return;\n      const options=[...list.querySelectorAll<HTMLElement>('.ui-select__option:not([data-disabled])')];\n      const selected=options.find(option=>option.hasAttribute('data-selected'));\n      const target=selected??(state.focusStrategy==='last'?options.at(-1):options[0])??list;\n      target.focus({preventScroll:true});\n    };\n    // A reversal keeps the collection mounted. Restore its focus only after\n    // containment resumes, without overwriting navigation already inside it.\n    const frame=requestAnimationFrame(focusOnOpening);\n    return()=>cancelAnimationFrame(frame);\n  },[isExiting,state?.isOpen,state?.collection.size,state?.focusStrategy,surface]);\n  useEffect(()=>{\n    if(!isExiting){\n      const element=surface.current;\n      const remember=()=>{restore.current=!!element?.contains(document.activeElement);};\n      remember();element?.addEventListener('focusin',remember);\n      return()=>element?.removeEventListener('focusin',remember);\n    }\n    if(!restore.current)return;\n    const active=document.activeElement,dialog=trigger.current?.closest('[role=\"dialog\"], [role=\"alertdialog\"]');\n    // The popover releases containment during exit. Its inert option may have\n    // blurred into the enclosing dialog; preserve deliberate focus elsewhere.\n    if(active===document.body||active===dialog||surface.current?.contains(active))trigger.current?.focus({preventScroll:true});\n    restore.current=false;\n  },[isExiting,restore,surface,trigger]);\n  return children;\n}\n\nexport type SelectOption = { id: string; label: string; detail?: string; leading?: ReactNode; isDisabled?: boolean };\nexport type SelectProps = Omit<AriaSelectProps<SelectOption>, 'children' | 'className' | 'items' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {\n  options: SelectOption[];\n  label?: string;\n  name?: string;\n  placeholder?: string;\n  selectedKey?: string | null;\n  defaultSelectedKey?: string;\n  onSelectionChange?: (key: string | null) => void;\n  isDisabled?: boolean;\n  className?: string;\n  triggerClassName?: string;\n  popoverClassName?: string;\n  hideIndicator?: boolean;\n  hideLabel?: boolean;\n  hint?: string;\n  error?: string;\n  size?: 'small' | 'medium' | 'large';\n  density?: 'comfortable' | 'compact' | 'touch';\n  isOpen?: boolean;\n  onOpenChange?: (isOpen: boolean) => void;\n  'aria-label'?: string;\n  'aria-describedby'?: string;\n};\n\nexport function Select({ options, label, name, placeholder = 'Select an option', selectedKey, defaultSelectedKey, onSelectionChange, isDisabled: disabled, className, triggerClassName, popoverClassName, hideIndicator = false, hideLabel = false, hint, error, isInvalid, size = 'medium', density = 'comfortable', isOpen, onOpenChange, 'aria-label': ariaLabel, 'aria-describedby': descriptionId, ...props }: SelectProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const trigger=useRef<HTMLButtonElement>(null),surface=useRef<HTMLElement>(null);\n  const [surfaceMounted,setSurfaceMounted]=useState(false);\n  const setSurface=useCallback((element:HTMLElement|null)=>{surface.current=element;setSurfaceMounted(Boolean(element));},[]);\n  const restoreOnExit=useRef(false);\n  const [internalOpen,setInternalOpen]=useState(false);\n  const open=isOpen??internalOpen;\n  const ignoreScrollClose=useAnchorScrollGuard(open,trigger);\n  const position=useOverlayPosition({targetRef:trigger,overlayRef:surface,isOpen:open||surfaceMounted,placement:'bottom start',offset:6,maxHeight:312,onClose:null});\n  useEffect(()=>{\n    if(!open&&!surfaceMounted)return;let frame=0,previous='';\n    // An ancestor can move during a height/grid transition without resizing\n    // the trigger. Follow its actual rectangle through the public position hook.\n    // Keep following during exit: the surface is painted until it unmounts.\n    function follow(){const rect=trigger.current?.getBoundingClientRect();if(rect){const next=[rect.x,rect.y,rect.width,rect.height].join(':');if(next!==previous){previous=next;position.updatePosition();}}frame=requestAnimationFrame(follow);}\n    frame=requestAnimationFrame(follow);return()=>cancelAnimationFrame(frame);\n  },[open,surfaceMounted,position.updatePosition]);\n  function changeOpen(open:boolean){\n    if(!open&&ignoreScrollClose())return;\n    if(isOpen===undefined)setInternalOpen(open);\n    restoreOnExit.current=!open&&!!surface.current?.contains(document.activeElement);\n    onOpenChange?.(open);\n  }\n  return <AriaSelect {...props} name={name} selectedKey={selectedKey} defaultSelectedKey={defaultSelectedKey} onSelectionChange={key => onSelectionChange?.(key == null ? null : String(key))} isDisabled={isDisabled} isInvalid={error ? true : isInvalid} isOpen={open} onOpenChange={changeOpen} aria-describedby={descriptionId} aria-label={ariaLabel ?? (label ? undefined : placeholder)} data-size={size} className={cx('ui-select', className)}>\n    <DisabledSelectCloser isDisabled={isDisabled}/>\n    {label && <Label className={cx('ui-select__label',hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden>*</span>}</Label>}\n    <SelectTrigger trigger={trigger} className={cx('ui-select__trigger', triggerClassName)}><SelectValue<SelectOption>>{({ selectedItem, selectedText }) => <span className=\"ui-select__value\">{selectedItem?.leading}<span>{selectedText || placeholder}</span></span>}</SelectValue>{!hideIndicator && <RiArrowDownSLine size={16} aria-hidden />}</SelectTrigger>\n    <Popover isNonModal style={position.overlayProps.style} ref={setSurface} data-density={density} className={cx('ui-select__popover', popoverClassName)} placement=\"bottom start\" offset={6} maxHeight={312}>{({isExiting})=><SelectExitFocus isExiting={isExiting} trigger={trigger} surface={surface} restore={restoreOnExit}><div className=\"ui-select__surface\" inert={isExiting || Boolean(isDisabled)}><ScrollArea indicatorPlacement=\"gutter\" label={`${label ?? ariaLabel ?? 'Select'} options`} className=\"ui-select__scroll\" renderViewport={({ref,className:viewportClassName})=><ListBox ref={ref} className={cx('ui-select__list',viewportClassName)} items={options}>{item => <ListBoxItem id={item.id} textValue={item.label} isDisabled={item.isDisabled} className=\"ui-select__option\"><span><strong>{item.leading && <span className=\"ui-select__leading\">{item.leading}</span>}{item.label}</strong>{item.detail && <small>{item.detail}</small>}</span><RiCheckLine size={16} aria-hidden /></ListBoxItem>}</ListBox>}/></div></SelectExitFocus>}</Popover>\n    <FieldFeedback hint={hint} error={error}/>\n  </AriaSelect>;\n}\n",
+      "sha256": "5ed12c96b0129996fd858fa720369c41e772da54ae1604e8c7453fc4b44c55c3",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 343,
+          "end": 353
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 390,
+          "end": 427
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 568,
+          "end": 609
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-anchor-scroll-guard",
+          "target": "hooks/use-anchor-scroll-guard.ts",
+          "start": 648,
+          "end": 679
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 713,
+          "end": 751
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-anchor-scroll-guard.ts",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';\n\n/** Ignore only a queued scroll's dismissal when its anchor did not move. */\nexport function useAnchorScrollGuard(isOpen: boolean, anchor: RefObject<Element|null>|undefined) {\n  const guard=useRef<(()=>boolean)|null>(null);\n  useLayoutEffect(()=>{\n    const trigger=anchor?.current;if(!isOpen||!trigger)return;\n    const openedAt=trigger.getBoundingClientRect();\n    let unchanged=false,scrollEvent:Event|null=null;\n    const ignore=()=>unchanged&&scrollEvent!==null&&scrollEvent.eventPhase!==Event.NONE;\n    guard.current=ignore;\n    function onScroll(event:Event){\n      if(event.target instanceof Node&&!event.target.contains(trigger??null))return;\n      const current=trigger!.getBoundingClientRect();\n      unchanged=Math.abs(current.x-openedAt.x)<.5&&Math.abs(current.y-openedAt.y)<.5;\n      scrollEvent=event;\n    }\n    window.addEventListener('scroll',onScroll,true);\n    return()=>{window.removeEventListener('scroll',onScroll,true);if(guard.current===ignore)guard.current=null;};\n  },[isOpen,anchor]);\n  return useCallback(()=>guard.current?.()??false,[]);\n}\n",
+      "sha256": "0a69c28c08d424b9cb5b0c485c83027aee9972154e7dddc1e6e5da87b07e6594",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@internationalized/date": "^3.12.4",
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-button",
+      "ui-button--icon-only",
+      "ui-button__busy-spinner",
+      "ui-button__label",
+      "ui-button__leading-icon",
+      "ui-button__leading-slot",
+      "ui-calendar-day",
+      "ui-date-chip",
+      "ui-date-day-count",
+      "ui-date-dialog",
+      "ui-date-footer",
+      "ui-date-footer__actions",
+      "ui-date-footer__summary",
+      "ui-date-popover",
+      "ui-date-popover--single",
+      "ui-date-presets",
+      "ui-date-range-layout",
+      "ui-date-range-main",
+      "ui-date-range-months",
+      "ui-date-trigger",
+      "ui-field-feedback",
+      "ui-field-feedback__error",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-input-field__message",
+      "ui-month-panel",
+      "ui-month-panel__cell",
+      "ui-month-panel__grid",
+      "ui-month-panel__heading",
+      "ui-month-panel__nav",
+      "ui-month-panel__nav--next",
+      "ui-month-panel__spacer",
+      "ui-month-panel__weekday",
+      "ui-range-calendar",
+      "ui-scheduler",
+      "ui-scheduler-popover",
+      "ui-scheduler__avatar",
+      "ui-scheduler__calendar",
+      "ui-scheduler__details",
+      "ui-scheduler__format",
+      "ui-scheduler__host",
+      "ui-scheduler__info",
+      "ui-scheduler__role",
+      "ui-scheduler__slots",
+      "ui-scheduler__times",
+      "ui-scheduler__timezone",
+      "ui-scroll-area",
+      "ui-scroll-area__content",
+      "ui-scroll-area__edge",
+      "ui-scroll-area__viewport",
+      "ui-select",
+      "ui-select__label",
+      "ui-select__leading",
+      "ui-select__list",
+      "ui-select__option",
+      "ui-select__popover",
+      "ui-select__scroll",
+      "ui-select__surface",
+      "ui-select__trigger",
+      "ui-select__value",
+      "ui-single-calendar",
+      "ui-spinner"
+    ],
+    "prefixes": []
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "name": "auth-card",
+  "title": "Auth Card",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A sign-in, sign-up, or verification panel that composes form fields with provider buttons and hands data to your authentication layer.",
+  "sections": [
+    "Preview",
+    "Sign up",
+    "Verification code",
+    "Providers"
+  ],
+  "example": "<AuthCard mode=\"sign-in\" onSubmit={handleSignIn}\n  onProvider={handleProvider} onModeChange={setMode} />",
+  "entryFiles": [
+    "components/blocks/auth-card/auth-card.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/auth-card/auth-card.tsx",
+      "names": [
+        "AuthCard",
+        "AuthCardMode",
+        "AuthCardProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/checkbox/checkbox-glyph.tsx",
+      "content": "export type CheckboxSize = 'sm' | 'md';\n\nexport type CheckboxGlyphState = {\n  isSelected: boolean;\n  isIndeterminate: boolean;\n  isFocusVisible: boolean;\n  isDisabled: boolean;\n  isHovered: boolean;\n};\n\nexport function CheckboxGlyph({ state, size = 'md' }: { state: CheckboxGlyphState; size?: CheckboxSize }) {\n  const marked = state.isSelected || state.isIndeterminate;\n  return <span className=\"ui-checkbox__box\" data-size={size} data-marked={marked || undefined} data-hovered={state.isHovered || undefined} data-focus-visible={state.isFocusVisible || undefined} data-disabled={state.isDisabled || undefined} aria-hidden=\"true\">\n    <svg viewBox=\"0 0 16 16\" fill=\"none\">\n      {state.isIndeterminate ? <path d=\"M4.2 8h7.6\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\" /> : state.isSelected ? <path d=\"m3.8 8 2.7 2.6 5.7-5.5\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\" strokeLinejoin=\"round\" pathLength=\"1\" className=\"ui-checkbox__tick\" /> : null}\n    </svg>\n  </span>;\n}\n",
+      "sha256": "7dae5b5f897dfff4fe8871bb0c58da0363b31c86bb96cfd93af661245c249a6c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/checkbox/checkbox.tsx",
+      "content": "'use client';\n\nimport type { ReactNode } from 'react';\nimport { Checkbox as AriaCheckbox } from 'react-aria-components';\nimport type { CheckboxProps as AriaCheckboxProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { CheckboxGlyph, type CheckboxSize } from './checkbox-glyph';\n\nexport type CheckboxProps = Omit<AriaCheckboxProps, 'children'> & {\n  children?: ReactNode;\n  size?: CheckboxSize;\n};\n\nexport function Checkbox({ children, size = 'md', className, ...props }: CheckboxProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaCheckbox {...props} isDisabled={isDisabled} data-size={size} className={state => cx('ui-checkbox', typeof className === 'function' ? className(state) : className)}>\n    {state => <><CheckboxGlyph state={state} size={size} />{children != null && <span className=\"ui-checkbox__label\">{children}</span>}</>}\n  </AriaCheckbox>;\n}\n",
+      "sha256": "b08f3091c4e35d95db6e7ba103a93a3096ad117341c4de931aa0146003fc59ab",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 222,
+          "end": 232
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 269,
+          "end": 306
+        },
+        {
+          "kind": "module",
+          "value": "./checkbox-glyph",
+          "target": "components/base/checkbox/checkbox-glyph.tsx",
+          "start": 359,
+          "end": 375
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input-otp/input-otp.tsx",
+      "content": "'use client';\n\nimport { useState } from 'react';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type InputOTPProps = {\n  length?: number;\n  value?: string;\n  defaultValue?: string;\n  onChange?: (value: string) => void;\n  onComplete?: (value: string) => void;\n  isDisabled?: boolean;\n  isInvalid?: boolean;\n  'aria-label'?: string;\n  className?: string;\n};\n\nexport function InputOTP({ length = 6, value, defaultValue = '', onChange, onComplete, isDisabled: disabled = false, isInvalid = false, 'aria-label': ariaLabel = 'Verification code', className }: InputOTPProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const [internal, setInternal] = useState(defaultValue.replace(/\\D/g, '').slice(0, length));\n  const current = value === undefined ? internal : value.replace(/\\D/g, '').slice(0, length);\n  function update(next: string) {\n    const cleaned = next.replace(/\\D/g, '').slice(0, length);\n    if (value === undefined) setInternal(cleaned);\n    onChange?.(cleaned);\n    if (cleaned.length === length && current !== cleaned) onComplete?.(cleaned);\n  }\n  return <div className={cx('ui-otp', className)} data-disabled={isDisabled || undefined} data-invalid={isInvalid || undefined}>\n    <input type=\"text\" className=\"ui-otp__input\" inputMode=\"numeric\" autoComplete=\"one-time-code\" pattern=\"[0-9]*\" maxLength={length} value={current} disabled={isDisabled} aria-label={ariaLabel} aria-invalid={isInvalid || undefined} onChange={event => update(event.target.value)} />\n    {Array.from({ length }, (_, index) => <span key={index} className=\"ui-otp__slot\" data-active={index === current.length && current.length < length || undefined} aria-hidden=\"true\">{current[index] || ''}</span>)}\n  </div>;\n}\n",
+      "sha256": "8278918d0168acca3cce467b2e59fb8c0ed11c928f0af601ba683db9c71dbd1f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 69,
+          "end": 79
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 116,
+          "end": 153
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/field-feedback.tsx",
+      "content": "'use client';\n\nimport { useContext, useLayoutEffect, useRef, useState } from 'react';\nimport { FieldError, FieldErrorContext, Text } from 'react-aria-components';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\n\nfunction ErrorContent({ error }: { error?: string }) {\n  const present = useIsPresent();\n  const element = useRef<HTMLElement>(null);\n  const [snapshot, setSnapshot] = useState(error ?? '');\n  useLayoutEffect(() => {\n    if (present && element.current) {\n      const text = element.current.textContent ?? '';\n      setSnapshot(previous => previous === text ? previous : text);\n    }\n  });\n  return <div className=\"ui-field-feedback__error\" inert={!present} aria-hidden={!present || undefined}>\n    {present ? <FieldError ref={element} className=\"ui-input-field__message\">{error}</FieldError> : <span className=\"ui-input-field__message\">{snapshot}</span>}\n  </div>;\n}\n\n/** Keep native validation messages associated while animating their actual layout. */\nexport function FieldFeedback({ hint, error }: { hint?: string; error?: string }) {\n  const validation = useContext(FieldErrorContext);\n  const reduced = useReducedMotion();\n  const invalid = validation?.isInvalid ?? Boolean(error);\n  const showHint = Boolean(hint && !error);\n  return <div className=\"ui-field-feedback\" data-content={invalid || showHint || undefined}>\n    <AnimatedHeight>\n      {showHint && <Text slot=\"description\" className=\"ui-input-field__message\">{hint}</Text>}\n      <AnimatePresence initial={false} mode=\"popLayout\">\n        {invalid && <motion.div key=\"error\" initial={{ opacity: 0, y: reduced ? 0 : 2 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -2 }} transition={{ duration: reduced ? 0 : .16, ease: [.2, .75, .25, 1] }}>\n          <ErrorContent error={error}/>\n        </motion.div>}\n      </AnimatePresence>\n    </AnimatedHeight>\n  </div>;\n}\n",
+      "sha256": "91b0aa0dcdb56c7d7e4a4923a1ac4ba946de997ab1d233e364d75f36f1a00056",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 283,
+          "end": 332
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/input.tsx",
+      "content": "'use client';\n\nimport type { AriaAttributes, ReactNode, Ref } from 'react';\nimport { TextField, Label, Input as AriaInput, type TextFieldProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type InputProps = Omit<TextFieldProps, 'children' | 'className'> & {\n  'aria-busy'?: AriaAttributes['aria-busy'];\n  label: string;\n  placeholder?: string;\n  hint?: string;\n  error?: string;\n  leading?: ReactNode;\n  trailing?: ReactNode;\n  trailingAction?: ReactNode;\n  leadingAction?: ReactNode;\n  blockStart?: ReactNode;\n  blockEnd?: ReactNode;\n  className?: string;\n  hideLabel?: boolean;\n  inputRef?: Ref<HTMLInputElement>;\n  variant?: 'default' | 'plain' | 'soft';\n  size?: 'small' | 'medium' | 'large';\n  maxLength?: number;\n};\n\nexport function Input({ label, placeholder, hint, error, leading, trailing, trailingAction, leadingAction, blockStart, blockEnd, className, isInvalid, hideLabel = false, inputRef, variant = 'default', size = 'medium', maxLength, ...props }: InputProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  const stacked = blockStart !== undefined || blockEnd !== undefined;\n  const control = <>{leadingAction && <span className=\"ui-input-field__action\">{leadingAction}</span>}{leading && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{leading}</span>}<AriaInput ref={inputRef} maxLength={maxLength} aria-busy={props['aria-busy']} className=\"ui-input-field__input\" placeholder={placeholder} />{trailing && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{trailing}</span>}{trailingAction && <span className=\"ui-input-field__action\">{trailingAction}</span>}</>;\n  return <TextField {...props} isDisabled={isDisabled} data-variant={variant} data-size={size} isInvalid={error ? true : isInvalid} className={cx('ui-input-field', className)}>\n    <Label className={cx('ui-input-field__label', hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden=\"true\">*</span>}</Label>\n    <div className={cx('ui-input-field__control', stacked && 'ui-input-field__control--stacked')}>{blockStart !== undefined && <div className=\"ui-input-group__block\" data-align=\"start\">{blockStart}</div>}{stacked ? <div className=\"ui-input-field__row\">{control}</div> : control}{blockEnd !== undefined && <div className=\"ui-input-group__block\" data-align=\"end\">{blockEnd}</div>}</div>\n    <FieldFeedback hint={hint} error={error}/>\n  </TextField>;\n}\n",
+      "sha256": "9fcddd095a0972e70cb391de936dfddd3beaff3e4243d459cef4f9e8e721d87c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 195,
+          "end": 205
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 239,
+          "end": 277
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 314,
+          "end": 351
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/social-button/social-button.tsx",
+      "content": "import type { ReactNode, CSSProperties } from 'react';\nimport { RiAmazonFill, RiAppleFill, RiDiscordFill, RiDropboxFill, RiFacebookFill, RiFigmaFill, RiGithubFill, RiGitlabFill, RiGlobalLine, RiGoogleFill, RiInstagramFill, RiLinkedinFill, RiMicrosoftFill, RiNotionFill, RiRedditFill, RiSlackFill, RiSpotifyFill, RiTelegramFill, RiTiktokFill, RiTwitchFill, RiTwitterXFill, RiWhatsappFill } from '@remixicon/react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nconst providers: Record<string, { label: string; color: string; icon?: IconComponent }> = {\n  google: { label: 'Google', color: '#2678f5', icon: RiGoogleFill },\n  apple: { label: 'Apple', color: '#111318', icon: RiAppleFill },\n  github: { label: 'GitHub', color: '#111318', icon: RiGithubFill },\n  gitlab: { label: 'GitLab', color: '#e96e30', icon: RiGitlabFill },\n  microsoft: { label: 'Microsoft', color: '#4e6f98', icon: RiMicrosoftFill },\n  x: { label: 'X', color: '#111318', icon: RiTwitterXFill },\n  facebook: { label: 'Facebook', color: '#1877f2', icon: RiFacebookFill },\n  linkedin: { label: 'LinkedIn', color: '#0a66c2', icon: RiLinkedinFill },\n  discord: { label: 'Discord', color: '#5865f2', icon: RiDiscordFill },\n  slack: { label: 'Slack', color: '#5b285f', icon: RiSlackFill },\n  figma: { label: 'Figma', color: '#9b4cee', icon: RiFigmaFill },\n  notion: { label: 'Notion', color: '#111318', icon: RiNotionFill },\n  dropbox: { label: 'Dropbox', color: '#0061fe', icon: RiDropboxFill },\n  spotify: { label: 'Spotify', color: '#16883b', icon: RiSpotifyFill },\n  twitch: { label: 'Twitch', color: '#9146ff', icon: RiTwitchFill },\n  reddit: { label: 'Reddit', color: '#ff4500', icon: RiRedditFill },\n  tiktok: { label: 'TikTok', color: '#111318', icon: RiTiktokFill },\n  instagram: { label: 'Instagram', color: '#d62976', icon: RiInstagramFill },\n  telegram: { label: 'Telegram', color: '#229ed9', icon: RiTelegramFill },\n  whatsapp: { label: 'WhatsApp', color: '#138c4a', icon: RiWhatsappFill },\n  amazon: { label: 'Amazon', color: '#e48619', icon: RiAmazonFill },\n  bitbucket: { label: 'Bitbucket', color: '#0052cc' },\n  auth0: { label: 'Auth0', color: '#d95225' },\n  okta: { label: 'Okta', color: '#007dc1' },\n};\n\nexport type SocialProvider = keyof typeof providers;\nexport type SocialButtonProps = {\n  provider?: SocialProvider;\n  label?: string;\n  logo?: ReactNode;\n  color?: string;\n  appearance?: 'brand' | 'neutral' | 'outline';\n  size?: 'medium' | 'small';\n  iconOnly?: boolean;\n  href?: string;\n  onPress?: () => void;\n  disabled?: boolean;\n  className?: string;\n};\n\nexport function SocialButton({ provider = 'google', label, logo, color, appearance = 'outline', size = 'medium', iconOnly = false, href, onPress, disabled = false, className }: SocialButtonProps) {\n  const config = providers[provider];\n  const name = label ?? config?.label ?? provider;\n  const Icon = config?.icon;\n  const style = { '--social-brand': color ?? config?.color ?? 'var(--accent-strong)' } as CSSProperties;\n  const content = <>{logo ?? (Icon ? <Icon size={size === 'small' ? 17 : 19} aria-hidden /> : <span className=\"ui-social-button__monogram\" aria-hidden=\"true\">{name[0]}</span>)}{!iconOnly && <span>Continue with {name}</span>}</>;\n  const common = { className: cx('ui-social-button', className), 'data-appearance': appearance, 'data-size': size, 'data-icon-only': iconOnly || undefined, style, 'aria-label': iconOnly ? `Continue with ${name}` : undefined };\n  return href && !disabled ? <a {...common} href={href} onClick={onPress}>{content}</a> : <button {...common} type=\"button\" disabled={disabled} onClick={onPress}>{content}</button>;\n}\n\nexport const socialProviderNames = Object.keys(providers) as SocialProvider[];\n\nexport function SocialMark({ provider, size = 14, className }: { provider?: SocialProvider; size?: number; className?: string }) {\n  const config = provider ? providers[provider] : undefined;\n  const Icon = config?.icon ?? RiGlobalLine;\n  const monochrome = provider === 'x' || provider === 'github' || provider === 'notion' || provider === 'apple' || provider === 'tiktok';\n  return <Icon size={size} className={className} style={{ color: monochrome ? 'var(--text-main)' : config?.color ?? 'var(--text-muted)' }} aria-hidden />;\n}\n",
+      "sha256": "b9349d54682b61edf2b300b496658109b4904789759704cc144f099c3d1c439c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 450,
+          "end": 485
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 508,
+          "end": 518
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/auth-card/auth-card.tsx",
+      "content": "'use client';\n\nimport { useState, type ReactNode, type FormEvent } from 'react';\nimport { RiArrowLeftLine, RiEyeLine, RiEyeOffLine } from '@remixicon/react';\nimport { Input } from '@/components/base/input/input';\nimport { InputOTP } from '@/components/base/input-otp/input-otp';\nimport { SocialButton, type SocialProvider } from '@/components/base/social-button/social-button';\nimport { Checkbox } from '@/components/base/checkbox/checkbox';\nimport { cx } from '@/utils/cx';\n\nexport type AuthCardMode = 'sign-in' | 'sign-up' | 'verify';\nexport type AuthCardProps = { mode?: AuthCardMode; onSubmit?: (data: FormData) => void; onVerify?: (code: string) => void; onProvider?: (provider: SocialProvider) => void; onModeChange?: (mode: AuthCardMode) => void; providers?: SocialProvider[]; artwork?: ReactNode; logo?: ReactNode; className?: string };\n\nexport function AuthCard({ mode = 'sign-in', onSubmit, onVerify, onProvider, onModeChange, providers = ['google','apple','github'], artwork, logo, className }: AuthCardProps) {\n  const [passwordVisible, setPasswordVisible] = useState(false);\n  const [code, setCode] = useState('');\n  const title = mode === 'sign-in' ? 'Welcome back' : mode === 'sign-up' ? 'Create your account' : 'Check your inbox';\n  const subtitle = mode === 'sign-in' ? 'Sign in to pick up where you left off.' : mode === 'sign-up' ? 'A clearer place for your work starts here.' : 'Enter the code we sent to your email.';\n  function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); onSubmit?.(new FormData(event.currentTarget)); }\n  return <div className={cx('ui-auth-card', artwork && 'ui-auth-card--split', className)}>{artwork && <div className=\"ui-auth-card__artwork\">{artwork}</div>}<div className=\"ui-auth-card__content\">{logo && <div className=\"ui-auth-card__logo\">{logo}</div>}{mode === 'verify' && onModeChange && <button className=\"ui-auth-card__back\" type=\"button\" onClick={() => onModeChange('sign-in')}><RiArrowLeftLine size={16} aria-hidden /> Back to sign in</button>}<h2>{title}</h2><p>{subtitle}</p>{mode === 'verify' ? <div className=\"ui-auth-card__verify\"><InputOTP value={code} onChange={setCode} onComplete={next => onVerify?.(next)} aria-label=\"Verification code\" /><button type=\"button\" disabled={code.length < 6} onClick={() => onVerify?.(code)}>Verify code</button></div> : <form onSubmit={submit}><Input name=\"email\" label=\"Email\" type=\"email\" placeholder=\"you@company.com\" isRequired /><div className=\"ui-auth-card__password\"><Input name=\"password\" label=\"Password\" type={passwordVisible ? 'text' : 'password'} placeholder=\"Enter your password\" isRequired /><button type=\"button\" aria-label={passwordVisible ? 'Hide password' : 'Show password'} onClick={() => setPasswordVisible(value => !value)}>{passwordVisible ? <RiEyeOffLine size={17} aria-hidden /> : <RiEyeLine size={17} aria-hidden />}</button></div>{mode === 'sign-up' && <Input name=\"name\" label=\"Name\" placeholder=\"Your name\" isRequired />}<div className=\"ui-auth-card__options\"><Checkbox name=\"remember\" defaultSelected>Remember me</Checkbox>{mode === 'sign-in' && <button type=\"button\" onClick={() => onModeChange?.('verify')}>Forgot password?</button>}</div><button className=\"ui-auth-card__submit\" type=\"submit\">{mode === 'sign-in' ? 'Sign in' : 'Create account'}</button></form>}{mode !== 'verify' && providers.length > 0 && <><div className=\"ui-auth-card__divider\"><span>or continue with</span></div><div className=\"ui-auth-card__providers\">{providers.map(provider => <SocialButton key={provider} provider={provider} onPress={() => onProvider?.(provider)} />)}</div></>}{onModeChange && <div className=\"ui-auth-card__switch\">{mode === 'sign-in' ? 'New here?' : 'Already have an account?'} <button type=\"button\" onClick={() => onModeChange(mode === 'sign-in' ? 'sign-up' : 'sign-in')}>{mode === 'sign-in' ? 'Create an account' : 'Sign in'}</button></div>}</div></div>;\n}\n",
+      "sha256": "0afdb9ff3869a9543a667b689b230b7b0126165dc7f95182e9cff3150af0db58",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/input/input",
+          "target": "components/base/input/input.tsx",
+          "start": 181,
+          "end": 210
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input-otp/input-otp",
+          "target": "components/base/input-otp/input-otp.tsx",
+          "start": 239,
+          "end": 276
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/social-button/social-button",
+          "target": "components/base/social-button/social-button.tsx",
+          "start": 330,
+          "end": 375
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/checkbox/checkbox",
+          "target": "components/base/checkbox/checkbox.tsx",
+          "start": 404,
+          "end": 439
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 462,
+          "end": 472
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-auth-card",
+      "ui-auth-card--split",
+      "ui-auth-card__artwork",
+      "ui-auth-card__back",
+      "ui-auth-card__content",
+      "ui-auth-card__divider",
+      "ui-auth-card__logo",
+      "ui-auth-card__options",
+      "ui-auth-card__password",
+      "ui-auth-card__providers",
+      "ui-auth-card__submit",
+      "ui-auth-card__switch",
+      "ui-auth-card__verify",
+      "ui-checkbox",
+      "ui-checkbox__box",
+      "ui-checkbox__label",
+      "ui-checkbox__tick",
+      "ui-field-feedback",
+      "ui-field-feedback__error",
+      "ui-input-field",
+      "ui-input-field__action",
+      "ui-input-field__adornment",
+      "ui-input-field__control",
+      "ui-input-field__control--stacked",
+      "ui-input-field__input",
+      "ui-input-field__label",
+      "ui-input-field__message",
+      "ui-input-field__row",
+      "ui-input-group__block",
+      "ui-otp",
+      "ui-otp__input",
+      "ui-otp__slot",
+      "ui-social-button",
+      "ui-social-button__monogram"
+    ],
+    "prefixes": []
+  }
+}

@@ -1,0 +1,380 @@
+{
+  "name": "activity-feed",
+  "title": "Activity Feed",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A chronological history of people and system updates, with optional date groups, details and actions. The card grows with its content or keeps an explicit height with native scrolling.",
+  "sections": [
+    "Preview",
+    "Density and surfaces",
+    "Constrained history",
+    "Empty and loading"
+  ],
+  "example": "<ActivityFeed items={updates} label=\"Project activity\"\n  expandedKeys={expanded} onExpandedChange={setExpanded}\n  density=\"normal\" />",
+  "entryFiles": [
+    "components/blocks/activity-feed/activity-feed.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/activity-feed/activity-feed.tsx",
+      "names": [
+        "ActivityEntry",
+        "ActivityFeed",
+        "ActivityFeedProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/avatar/avatar.tsx",
+      "content": "'use client';\n\nimport type { HTMLAttributes } from 'react';\nimport { useEffect, useRef, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';\nexport type AvatarColor = 'neutral' | 'blue' | 'lime' | 'pink';\n\nexport type AvatarProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & {\n  size?: AvatarSize;\n  color?: AvatarColor;\n  initials?: string;\n  src?: string;\n  alt?: string;\n};\n\nexport function Avatar({ size = 'md', color = 'neutral', initials, src, alt, className, ...props }: AvatarProps) {\n  const [failedSource, setFailedSource] = useState<string | null>(null);\n  const imageRef = useRef<HTMLImageElement>(null);\n  const showImage = Boolean(src && src !== failedSource);\n\n  useEffect(() => {\n    const image = imageRef.current;\n    if (!image || !src) return;\n    const fail = () => setFailedSource(src);\n    if (image.complete && image.naturalWidth === 0) fail();\n    image.addEventListener('error', fail);\n    return () => image.removeEventListener('error', fail);\n  }, [src, showImage]);\n\n  return (\n    <span role=\"img\" aria-label={alt || initials || 'Avatar'} data-size={size} data-color={color} className={cx('ui-avatar', className)} {...props}>\n      <span className=\"ui-avatar__initials\" aria-hidden=\"true\">{initials}</span>\n      {showImage && <img ref={imageRef} src={src} alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\" onError={() => setFailedSource(src!)} />}\n    </span>\n  );\n}\n",
+      "sha256": "c6e2f1f5909af8da88f8ba420c072d1b421c3ae4a00527fe823ff3e760ccc13c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 133,
+          "end": 143
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/button.tsx",
+      "content": "'use client';\n\nimport type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\nimport { Spinner } from '@/components/base/spinner/spinner';\n\nexport type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline' | 'solid' | 'quiet';\nexport type ButtonSize = 'medium' | 'small' | 'xs';\n\ntype NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;\ntype ContentProps =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonProps = NativeButtonProps & ContentProps & {\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  trailingIcon?: IconComponent;\n  isLoading?: boolean;\n  loadingLabel?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\nconst base = 'ui-button inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none outline-none';\nconst sizes: Record<ButtonSize, string> = {\n  medium: 'h-9 rounded-[10px] px-2 gap-0.5',\n  small: 'h-8 rounded-lg px-2 gap-0.5',\n  xs: 'h-6 rounded-[5px] px-2 gap-0.5',\n};\nexport const buttonIconClassNames: Record<ButtonSize, string> = { medium: 'size-5', small: 'size-[18px]', xs: 'size-3.5' };\nexport function buttonClassNames(size: ButtonSize, iconOnly = false, className?: string) {\n  return cx(base, sizes[size], iconOnly && 'ui-button--icon-only !p-0', className);\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'medium',\n  iconOnly = false,\n  leadingIcon: LeadingIcon,\n  trailingIcon: TrailingIcon,\n  children,\n  className,\n  type = 'button',\n  isLoading = false,\n  loadingLabel,\n  disabled,\n  onClick,\n  onKeyDown,\n  ...props\n}: ButtonProps) {\n  return (\n    <button\n      {...props}\n      type={isLoading && type === 'submit' ? 'button' : type}\n      disabled={disabled}\n      aria-disabled={isLoading || props['aria-disabled'] || undefined}\n      aria-busy={isLoading || undefined}\n      aria-description={isLoading && loadingLabel ? loadingLabel : props['aria-description']}\n      data-variant={variant}\n      data-size={size}\n      data-icon-only={iconOnly || undefined}\n      data-loading={isLoading || undefined}\n      data-loading-label={loadingLabel !== undefined || undefined}\n      className={buttonClassNames(size, iconOnly, className)}\n      onClick={event => { if (isLoading || props['aria-disabled'] === true || props['aria-disabled'] === 'true') { event.preventDefault(); event.stopPropagation(); return; } onClick?.(event); }}\n      onKeyDown={event => { if (isLoading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); return; } onKeyDown?.(event); }}\n    >\n      {LeadingIcon && <span className=\"ui-button__leading-slot\" aria-hidden><LeadingIcon className={cx(buttonIconClassNames[size], 'ui-button__leading-icon')}/></span>}\n      {!iconOnly && <span className=\"ui-button__label\">{children}</span>}\n      {!iconOnly && TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n      <Spinner className=\"ui-button__busy-spinner\" size={size === 'xs' ? 'xs' : size === 'small' ? 'sm' : 'md'}/>\n    </button>\n  );\n}\n",
+      "sha256": "bcfc2d2db4debfd2c11dd8ba8b23a167c705ad3bf7d9151571e501ed195fe158",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 118,
+          "end": 153
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 176,
+          "end": 186
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 214,
+          "end": 247
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/card/card.tsx",
+      "content": "import type { HTMLAttributes, ReactNode, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CardProps = HTMLAttributes<HTMLDivElement> & { ref?: Ref<HTMLDivElement>; variant?: 'bordered' | 'raised' | 'soft'; padding?: 'none' | 'small' | 'medium' | 'large' };\nexport function Card({ variant = 'bordered', padding = 'medium', className, ...props }: CardProps) {\n  return <div {...props} className={cx('ui-card', className)} data-variant={variant} data-padding={padding}/>;\n}\nexport function CardHeader({ title, description, actions, leading }: { title: string; description?: string; actions?: ReactNode; leading?: ReactNode }) {\n  return <header className=\"ui-card__header\">{leading && <span className=\"ui-card__leading\" aria-hidden>{leading}</span>}<div><h3>{title}</h3>{description && <p>{description}</p>}</div>{actions && <div className=\"ui-card__actions\">{actions}</div>}</header>;\n}\nexport function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) { return <div {...props} className={cx('ui-card__footer', className)}/>; }\n",
+      "sha256": "742356565d970d6e79db31da7e8fc650e7f9044a9a11c50b9335dc40a449e1b8",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 81,
+          "end": 91
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/collapsible/collapsible.tsx",
+      "content": "import type { HTMLAttributes, ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CollapsibleProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & { isOpen: boolean; children: ReactNode };\n\n/** Keep descendants mounted while hiding their focus targets and animating flow. */\nexport function Collapsible({ isOpen, children, className, ...props }: CollapsibleProps) {\n  return <div {...props} className={cx('ui-collapsible', className)} data-open={isOpen || undefined} aria-hidden={!isOpen} inert={!isOpen}>\n    <div className=\"ui-collapsible__inner\"><div className=\"ui-collapsible__content\">{children}</div></div>\n  </div>;\n}\n",
+      "sha256": "639642d279efcb03d280423ca16442c74c8d97c0a83d3692047ac43d0748fa3c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/empty-state/empty-state.tsx",
+      "content": "import type { ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type EmptyStateProps = {\n  title: string;\n  description?: ReactNode;\n  icon?: ReactNode;\n  actions?: ReactNode;\n  children?: ReactNode;\n  size?: 'small' | 'medium' | 'large';\n  variant?: 'plain' | 'bordered' | 'soft';\n  className?: string;\n};\n\nexport function EmptyState({ title, description, icon, actions, children, size = 'medium', variant = 'plain', className }: EmptyStateProps) {\n  return <div className={cx('ui-empty-state', className)} data-size={size} data-variant={variant}>\n    {icon && <div className=\"ui-empty-state__icon\" aria-hidden>{icon}</div>}<h3>{title}</h3>{description && <p>{description}</p>}{actions && <div className=\"ui-empty-state__actions\">{actions}</div>}{children && <div className=\"ui-empty-state__detail\">{children}</div>}\n  </div>;\n}\n",
+      "sha256": "8fc8c85405c6fa17a06a0a46be2e70d9412fcc284347531dd1b1c95fade6a7f2",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 60,
+          "end": 70
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/scroll-area/scroll-area.tsx",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type Ref, type RefObject } from 'react';\nimport { RiArrowDownSLine, RiArrowUpSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type ScrollAreaViewportProps = { ref: Ref<HTMLDivElement>; className: string; children: ReactNode };\nexport type ScrollAreaProps = {\n  children?: ReactNode;\n  label: string;\n  className?: string;\n  viewportClassName?: string;\n  orientation?: 'vertical' | 'horizontal' | 'both';\n  /** Let a collection own the scroll viewport, keeping its keyboard scrolling native. */\n  renderViewport?: (props: ScrollAreaViewportProps) => ReactElement;\n  /** Keep a pointer action in a searchable input without stealing its focus. */\n  preservePointerFocus?: boolean;\n  /** Restore a virtual collection's input when a focused edge disappears. */\n  focusRef?: RefObject<HTMLElement | null>;\n  /** Keep arrow controls outside the item viewport in constrained collections. */\n  indicatorPlacement?: 'overlay' | 'gutter';\n};\n\n/** Keep native scrolling, with directional controls only when content overflows. */\nexport function ScrollArea({ children, label, className, viewportClassName, renderViewport, orientation = 'vertical', preservePointerFocus = false, focusRef, indicatorPlacement='overlay' }: ScrollAreaProps) {\n  const viewport = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);\n  const [mountedViewport, setMountedViewport] = useState<HTMLDivElement | null>(null);\n  const setViewport = useCallback((element: HTMLDivElement | null) => {\n    viewport.current = element;\n    setMountedViewport(element);\n  }, []);\n  const [edges, setEdges] = useState({ up: false, down: false, left: false, right: false });\n  const measuredEdges = useRef(edges);\n  useLayoutEffect(() => {\n    const el = mountedViewport;\n    if (!el) return;\n    function measure() {\n      if (!el) return;\n      const up = orientation !== 'horizontal' && el.scrollTop > 1, down = orientation !== 'horizontal' && el.scrollHeight - el.clientHeight - el.scrollTop > 1;\n      const rtl = getComputedStyle(el).direction === 'rtl', maximum = el.scrollWidth - el.clientWidth;\n      const left = orientation !== 'vertical' && (rtl ? maximum + el.scrollLeft : el.scrollLeft) > 1;\n      const right = orientation !== 'vertical' && (rtl ? -el.scrollLeft : maximum - el.scrollLeft) > 1;\n      const next = { up, down, left, right };\n      const focusedEdge = document.activeElement?.closest('.ui-scroll-area__edge');\n      const direction = focusedEdge?.getAttribute('data-direction') as keyof typeof next | undefined;\n      if (focusedEdge && el.parentElement?.contains(focusedEdge) && direction && !next[direction]) (focusRef?.current ?? el).focus({ preventScroll: true });\n      if (Object.keys(next).some(key => measuredEdges.current[key as keyof typeof next] !== next[key as keyof typeof next])) {\n        measuredEdges.current = next;\n        setEdges(measuredEdges.current);\n      }\n    }\n    const observer = new ResizeObserver(measure);\n    const observed = new Set<Element>();\n    function observeContent() {\n      if (!el) return;\n      // A collection may not allow a wrapper between itself and its sections.\n      // Observe those sections directly so filtering and density changes are measured.\n      const next = new Set<Element>([el, ...el.children]);\n      for (const child of observed) if (!next.has(child)) { observer.unobserve(child); observed.delete(child); }\n      for (const child of next) if (!observed.has(child)) { observer.observe(child); observed.add(child); }\n      measure();\n    }\n    const mutations = new MutationObserver(observeContent);\n    mutations.observe(el, { childList: true, subtree: true });\n    observeContent();\n    el.addEventListener('scroll', measure, { passive: true });\n    return () => { observer.disconnect(); mutations.disconnect(); el.removeEventListener('scroll', measure); };\n  }, [focusRef, mountedViewport, orientation]);\n  function scroll(direction: number, horizontal = false) {\n    const el = viewport.current;\n    if (!el) return;\n    el.scrollBy({ [horizontal ? 'left' : 'top']: direction * Math.max(80, (horizontal ? el.clientWidth : el.clientHeight) * .7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });\n  }\n  return <div className={cx('ui-scroll-area', className)} data-orientation={orientation} data-indicator-placement={indicatorPlacement} data-overflow-y={edges.up || edges.down || undefined}>\n    {renderViewport ? renderViewport({ ref: setViewport, className: cx('ui-scroll-area__viewport', viewportClassName), children }) : <div ref={setViewport} className={cx('ui-scroll-area__viewport', viewportClassName)} role=\"region\" aria-label={label} tabIndex={0}><div ref={content} className=\"ui-scroll-area__content\">{children}</div></div>}\n    <div className=\"ui-scroll-area__edge\" data-direction=\"up\" data-visible={edges.up || undefined} aria-hidden={!edges.up}><IconButton icon={RiArrowUpSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} up`} disabled={!edges.up} tabIndex={edges.up ? 0 : -1} onClick={() => scroll(-1)}/></div>\n    <div className=\"ui-scroll-area__edge\" data-direction=\"down\" data-visible={edges.down || undefined} aria-hidden={!edges.down}><IconButton icon={RiArrowDownSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} down`} disabled={!edges.down} tabIndex={edges.down ? 0 : -1} onClick={() => scroll(1)}/></div>\n    {orientation !== 'vertical' && <>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"left\" data-visible={edges.left || undefined} aria-hidden={!edges.left}><IconButton icon={RiArrowLeftSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} left`} disabled={!edges.left} tabIndex={edges.left ? 0 : -1} onClick={() => scroll(-1, true)}/></div>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"right\" data-visible={edges.right || undefined} aria-hidden={!edges.right}><IconButton icon={RiArrowRightSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} right`} disabled={!edges.right} tabIndex={edges.right ? 0 : -1} onClick={() => scroll(1, true)}/></div>\n    </>}\n  </div>;\n}\n",
+      "sha256": "6a0b95325225bbeb5dbcfb3fc4d3069c72e5d022d897f9e6bee1e96c34243bcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 282,
+          "end": 319
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 342,
+          "end": 352
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/activity-feed/activity-feed.tsx",
+      "content": "'use client';\n\nimport { useId, useState, type CSSProperties, type ReactNode } from 'react';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { RiArrowDownSLine, RiTimeLine } from '@remixicon/react';\nimport { Avatar, type AvatarProps } from '@/components/base/avatar/avatar';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\nimport { Button, type ButtonProps } from '@/components/base/buttons/button';\nimport { Card, CardHeader } from '@/components/base/card/card';\nimport { Collapsible } from '@/components/base/collapsible/collapsible';\nimport { EmptyState } from '@/components/base/empty-state/empty-state';\nimport { ScrollArea } from '@/components/base/scroll-area/scroll-area';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type ActivityEntry = {\n  id: string;\n  title: string;\n  description?: ReactNode;\n  time: string;\n  dateTime?: string;\n  group?: string;\n  actor?: Pick<AvatarProps, 'src' | 'initials' | 'color'> & { name: string };\n  icon?: IconComponent;\n  detail?: ReactNode;\n  action?: { label: string; onPress: () => void; isDisabled?: boolean; isLoading?: boolean; variant?: ButtonProps['variant'] };\n};\nexport type ActivityFeedProps = {\n  items: ActivityEntry[];\n  label?: string;\n  description?: string;\n  density?: 'normal' | 'compact';\n  variant?: 'bordered' | 'soft' | 'raised';\n  height?: number | string;\n  expandedKeys?: string[];\n  defaultExpandedKeys?: string[];\n  onExpandedChange?: (keys: string[]) => void;\n  headerActions?: ReactNode;\n  footer?: ReactNode;\n  isLoading?: boolean;\n  emptyTitle?: string;\n  emptyDescription?: string;\n  emptyAction?: ReactNode;\n  className?: string;\n};\n\nfunction ActivityPresence({ children }: { children: ReactNode }) {\n  const present = useIsPresent();\n  return <div inert={!present} aria-hidden={!present || undefined}>{children}</div>;\n}\n\nexport function ActivityFeed({ items, label = 'Project activity', description, density = 'normal', variant = 'bordered', height, expandedKeys, defaultExpandedKeys = [], onExpandedChange, headerActions, footer, isLoading = false, emptyTitle = 'No activity yet', emptyDescription = 'Updates will appear here as work moves forward.', emptyAction, className }: ActivityFeedProps) {\n  const [internalKeys, setInternalKeys] = useState(defaultExpandedKeys);\n  const expanded = expandedKeys ?? internalKeys;\n  const id = useId(), reduced = useReducedMotion();\n  function toggle(key: string) {\n    const next = expanded.includes(key) ? expanded.filter(item => item !== key) : [...expanded, key];\n    if (expandedKeys === undefined) setInternalKeys(next);\n    onExpandedChange?.(next);\n  }\n  const groupCounts = new Map<string, number>();\n  const content = items.length ? <ol className=\"ui-activity-feed__list\" aria-label={label}>\n    <AnimatePresence initial={false} mode=\"popLayout\">{items.flatMap((item, index) => {\n      const Icon = item.icon ?? RiTimeLine, detailId = `${id}-${index}`, isExpanded = expanded.includes(item.id);\n      const startsGroup = Boolean(item.group && item.group !== items[index - 1]?.group);\n      const endsGroup = index === items.length - 1 || item.group !== items[index + 1]?.group;\n      const entry = <motion.li key={`entry-${item.id}`} className=\"ui-activity-feed__item\" layout=\"position\" data-last-group={endsGroup || undefined} initial={reduced ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: reduced ? 0 : .24, ease: [.2,.75,.25,1] }}>\n        <ActivityPresence>\n        <div className=\"ui-activity-feed__row\">\n          <div className=\"ui-activity-feed__mark\">{item.actor ? <Avatar size=\"md\" src={item.actor.src} initials={item.actor.initials ?? item.actor.name.split(' ').map(word => word[0]).join('').slice(0,2)} alt={item.actor.name} color={item.actor.color}/> : <span className=\"ui-activity-feed__system\" aria-hidden><Icon/></span>}</div>\n          <div className=\"ui-activity-feed__copy\"><div className=\"ui-activity-feed__heading\"><p>{item.actor ? <><strong>{item.actor.name}</strong> {item.title}</> : <strong>{item.title}</strong>}</p><time dateTime={item.dateTime}>{item.time}</time></div>\n            {item.description && <div className=\"ui-activity-feed__description\">{item.description}</div>}\n            {(item.detail || item.action) && <div className=\"ui-activity-feed__actions\">{item.detail && <Button size=\"xs\" variant=\"ghost\" trailingIcon={RiArrowDownSLine} aria-label={`Details for ${item.title}`} aria-expanded={isExpanded} aria-controls={detailId} onClick={() => toggle(item.id)}>Details</Button>}{item.action && <Button size=\"xs\" variant={item.action.variant ?? 'outline'} disabled={item.action.isDisabled} isLoading={item.action.isLoading} onClick={item.action.onPress}>{item.action.label}</Button>}</div>}\n            {item.detail && <Collapsible id={detailId} isOpen={isExpanded}><div className=\"ui-activity-feed__detail\">{item.detail}</div></Collapsible>}\n          </div>\n        </div></ActivityPresence>\n      </motion.li>;\n      if (!startsGroup) return [entry];\n      const occurrence = (groupCounts.get(item.group!) ?? 0) + 1;\n      groupCounts.set(item.group!, occurrence);\n      return [<motion.li key={`group-${item.group}-${occurrence}`} role=\"presentation\" className=\"ui-activity-feed__group\" initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduced ? 0 : .16 }}><ActivityPresence><h4>{item.group}</h4></ActivityPresence></motion.li>, entry];\n    })}</AnimatePresence>\n  </ol> : <EmptyState size=\"small\" title={isLoading ? 'Loading activity…' : emptyTitle} description={isLoading ? 'Updates will appear here.' : emptyDescription} icon={isLoading ? <Spinner/> : <RiTimeLine/>} actions={!isLoading ? emptyAction : undefined}/>;\n  const body = <AnimatePresence initial={false} mode=\"popLayout\"><motion.div key={items.length ? 'entries' : 'empty'} className=\"ui-activity-feed__view\" initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduced ? 0 : .16 }}><ActivityPresence>{content}</ActivityPresence></motion.div></AnimatePresence>;\n  return <Card className={cx('ui-activity-feed', className)} variant={variant} padding=\"none\" data-density={density} data-constrained={height !== undefined || undefined} aria-busy={isLoading || undefined} style={{ '--activity-height': typeof height === 'number' ? `${height}px` : height } as CSSProperties}>\n    <CardHeader title={label} description={description} actions={headerActions}/>\n    {height !== undefined ? <ScrollArea label={label} className=\"ui-activity-feed__scroll\">{body}</ScrollArea> : <div className=\"ui-activity-feed__content\"><AnimatedHeight>{body}</AnimatedHeight></div>}\n    {footer && <div className=\"ui-activity-feed__footer\">{footer}</div>}\n  </Card>;\n}\n",
+      "sha256": "c4b1bc6b99247d967244994fbc1ef9e554653684d9937438c3554a015e29ffdf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/avatar/avatar",
+          "target": "components/base/avatar/avatar.tsx",
+          "start": 287,
+          "end": 318
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 353,
+          "end": 402
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 447,
+          "end": 479
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/card/card",
+          "target": "components/base/card/card.tsx",
+          "start": 516,
+          "end": 543
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/collapsible/collapsible",
+          "target": "components/base/collapsible/collapsible.tsx",
+          "start": 575,
+          "end": 616
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/empty-state/empty-state",
+          "target": "components/base/empty-state/empty-state.tsx",
+          "start": 647,
+          "end": 688
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 719,
+          "end": 760
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 788,
+          "end": 821
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 860,
+          "end": 895
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 918,
+          "end": 928
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-activity-feed",
+      "ui-activity-feed__actions",
+      "ui-activity-feed__content",
+      "ui-activity-feed__copy",
+      "ui-activity-feed__description",
+      "ui-activity-feed__detail",
+      "ui-activity-feed__footer",
+      "ui-activity-feed__group",
+      "ui-activity-feed__heading",
+      "ui-activity-feed__item",
+      "ui-activity-feed__list",
+      "ui-activity-feed__mark",
+      "ui-activity-feed__row",
+      "ui-activity-feed__scroll",
+      "ui-activity-feed__system",
+      "ui-activity-feed__view",
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-avatar",
+      "ui-avatar__initials",
+      "ui-button",
+      "ui-button--icon-only",
+      "ui-button__busy-spinner",
+      "ui-button__label",
+      "ui-button__leading-icon",
+      "ui-button__leading-slot",
+      "ui-card",
+      "ui-card__actions",
+      "ui-card__footer",
+      "ui-card__header",
+      "ui-card__leading",
+      "ui-collapsible",
+      "ui-collapsible__content",
+      "ui-collapsible__inner",
+      "ui-empty-state",
+      "ui-empty-state__actions",
+      "ui-empty-state__detail",
+      "ui-empty-state__icon",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-scroll-area",
+      "ui-scroll-area__content",
+      "ui-scroll-area__edge",
+      "ui-scroll-area__viewport",
+      "ui-spinner"
+    ],
+    "prefixes": []
+  }
+}

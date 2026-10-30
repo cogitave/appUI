@@ -1,0 +1,13 @@
+{
+  "brandName": "appUI",
+  "cliPackage": "appui",
+  "cliTag": "latest",
+  "sourceDirectory": "appui",
+  "published": false,
+  "localAvailable": true,
+  "configFile": "appui.json",
+  "mcpPublished": false,
+  "mcpLocalAvailable": true,
+  "skillsPublished": false,
+  "skillsLocalAvailable": true
+}

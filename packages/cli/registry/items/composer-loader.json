@@ -1,0 +1,75 @@
+{
+  "name": "composer-loader",
+  "title": "Composer Loader",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A measured animated edge that signals active work around a composer or another contained surface.",
+  "sections": [
+    "Preview",
+    "Active state",
+    "Custom colors"
+  ],
+  "example": "<ComposerLoader active={isWorking}><Composer onSend={send} /></ComposerLoader>",
+  "entryFiles": [
+    "components/blocks/composer-loader/composer-loader.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/composer-loader/composer-loader.tsx",
+      "names": [
+        "ComposerLoader",
+        "ComposerLoaderProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/blocks/composer-loader/composer-loader.tsx",
+      "content": "'use client';\n\nimport { useId, type CSSProperties, type ReactNode } from 'react';\nimport { useElementSize } from '@/hooks/use-element-size';\nimport { cx } from '@/utils/cx';\n\nexport type ComposerLoaderProps = {\n  active: boolean;\n  children: ReactNode;\n  colors?: string[];\n  speed?: number;\n  arc?: number;\n  intensity?: number;\n  bloom?: number;\n  bloomStrength?: number;\n  radius?: number;\n  reverse?: boolean;\n  className?: string;\n};\n\nconst defaultColors = ['#5eead4', '#46baec', '#9677c8', '#e633a4', '#00faa7'];\n\n/** A measured SVG rim keeps the band at a constant speed around any surface. */\nexport function ComposerLoader({ active, children, colors = defaultColors, speed = 4.5, arc = 120, intensity = .7, bloom = 16, bloomStrength = .3, radius, reverse = false, className }: ComposerLoaderProps) {\n  const id = useId().replaceAll(':', '');\n  const { ref, width, height } = useElementSize<HTMLDivElement>(560, 52);\n  const palette = colors.length ? colors : defaultColors;\n  const stops = palette.length === 1 ? [palette[0], palette[0]] : palette;\n  const curve = Math.max(0, Math.min(radius ?? height / 2, height / 2, width / 2));\n  const band = Math.max(1, Math.min(99, arc / 3.6));\n  const layers = [\n    { width: Math.max(0, bloom) * 2, blur: 14, opacity: Math.max(0, Math.min(1, bloomStrength)), band: Math.max(1, band - 3.33) },\n    { width: 8, blur: 6, opacity: .8, band: Math.max(1, band - 1.67) },\n    { width: 2.5, blur: .5, opacity: 1, band },\n  ];\n  return <div ref={ref} className={cx('ui-composer-loader', className)} data-active={active || undefined} style={{ '--loader-radius': `${curve}px`, '--loader-speed': `${Math.max(.1, speed)}s`, '--loader-direction': reverse ? 'reverse' : 'normal' } as CSSProperties}>\n    <span className=\"ui-composer-loader__light\" aria-hidden=\"true\">\n      <svg width=\"100%\" height=\"100%\" viewBox={`0 0 ${width} ${height}`} style={{ opacity: Math.max(0, Math.min(1, intensity)) }}>\n        <defs>\n          <linearGradient id={`${id}-colors`} x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">{stops.map((color, index) => <stop key={index} offset={`${index * 100 / (stops.length - 1)}%`} stopColor={color} />)}</linearGradient>\n          {layers.map((layer, index) => <filter key={index} id={`${id}-blur-${index}`} x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\"><feGaussianBlur stdDeviation={layer.blur} /></filter>)}\n        </defs>\n        {layers.map((layer, index) => <rect key={index} x=\"0\" y=\"0\" width={width} height={height} rx={curve} pathLength=\"100\" fill=\"none\" stroke={`url(#${id}-colors)`} strokeWidth={layer.width} strokeLinecap=\"round\" strokeDasharray={`${layer.band} ${100 - layer.band}`} filter={`url(#${id}-blur-${index})`} opacity={layer.opacity} />)}\n      </svg>\n    </span>\n    <div className=\"ui-composer-loader__content\">{children}</div>\n  </div>;\n}\n",
+      "sha256": "4e51059a7969d9372aae13a6c136889dec9bf03a88259a5b5084d203c33e2e1d",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-element-size",
+          "target": "hooks/use-element-size.ts",
+          "start": 114,
+          "end": 138
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 161,
+          "end": 171
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-element-size.ts",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, useState } from 'react';\n\n/** Keep chart coordinates in CSS pixels so text and markers never stretch. */\nexport function useElementSize<T extends HTMLElement>(initialWidth: number, initialHeight: number) {\n  const ref = useRef<T>(null);\n  const [size, setSize] = useState({ width: initialWidth, height: initialHeight });\n\n  useLayoutEffect(() => {\n    const element = ref.current;\n    if (!element) return;\n    function update(width: number, height: number) {\n      if (width <= 0 || height <= 0) return;\n      setSize(current => current.width === width && current.height === height ? current : { width, height });\n    }\n    update(element.clientWidth, element.clientHeight);\n    const observer = new ResizeObserver(([entry]) => update(entry.contentRect.width, entry.contentRect.height));\n    observer.observe(element);\n    return () => observer.disconnect();\n  }, []);\n\n  return { ref, ...size };\n}\n",
+      "sha256": "a8ccbf55acfb20ce4f9a17df7467849f2b1d4310686a866ef88031ab7b2ded5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-composer-loader",
+      "ui-composer-loader__content",
+      "ui-composer-loader__light"
+    ],
+    "prefixes": []
+  }
+}

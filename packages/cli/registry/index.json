@@ -1,0 +1,2210 @@
+{
+  "schemaVersion": 1,
+  "name": "appUI",
+  "version": "0.1.0",
+  "stylesSha256": "472f827fc20ff26246267ecbd58f55935ac0f80fdbe30c37e18e7ede15b8abd2",
+  "items": [
+    {
+      "name": "accordion",
+      "title": "Accordion",
+      "description": "Related sections with single or multiple expansion, keyboard navigation and a smooth change in layout height.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/accordion/accordion.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "069f9a81a6b9a4cad9a531ea4db9b314d72f31e85e84d61aeded5aa7e0cabfe4"
+    },
+    {
+      "name": "activity-feed",
+      "title": "Activity Feed",
+      "description": "A chronological history of people and system updates, with optional date groups, details and actions. The card grows with its content or keeps an explicit height with native scrolling.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/activity-feed/activity-feed.tsx"
+      ],
+      "fileCount": 14,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "0845980cb002d02d125aec06ede88f7955557484d2be48c7149dd827bc0ecf60"
+    },
+    {
+      "name": "activity-rings-card",
+      "title": "Activity Rings",
+      "description": "Three concentric goals show movement, exercise and running progress in a compact card.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "23cc01d58f6ebdd0f548077c06085bd00471c752bcb5067c8eddf49722d145b3"
+    },
+    {
+      "name": "agent-creator",
+      "title": "Agent Creator",
+      "description": "A configurable identity panel for an agent: shape, color, name, voice, language, and notification preferences.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/agent-creator/agent-creator.tsx"
+      ],
+      "fileCount": 21,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "18695b8e42fb86c414fb1555b4f7d3172c51973cf6dd901ebe7e18c88bf38133"
+    },
+    {
+      "name": "agent-limits-card",
+      "title": "Agent Limits",
+      "description": "A usage panel composed from the shared Meter and Collapsible, with segmented capacity, member details, compact density, semantic tones and labels for general product quotas.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/agent-limits/agent-limits-card.tsx"
+      ],
+      "fileCount": 9,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "be3d2f02975725e87cfb58a6499008d97a54770c39ab3c20c93551834d3175d2"
+    },
+    {
+      "name": "agent-progress",
+      "title": "Agent Progress",
+      "description": "A collapsible multi-step progress panel that keeps active work, completion, and timing readable in a small footprint.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/agent-progress/agent-progress.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "d12d1c95cb6d24df40b8060854b130953867661face6cc57bfaf03590c2c1beb"
+    },
+    {
+      "name": "agent-thinking",
+      "title": "Agent Thinking",
+      "description": "A lightweight status indicator for work in progress, with five motion variants and an elapsed timer.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/agent-thinking/agent-thinking.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "249190da22f22adcb0368662c84319fea7f39574b57807b790607139b4d1d72e"
+    },
+    {
+      "name": "alert",
+      "title": "Alert",
+      "description": "An inline message with semantic colors, optional actions and dismissal. Use a live announcement only when a new message needs attention.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/alert/alert.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "cc6db6ed44df668e306fc708f8fd9d77a1f39b0525ee7bb13b06e1f94c0c803e"
+    },
+    {
+      "name": "announcement",
+      "title": "Announcement",
+      "description": "A compact message card for onboarding and product updates. It supports an icon, a focused action, and an animated dismiss control.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/announcement/announcement.tsx"
+      ],
+      "fileCount": 6,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "89b20cd7d78d4517a4bdbcc2ff408eafc3a3d0be24962199f9c9498f5af887bb"
+    },
+    {
+      "name": "area-chart-card",
+      "title": "Area Chart",
+      "description": "A layered time series card with three sources and an accessible SVG summary.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "fc6ec1e86a0fe5982cd96cabaf54f65f609dcc33c7d2b3f2ad31e58e95173c05"
+    },
+    {
+      "name": "aspect-ratio",
+      "title": "Aspect Ratio",
+      "description": "A responsive media container that reserves exact bounds before content loads, with cover or contain fitting and four corner options.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/aspect-ratio/aspect-ratio.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "ade5d7f373c664a570e193596babd61fe707f657b20b4a4afc5aa24730c44ef4"
+    },
+    {
+      "name": "auth-card",
+      "title": "Auth Card",
+      "description": "A sign-in, sign-up, or verification panel that composes form fields with provider buttons and hands data to your authentication layer.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/auth-card/auth-card.tsx"
+      ],
+      "fileCount": 11,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "d50a422da3a4f954a117f3d5e1a827c32d10d3944306add0c95630d3b31c95ae"
+    },
+    {
+      "name": "avatar",
+      "title": "Avatar",
+      "description": "A person’s photo or initials in four measured sizes. Initials remain visible if the image fails to load.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/avatar/avatar.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "691913fb975995bc213f61ce61620bd3857ba23d080dd742e174a77380f3c1e7"
+    },
+    {
+      "name": "badge",
+      "title": "Badge",
+      "description": "Small count labels for navigation and unread totals. The primary color sits comfortably on selected surfaces.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/badges/badge.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "5ee19445359f9539dcc8331c9da5f967be4f2e61603fadd9e28a6aeb81f27d0d"
+    },
+    {
+      "name": "bar-list-card",
+      "title": "Bar List",
+      "description": "A ranked horizontal breakdown with clear labels and percentages.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "a8ca6d07d0c45a61bcc27f6221a49b0ccd1f02e3f4e6751cf5c40b9c248ad7d9"
+    },
+    {
+      "name": "breadcrumb",
+      "title": "Breadcrumb",
+      "description": "A compact path through the interface. Ancestors are interactive, while the current page is announced clearly to assistive technology.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/breadcrumb/breadcrumb.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "5f9dd7e7e0dec418f0b9e00cfed0f45d671878a95f66f8021fe1a24167475949"
+    },
+    {
+      "name": "button",
+      "title": "Button",
+      "description": "Primary, secondary, ghost, and danger actions in three sizes, with clear hover, pressed, focus, and disabled states.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/buttons/button.tsx"
+      ],
+      "fileCount": 4,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "c491cf573873c73893c36105de0f50621bf406be76d3d61ec7b5aff2de558f08"
+    },
+    {
+      "name": "button-group",
+      "title": "Button Group",
+      "description": "Related controls share one border and a quiet shadow. Use the selected state for toolbars and compact filters.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/buttons/button-group.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "12037d2674845d9b5805d93cee60cca5f3669456e2e70a3fe76100405511fd13"
+    },
+    {
+      "name": "calendar",
+      "title": "Calendar",
+      "description": "A month grid with colored events, month navigation, overflow counts, event details, and a new-event action.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/calendar/calendar.tsx"
+      ],
+      "fileCount": 10,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "react-dom": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "ae1130ddc5a479caac06e7c07a10044c4449624a32146cae42d3cf344fbd665f"
+    },
+    {
+      "name": "card",
+      "title": "Card",
+      "description": "A shared content surface with measured padding, headers and footers. Compose it from the same controls as the rest of your product.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/card/card.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "7d258e358c89d610010f278081cfd158f5ba6b2fc30641e9211f61900108f023"
+    },
+    {
+      "name": "carousel",
+      "title": "Carousel",
+      "description": "A gallery driven by native scrolling and scroll snap. Touch, trackpad, keyboard, arrows, and position controls all stay in sync.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/carousel/carousel.tsx"
+      ],
+      "fileCount": 7,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "3eea5234f746aafa85c104495839240a7ff0787cab78427cfb33690bc7dc3c3e"
+    },
+    {
+      "name": "checkbox",
+      "title": "Checkbox",
+      "description": "A precise 16px choice control built on React Aria. Checked, mixed, disabled, and labelled states share one visual language.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/checkbox/checkbox.tsx",
+        "components/base/checkbox/checkbox-card.tsx"
+      ],
+      "fileCount": 5,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "28f464afe0cc425d125a509a48ad4975486e7d522ae26cfbd0adbfd810aaf647"
+    },
+    {
+      "name": "chip",
+      "title": "Chip",
+      "description": "Compact color labels for statuses, values, and tags. Three emphasis levels cover nine semantic color pairs.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/badges/chip.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "099039ba1428803ef8c9ee17c6e5a24a958af2290c55c16e9250b14f1e4e4d27"
+    },
+    {
+      "name": "close-button",
+      "title": "Close Button",
+      "description": "The circular dismiss action for compact surfaces and dialogs. Four sizes keep the icon stroke crisp at every scale.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/buttons/close-button.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "6ecd9cfd2ad80dafc01adf5f985971fe43f97a68d87a0176d08582747776b9a1"
+    },
+    {
+      "name": "code-block",
+      "title": "Code Block",
+      "description": "A shared code surface with exact-source copying, animated format changes, optional line numbers, highlighted lines, wrapping and native scrolling. Code remains selectable and the surrounding layout follows content height.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/code-block/code-block.tsx"
+      ],
+      "fileCount": 12,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "745800aeedae52f1dea6afc07e6275ec496b5840807f9b5d570f1882457ff113"
+    },
+    {
+      "name": "collapsible",
+      "title": "Collapsible",
+      "description": "An animated content region that preserves child state while removing hidden content from keyboard navigation and the accessibility tree.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/collapsible/collapsible.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "330a95b70ac481208f7d4de0ee24e719828b633369c3a14eb9c80e1543473a5f"
+    },
+    {
+      "name": "color-swatch",
+      "title": "Color Swatch",
+      "description": "Color previews and accessible named palette choices, with transparency, three sizes, circular or square shapes, flat or gloss surfaces and native keyboard selection.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/color-swatch/color-swatch.tsx",
+        "components/base/color-swatch/color-swatch-picker.tsx"
+      ],
+      "fileCount": 11,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "96de660708b23d6d44bf7677a4237d951d6346eaa8e382b9785d6afde8018f36"
+    },
+    {
+      "name": "combo-chart-card",
+      "title": "Combo Chart",
+      "description": "Bars and point markers show two related measures on one compact plot.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "f392af55d6d3c9bc22ede9cd959428b259a13dd89c1c2ba6efec43997bba74ed"
+    },
+    {
+      "name": "combobox",
+      "title": "ComboBox",
+      "description": "Search a list of choices with keyboard navigation, rich option details, disabled items and a useful empty state.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/combobox/combobox.tsx"
+      ],
+      "fileCount": 13,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "743053c5c6c28ee11f22fdd4ea2f18a5764ce5e9d0c2ba048de528f269e13e7e"
+    },
+    {
+      "name": "command-menu",
+      "title": "Command Menu",
+      "description": "Searchable, grouped actions with keyboard navigation, optional descriptions, shortcuts and a fixed scrolling area. The search field keeps focus while you move between results.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/command-menu/command-menu.tsx"
+      ],
+      "fileCount": 16,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "react-dom": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "46592b0a22804c606737f577235ebf9fb2d4eda1b86d01f3dc226d972a7d0d3e"
+    },
+    {
+      "name": "command-palette",
+      "title": "Command Palette",
+      "description": "The shared Command Menu inside a focus-trapped Dialog. An optional hideHeader surface keeps its accessible title while showing search directly. Search and result changes preserve the panel bounds; choosing an action can close the palette or keep it available.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/command-palette/command-palette.tsx"
+      ],
+      "fileCount": 18,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "react-dom": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "e479ae089880b44df7a37c70a3629063eb432a843df597895ed9bebc1ce0ad17"
+    },
+    {
+      "name": "composer",
+      "title": "Composer",
+      "description": "A responsive message composer with model selection, attachments, voice action, project context, and working state.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/composer/composer.tsx"
+      ],
+      "fileCount": 13,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "17c490dbe88baa6e753c640f8e7988cf2a880c1b9215b983b9eddda6d7f20b78"
+    },
+    {
+      "name": "composer-attachments",
+      "title": "Composer Attachments",
+      "description": "A strip of compact attachment tiles with thumbnails, progress rings, add, and remove actions.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/composer/composer-attachments.tsx"
+      ],
+      "fileCount": 4,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "c114ef2872ac181d0d497b92786c5e28bc58ba5281e87043bff4095c63746705"
+    },
+    {
+      "name": "composer-loader",
+      "title": "Composer Loader",
+      "description": "A measured animated edge that signals active work around a composer or another contained surface.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/composer-loader/composer-loader.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "8a5b5f7f65a6cae8a96575bbb15ba31dd8434206f7417ad85c5ac19ed2c37a45"
+    },
+    {
+      "name": "composer-panel",
+      "title": "Composer Panel",
+      "description": "A two-row composer with permission modes, provider and model search, reasoning effort, attachments and a configurable status tab.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/composer-panel/composer-panel.tsx"
+      ],
+      "fileCount": 30,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "ed2a1019afc1f2e8da46b4b771ea352b5fd46ec0bea3585ef02f2e6ea4748d1a"
+    },
+    {
+      "name": "context-menu",
+      "title": "Context Menu",
+      "description": "Actions at the pointer, with touch long press and keyboard access. Shared menus support submenus, shortcuts, independent selections and animated density.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/context-menu/context-menu.tsx"
+      ],
+      "fileCount": 11,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "58d38c633ace8a0f4882c4a99dbe31269ef0a6190d45cb33fb2d76c06fa8ba19"
+    },
+    {
+      "name": "contributions-card",
+      "title": "Contributions",
+      "description": "A dense contribution calendar with an activity summary and keyboard focus for each day.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "30fe7d4722ceeebfcbfb3aa4c50ca3e436b392164e44f2c6a1492376082fe07b"
+    },
+    {
+      "name": "conversation",
+      "title": "Conversation",
+      "description": "A responsive message viewport that follows new content while you are at the end and preserves your place when you scroll up to read earlier messages.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/conversation/conversation.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "8b7b74f5a2ea8cecbf8f36b498e91d6a4f3c73c6c8d30694ff521c9e2e824a62"
+    },
+    {
+      "name": "data-table",
+      "title": "Data Table",
+      "description": "A searchable, sortable and paginated data grid driven by TanStack Table, with filters and row selection.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/data-table/data-table.tsx"
+      ],
+      "fileCount": 18,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "@tanstack/react-table": "^8.21.3",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "f3d11c22255a74604951abb02fcf011390e3024fa7cbba337597f25063e9d386"
+    },
+    {
+      "name": "date-picker",
+      "title": "Date Picker",
+      "description": "Choose a single day or a date range in a calendar that supports keyboard navigation, quick ranges, editable dates, and an explicit Apply action.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/date-picker/date-picker.tsx",
+        "components/base/date-picker/date-range-picker.tsx",
+        "components/base/date-picker/meeting-scheduler.tsx"
+      ],
+      "fileCount": 17,
+      "dependencies": {
+        "@internationalized/date": "^3.12.4",
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "86037b856b0f2e71723a0f3c91a10276cc96a4f9e7d0add9481e6845389d2207"
+    },
+    {
+      "name": "dialog",
+      "title": "Dialog",
+      "description": "A focused modal surface with a named header, dynamic content, optional actions, keyboard dismissal and focus restoration.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/dialog/dialog.tsx"
+      ],
+      "fileCount": 4,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "2fa0bd8f7cb19d9d733e561efe9bc1919436b47618fa29df2f55ef2f0b2d2dfa"
+    },
+    {
+      "name": "direction",
+      "title": "Direction",
+      "description": "A scoped locale and DOM direction for readable layout, logical keyboard navigation and portaled controls. Nested scopes preserve the surrounding application.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/direction/direction.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "815c0ae880ddebc60c7dc6eb0bdd2db8337b23aa343a1b6838a77c97c90ffa72"
+    },
+    {
+      "name": "divider",
+      "title": "Divider",
+      "description": "A composable separator for dense interfaces. A hairline, framed double line, or soft filled strip can hold text and compact controls.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/divider/divider.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "bff380daf208e1759142055182311ed6508accadb37ef660c9d1f229b0e670c2"
+    },
+    {
+      "name": "drawer",
+      "title": "Drawer",
+      "description": "A side or bottom detail surface that shares Dialog behavior, fits its viewport and keeps header and actions reachable.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/drawer/drawer.tsx"
+      ],
+      "fileCount": 5,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "10febe82d43e2cd68cc34df343f4b30d5893063c9ec3001e19dcf09ba0092da8"
+    },
+    {
+      "name": "dropdown",
+      "title": "Dropdown",
+      "description": "A compact action surface with grouped items, keyboard navigation, and a soft entrance. Selection returns focus to the trigger.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/dropdown/dropdown.tsx"
+      ],
+      "fileCount": 7,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "13529c06386e80117dcc79b319f0665c4f1130e72e7783e14ffd0aa505c4a4e8"
+    },
+    {
+      "name": "earnings-chart-card",
+      "title": "Earnings Chart",
+      "description": "A monthly earnings view with goal tracks and a period selector.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "39b8998fd1b81011b277d871554f6d86a3fb2ad97f8d0d1692722e53d30143e6"
+    },
+    {
+      "name": "empty-state",
+      "title": "Empty State",
+      "description": "A clear explanation and useful next action for an empty collection, filtered result, first visit or unavailable content.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/empty-state/empty-state.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "45f5f844740c180fb6a3494625363091eaeebe405bf3412db528aa5265eeca97"
+    },
+    {
+      "name": "field",
+      "title": "Field",
+      "description": "Responsive form layout around shared controls, with their existing labels, descriptions and validation intact. Group columns follow their container; fieldsets provide legends and inherited disabled state.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/field/field.tsx"
+      ],
+      "fileCount": 4,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "d528f54949e66baa4a2ea4d6926ca62906fc83040a976cdad6a354127f22e5eb"
+    },
+    {
+      "name": "file-explorer",
+      "title": "File Explorer",
+      "description": "A file panel composed from Tree, SearchField, ScrollArea and Card. Search retains matching ancestors, manual expansion survives search, and constrained panels use native scrolling with directional controls.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/file-explorer/file-explorer.tsx"
+      ],
+      "fileCount": 22,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "75ca5d212fbc224d414b24d52289473e985a8354819ac72e656562b470bd3fff"
+    },
+    {
+      "name": "file-upload",
+      "title": "File Upload",
+      "description": "A keyboard-accessible dropzone with file type and size validation, visible progress, and clear completion feedback.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/file-upload/file-upload.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "dbea1541782946b3af04f2586a50bff344bbd92da87eb03da9268ae228b5a850"
+    },
+    {
+      "name": "filter-bar",
+      "title": "Filter Bar",
+      "description": "Search, Select, removable Chips and a result summary composed into a responsive collection toolbar. The parent owns the filtered data.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/filter-bar/filter-bar.tsx"
+      ],
+      "fileCount": 19,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "73b6c0ce3636073bc7297723a2029af0bd8d81e8f411622197da9ee7e4b0a212"
+    },
+    {
+      "name": "funnel-chart-card",
+      "title": "Funnel Chart",
+      "description": "A conversion path that keeps stage totals and relative completion visible.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "edf920efba426c58e55b1196b563fd8f41b7e87a1d18be2108453d4092de879e"
+    },
+    {
+      "name": "heatmap-chart-card",
+      "title": "Heatmap Chart",
+      "description": "A grid of activity levels that remains inspectable by keyboard and pointer.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "eb02a3c7dc3e4604b192d71aee24aa5e24c9e43e36ef16016764dc50bc35f18c"
+    },
+    {
+      "name": "hover-card",
+      "title": "Hover Card",
+      "description": "A non-modal preview for people, sources and related objects. Hover or focus to inspect details, then move into its actions without losing your place.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/hover-card/hover-card.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "311da0b5f75f27e06f48f59d1a813f98b858565aeddf1e875b5175349103c581"
+    },
+    {
+      "name": "icon-button",
+      "title": "Icon Button",
+      "description": "A compact action control for rows and toolbars. Every icon-only action has an accessible name and a clear focus state.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/buttons/icon-button.tsx"
+      ],
+      "fileCount": 6,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "8386d89c5fc302f8082a1243a0a28a4975c7411b00d92f7c4cac9bf54a473abe"
+    },
+    {
+      "name": "input",
+      "title": "Input",
+      "description": "A labelled field built on React Aria, with leading and trailing adornments, hint text, required state, and error feedback.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/input/input.tsx"
+      ],
+      "fileCount": 5,
+      "dependencies": {
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "148008028a0dc954fff4469d6a3081101c7ad1e7f543bba6da3fd09ac1739587"
+    },
+    {
+      "name": "input-group",
+      "title": "Input Group",
+      "description": "Inline icons, text, actions and block additions composed from the shared Input and Textarea, with their labels, focus and validation intact.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/input-group/input-group.tsx"
+      ],
+      "fileCount": 7,
+      "dependencies": {
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "451f298830951fa7162eebebcb16445238936efe14e89780525af8a6903a4056"
+    },
+    {
+      "name": "input-otp",
+      "title": "Input OTP",
+      "description": "One accessible input rendered as a sequence of code slots. Paste, autofill, and keyboard editing work as a single value.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/input-otp/input-otp.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "972e54eaec85159451a9eb5a71f915ddb39f78ddcd4b9359b16db2c2c0a8e13e"
+    },
+    {
+      "name": "item",
+      "title": "Item",
+      "description": "Content rows composed from Card, with media, text and ordinary actions. Three surfaces, three sizes, native list groups and complete row links share the same typography and responsive layout.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/item/item.tsx"
+      ],
+      "fileCount": 4,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "6d0ba86a84a1990f437a0660285f9a31f85073c915aeef0f206aefac78f80af5"
+    },
+    {
+      "name": "kbd",
+      "title": "Kbd",
+      "description": "Compact keyboard hints and shortcut groups in soft or outlined surfaces. The visual hint does not register a shortcut by itself.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/kbd/kbd.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "fb0bfdc195552d93695fd838f1e80c19b9fb0fa22b372e08a1287446d60ed2c5"
+    },
+    {
+      "name": "line-chart-card",
+      "title": "Line Chart",
+      "description": "A single time series with a soft area fill and measured axis labels.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "3a8bd9771c70081a33dcc8634f9f4ac03e98af2bd7bbd9ef2b975a6bac88c060"
+    },
+    {
+      "name": "link-button",
+      "title": "Link Button",
+      "description": "An inline navigation action with measured icon spacing and a gentle directional hover cue.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/buttons/link-button.tsx",
+        "components/base/buttons/button-link.tsx"
+      ],
+      "fileCount": 6,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "5270ffabe255ec34479793214e2164d565452318c3e554a394aad5e3c064849e"
+    },
+    {
+      "name": "menubar",
+      "title": "Menubar",
+      "description": "Application commands in a persistent bar, with one Tab stop, logical arrow navigation, nested actions and independent selection groups.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/menubar/menubar.tsx"
+      ],
+      "fileCount": 11,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "6d6ca101ecf81c5746304f8b29869dd7e1a407152aa4b8628407c9e21270d913"
+    },
+    {
+      "name": "message",
+      "title": "Message",
+      "description": "A user, assistant or system message with consistent type, optional identity, time, sources and actions. Streaming responses keep their actions out of the way.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/message/message.tsx"
+      ],
+      "fileCount": 5,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "a3bde0f9ccd9d7ad228911ace0283a2857eddfe65531c0fa3729f6a4ebbff8f0"
+    },
+    {
+      "name": "message-actions",
+      "title": "Message Actions",
+      "description": "A compact response action row with real clipboard confirmation, optional feedback, regeneration and read-aloud callbacks.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/message-actions/message-actions.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "fb74b9c53f069fb23bc08268b5e8ad52eb816fa731d3991efd8f4ed088c4fcfd"
+    },
+    {
+      "name": "meter",
+      "title": "Meter",
+      "description": "A quantity within a known range, for storage, capacity, quotas and usage. Optional segments show its parts while preserving the total and the accessible value.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/meter/meter.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "d33813d6f54b1fb85998d4a243e971923bb36c8c29b4b50bf92e6ec6a4973745"
+    },
+    {
+      "name": "most-active-days-card",
+      "title": "Most Active Days",
+      "description": "A scrolling month calendar with activity rings, smooth month navigation and selectable days.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "a552ee5e7fc1284e0549ea5cb737d515e07ea2277eb3fcbeeb2a07e635a32ebf"
+    },
+    {
+      "name": "navigation-menu",
+      "title": "Navigation Menu",
+      "description": "Site links with expandable panels, ordinary Tab navigation and measured height transitions. Choose a floating dropdown or inline expansion, with scoped logical direction.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/navigation-menu/navigation-menu.tsx"
+      ],
+      "fileCount": 11,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "dee3257e3e3de496f7865e5a12e8461fdd9dfc37c3209f45b5c7ee2a06aa2542"
+    },
+    {
+      "name": "notification",
+      "title": "Notification",
+      "description": "Shared notification cards with tone, avatar, actions and timed dismissal. A scoped provider presents a list or animated stack, with queue limits, paused timers, keyboard navigation and updates for pending operations.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/notification/notification.tsx"
+      ],
+      "fileCount": 18,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "react-dom": "19.2.4",
+        "react-stately": "3.50.0",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "282ce799123f76c4a9e0eabd3bd9689146b529143730082d2998973972168f21"
+    },
+    {
+      "name": "notification-center",
+      "title": "Notification Center",
+      "description": "An inbox with category tabs, unread state, inline actions, and a mark-all-read control.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/notification-center/notification-center.tsx"
+      ],
+      "fileCount": 4,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "7c9f894543be9b1330d1a76f3ccb5dba12937445a5925a1a5fa5c66bc2f959bb"
+    },
+    {
+      "name": "number-field",
+      "title": "Number Field",
+      "description": "A locale-aware numeric control with keyboard and press-and-hold steppers, range limits, currency formatting and associated validation.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/number-field/number-field.tsx"
+      ],
+      "fileCount": 5,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "fc90fb980e88f50414a33eed54eff1c7e1228557bdb8bb2bb80a3c0760e71da3"
+    },
+    {
+      "name": "onboarding-checklist",
+      "title": "Onboarding Checklist",
+      "description": "A setup card with required and optional tasks, progress, actions and an animated disclosure. Completion can follow application data or direct checkbox choices, with controlled state and optional dismissal.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/onboarding-checklist/onboarding-checklist.tsx"
+      ],
+      "fileCount": 16,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "6c1ed9fd2081d4fa3617a0bebb4eb3ebefcd2060f07541df3420038cc99524e0"
+    },
+    {
+      "name": "orders-chart-card",
+      "title": "Orders Chart",
+      "description": "Grouped bars compare current and previous order totals over time.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "18c4f40a0cb1fe2971820409829f79b9acf08363e5930792aa970843f7c990b4"
+    },
+    {
+      "name": "pagination",
+      "title": "Pagination",
+      "description": "A controlled page navigator that keeps nearby pages visible and collapses long ranges into ellipses.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/pagination/pagination.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "1e111a06c3f5d95e2d0ffad9625ff67d07feee700284d7e0e6f5dc7b85328b49"
+    },
+    {
+      "name": "popover",
+      "title": "Popover",
+      "description": "A positioned content surface with focus management, optional arrow, controlled state and dismissal that returns to its trigger.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/popover/popover.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "77d5d1c249f1146c14d6f1f3812ead550736a7b935952406e80ccf4580106b85"
+    },
+    {
+      "name": "progress",
+      "title": "Progress",
+      "description": "Determinate and indeterminate progress in bars or rings, with an accessible label, custom range and animated updates.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/progress/progress.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "38318ef24a939755f992c8e5d0b18db7d496bc5047dd20fc70700d623c89aa13"
+    },
+    {
+      "name": "questionnaire",
+      "title": "Questionnaire",
+      "description": "A stepped question flow with single and multiple selections, optional custom answers, and a completion callback.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/questionnaire/questionnaire.tsx"
+      ],
+      "fileCount": 9,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "2f78fec00ea7f3c5ed2e9455fa0ecd7c84f43178ea666e3c7b9f29ba90e83123"
+    },
+    {
+      "name": "radar-chart-card",
+      "title": "Radar Chart",
+      "description": "A radial comparison of several categories, drawn as an accessible SVG polygon.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "dd73eca69e4a528a096b0181fab00ad16af43511d3deff75c055778d10dadfd1"
+    },
+    {
+      "name": "radial-chart-card",
+      "title": "Radial Chart",
+      "description": "Nested rings compare a collection of proportions with a supporting legend.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "9b1c0ed8042078516976748bfeb950d55169e5b8b560709bfbec9f62877d31ba"
+    },
+    {
+      "name": "radio",
+      "title": "Radio",
+      "description": "A single-choice control built on React Aria, with keyboard navigation, form semantics, compact sizes, and full-card options.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/radio/radio.tsx",
+        "components/base/radio/radio-card.tsx"
+      ],
+      "fileCount": 4,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "0972fd97dcf030f684410f23b1765c048015e603717de7a1096db60fffac7e9e"
+    },
+    {
+      "name": "revenue-chart-card",
+      "title": "Revenue Chart",
+      "description": "A revenue trend card with a muted comparison line for the previous period.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "4fb2126b8292d1e2d608c80f225ac3c77cf0d0d9957b082920624fff000bf05b"
+    },
+    {
+      "name": "sankey-chart-card",
+      "title": "Sankey Chart",
+      "description": "A flow view connecting source and destination categories with weighted paths.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "d7f52b4befdcb1972c4901085b8028a04ad5847c582e2ddf5af3407db45c35af"
+    },
+    {
+      "name": "scatter-chart-card",
+      "title": "Scatter Chart",
+      "description": "A multi-group scatter plot for comparing account growth and revenue.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "4e7998177f590a03677a694d698418a06fe7ae7d642c3af283a9e638272d37d1"
+    },
+    {
+      "name": "scroll-area",
+      "title": "Scroll Area",
+      "description": "Native wheel, touch and keyboard scrolling with animated directional controls instead of a visible scrollbar.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/scroll-area/scroll-area.tsx"
+      ],
+      "fileCount": 7,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "ff2e4d765e3bbba42125e7d79a6e2a87ecb64799dc02123e9a7b72d2d9418355"
+    },
+    {
+      "name": "search-field",
+      "title": "Search Field",
+      "description": "The shared Input with a search icon, a compact clear action and optional pending indicator. Clearing restores focus to the input.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/search-field/search-field.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "eb32f24ae149f1fafabb98b98b4e8045971a1fe5a633dfbfd9af453719b1344a"
+    },
+    {
+      "name": "segmented-control",
+      "title": "Segmented Control",
+      "description": "A persistent configuration choice with soft, outlined and underlined surfaces, two sizes, equal-width or vertical layout and directional keyboard navigation.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/segmented-control/segmented-control.tsx"
+      ],
+      "fileCount": 5,
+      "dependencies": {
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "f4c350cd14460e779275a3c989eb5b244b6467169ce902150ada1991513ffde1"
+    },
+    {
+      "name": "select",
+      "title": "Select",
+      "description": "An accessible choice popover with shared form validation, three control sizes, menu density options and native scrolling with directional controls.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/select/select.tsx"
+      ],
+      "fileCount": 12,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "6e3792ebe8b2a102105a89083d895ff92fedc01dd23d2fc2bd65902b289eb2df"
+    },
+    {
+      "name": "settings-modal",
+      "title": "Settings Modal",
+      "description": "An application settings dialog with page navigation, preferences, profile editing, and a save callback.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/settings-modal/settings-modal.tsx"
+      ],
+      "fileCount": 21,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "a3c485f2b84ba629b3c2f7bfe5c8b1fd7ab9310a01f8f728220a6718247d0e3e"
+    },
+    {
+      "name": "sidebar",
+      "title": "Sidebar",
+      "description": "A floating navigation panel with a workspace identity, search, selected route, badges, secondary actions, and an account footer. The same component can collapse to a compact rail.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/sidebar/sidebar.tsx"
+      ],
+      "fileCount": 15,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-dom": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "8533a7c8e561d31fe63af6c4108ca3955c8c1bdfbfe5970553aaf513c92b1bd4"
+    },
+    {
+      "name": "skeleton",
+      "title": "Skeleton",
+      "description": "Content-shaped loading placeholders with shimmer, pulse or static motion, a smooth content crossfade and a shared busy region.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/skeleton/skeleton.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "812b43ce02ecceba134cb5c283f5c5daf7ca31349a246d27a0da7210f801e2d9"
+    },
+    {
+      "name": "sleep-score-card",
+      "title": "Sleep Score",
+      "description": "A single score ring with concise contributors below it.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "062be2a6566fa427c0a7b165930e779703a1218e937f132c155538bc985c032d"
+    },
+    {
+      "name": "slider",
+      "title": "Slider",
+      "description": "A precise value control with an inset track, keyboard-adjustable thumb, formatted output, and a two-ended range variant.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/slider/slider.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "4d4006bd7abc818faba901580f4b41c3bcff48329250bcc48c326388967737ad"
+    },
+    {
+      "name": "social-button",
+      "title": "Social Button",
+      "description": "Sign-in actions for 24 providers or a custom brand, with three appearances, two sizes, and a navigation mode.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/social-button/social-button.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "99239eb721228e40b318d934830bc05d09c69c06c37fd0035d4f97550b7b4907"
+    },
+    {
+      "name": "sources",
+      "title": "Sources",
+      "description": "Source cards and inline citations use one source record for the summary, preview and destination. The list can collapse without leaving extra space.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/sources/sources.tsx"
+      ],
+      "fileCount": 10,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "79e4a0c4d73aeb0d7f89b69a69753d47abd51ffd43d7d59e8a7f4252ef2e606c"
+    },
+    {
+      "name": "spinner",
+      "title": "Spinner",
+      "description": "A compact loading indicator with four measured sizes and an accessible progress label.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/spinner/spinner.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "07f1ca42655ee31ea77122acb95a0dca40b05cfedea92a661e3671422e2cbdbd"
+    },
+    {
+      "name": "split-pane",
+      "title": "Split Pane",
+      "description": "Two panels with a shared, accessible resize handle. Dragging follows the pointer; keyboard resizing, collapse and restore use the library motion tokens. Content stays mounted when the layout changes direction.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/split-pane/split-pane.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "4a0404074808dde7cc524c3969edc3a9ab7a35d609313f798002a66fd728e0b3"
+    },
+    {
+      "name": "stage-bars-card",
+      "title": "Stage Bars",
+      "description": "A ranked set of pipeline stages with horizontal bars, counts and a legend.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "c38b9c04294bfa10d95f4d57895cc79dec06e463c8e9a605405e8eb316f37d12"
+    },
+    {
+      "name": "stat-cards",
+      "title": "Stat Cards",
+      "description": "Data-driven KPI tiles with a strong value, icon, comparison, and positive or negative change.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/stat-cards/stat-cards.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "8b15f3af3a3ec09e31c6e6efcd579a33ad5c90be850ea193fd80d6919f795404"
+    },
+    {
+      "name": "stepper",
+      "title": "Stepper",
+      "description": "An ordered journey with numbered or label-only steps, optional descriptions, explicit completion and error states, and keyboard navigation. Narrow containers stack numbered steps without shrinking the text.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/stepper/stepper.tsx"
+      ],
+      "fileCount": 6,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "f2fab736fa0987a166be0b40f40de03aa638d2cf14eb617e4b888c57c78d1e63"
+    },
+    {
+      "name": "steps-card",
+      "title": "Steps Chart",
+      "description": "A weekly step card using goal tracks and bright progress bars.",
+      "group": "Charts",
+      "type": "chart",
+      "entryFiles": [
+        "components/charts/chart-cards.tsx"
+      ],
+      "fileCount": 8,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "27860f53fbdb83e91a4cc5b89c7bce3e5c59f60ec50d3f179efbc37e818b8d19"
+    },
+    {
+      "name": "streaming-text",
+      "title": "Streaming Text",
+      "description": "Show incoming text as it arrives, with a small fade on each appended part and an optional cursor. Content stays readable when motion is reduced.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/streaming-text/streaming-text.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "dddea2ea86e443516472c9efa2aa326b0d39eff4fb2ddb5befabb5b3ed06a374"
+    },
+    {
+      "name": "switch",
+      "title": "Switch",
+      "description": "An accessible toggle with pill and rectangular tracks, three sizes, labelled states, and a full-card variant.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/switch/switch.tsx",
+        "components/base/switch/switch-card.tsx"
+      ],
+      "fileCount": 4,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "7238db185ae6c3ef54b3ed31519b7f90b040b6b32530580c732cd37a27ecdb53"
+    },
+    {
+      "name": "table",
+      "title": "Table",
+      "description": "An accessible React Aria table primitive for keyboard navigation and selection. The preview shows the same table styling with TanStack filtering, sorting and pagination.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/table/table.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "64fae1a6f7f96a26d447b6e93be19679ba3c1bad33b5cbc542a4037a5f25ce34"
+    },
+    {
+      "name": "tabs",
+      "title": "Tabs",
+      "description": "A keyboard-accessible way to move between related panels, with a restrained underline or compact pill treatment.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/tabs/tabs.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "130c12f0269bdf9b36723a5509ad5b423e226bff7fdb2e44226390b798fe1dc5"
+    },
+    {
+      "name": "tag-group",
+      "title": "Tag Group",
+      "description": "A keyboard-accessible group of the library’s Chips for labels, selections and removable filters.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/tag-group/tag-group.tsx"
+      ],
+      "fileCount": 3,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "3576d93976c7ef2e070994773b43357a1ce7b8fbb22b965ae714faf6261b9066"
+    },
+    {
+      "name": "task-list",
+      "title": "Task List",
+      "description": "An agent activity log that reveals steps one at a time, with animated branches, resource chips, and a live working state.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/task-list/task-list.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "ad113afb875823b4f0d8d5cf9aea290c537aa615ad05435846c0fe3e84e847e1"
+    },
+    {
+      "name": "team-members",
+      "title": "Team Members",
+      "description": "Controlled member lists and searchable tables built from shared rows, avatars, role/status selectors and confirmation dialogs. The application owns saved members and invite/remove operations.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/team-members/team-members.tsx"
+      ],
+      "fileCount": 28,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "@tanstack/react-table": "^8.21.3",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "8710acf3eb92c76929b76a15b661490e61406a5dc7e7a52ac111fab09894ba24"
+    },
+    {
+      "name": "textarea",
+      "title": "Textarea",
+      "description": "A multiline field with the same label, hint, and error language as Input, plus auto resize and character counting.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/textarea/textarea.tsx"
+      ],
+      "fileCount": 5,
+      "dependencies": {
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "f2321cad7eb61559674f2936b5eadce6ddff09fa21fec73f3acde2a6ee90518c"
+    },
+    {
+      "name": "toggle",
+      "title": "Toggle",
+      "description": "A pressed action with controlled or independent state, three appearances, three sizes and animated feedback.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/toggle/toggle.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "b51295b83b9d41bdfeead43c8af8c51e06e5f56e5ece670b54c459c3e4336fac"
+    },
+    {
+      "name": "toggle-group",
+      "title": "Toggle Group",
+      "description": "Related pressed controls with single or multiple selection, joined or separated surfaces and logical keyboard navigation.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/toggle/toggle.tsx"
+      ],
+      "fileCount": 2,
+      "dependencies": {
+        "react": "19.2.4",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "b6d98b76df5618425c3c64d30eaf5c357d53f4ad6a9059303e1bb18387655e10"
+    },
+    {
+      "name": "tool-call",
+      "title": "Tool Call",
+      "description": "A tool operation with named progress, readable arguments, results, approval and recovery actions. Connect its state and callbacks to your application.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/tool-call/tool-call.tsx"
+      ],
+      "fileCount": 18,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "3a7a4148c1a80faaf9709201e63f0d576272af109c8f7de4c925f6eed433a2e3"
+    },
+    {
+      "name": "tooltip",
+      "title": "Tooltip",
+      "description": "A brief contextual hint that opens on hover and focus, places itself on screen, and enters with a soft scale and blur.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/tooltip/tooltip.tsx"
+      ],
+      "fileCount": 7,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "d815a29f1c89076fdcd8f11ebe63e1adbf267a9a6da130f4505c15e75d9c1013"
+    },
+    {
+      "name": "tree",
+      "title": "Tree",
+      "description": "A nested collection with independent focus and selection, controlled expansion, optional guides and animated groups. Single and multiple selection share the same row geometry and keyboard behavior.",
+      "group": "Base",
+      "type": "component",
+      "entryFiles": [
+        "components/base/tree/tree.tsx"
+      ],
+      "fileCount": 10,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "52739935351dff019988330966add41c5fc3a8a5dfae7d5402f00d3c5f1527ce"
+    },
+    {
+      "name": "web-search",
+      "title": "Web Search",
+      "description": "A streaming research trail with branching steps, recognizable site marks, and expandable source links.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/web-search/web-search.tsx"
+      ],
+      "fileCount": 5,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "f194dc476520744d3ff8d22303a1f6c2c08933da2f0c1ee42d2feb9fa34e2f5a"
+    },
+    {
+      "name": "workspace-tabs",
+      "title": "Workspace Tabs",
+      "description": "Open documents and conversations in shared accessible tabs. Custom leading content, toolbar/footer slots, separate close buttons, unsaved indicators, contained scrolling and three surfaces work with ordinary keyboard navigation.",
+      "group": "Blocks",
+      "type": "block",
+      "entryFiles": [
+        "components/blocks/workspace-tabs/workspace-tabs.tsx"
+      ],
+      "fileCount": 11,
+      "dependencies": {
+        "@remixicon/react": "^4.9.0",
+        "motion": "^12.43.0",
+        "react": "19.2.4",
+        "react-aria": "3.52.1",
+        "react-aria-components": "^1.21.1",
+        "tailwind-merge": "^3.6.0"
+      },
+      "sha256": "2300fb72e8ba94bce7e858fc5687f61e81bbc980478a9a26d90e6d2e45ce12ec"
+    }
+  ],
+  "families": [
+    {
+      "id": "composer",
+      "label": "Composer",
+      "rootSlug": "composer",
+      "selectionLabel": "Composition",
+      "kind": "composition",
+      "api": "Composer",
+      "description": "One composer family: the base input, a model and permission panel, attachments and an animated loading edge.",
+      "shared": [
+        "Composer",
+        "ComposerAttachments",
+        "ComposerPanel",
+        "ComposerLoader"
+      ],
+      "configuration": "Configure Composer with model, attachments, isWorking and slots. ComposerPanel composes provider and permission controls; ComposerLoader decorates the input with an animated edge. These compositions use their own exported components.",
+      "members": [
+        {
+          "slug": "composer",
+          "label": "Standard",
+          "value": "standard"
+        },
+        {
+          "slug": "composer-panel",
+          "label": "Panel",
+          "value": "panel"
+        },
+        {
+          "slug": "composer-attachments",
+          "label": "Attachments",
+          "value": "attachments"
+        },
+        {
+          "slug": "composer-loader",
+          "label": "Loading edge",
+          "value": "loader"
+        }
+      ]
+    },
+    {
+      "id": "button",
+      "label": "Button",
+      "rootSlug": "button",
+      "selectionLabel": "Component",
+      "kind": "component",
+      "api": "Button",
+      "description": "Related action controls in one family: text buttons, icon actions, navigation links and provider sign-in buttons.",
+      "shared": [
+        "Button",
+        "IconButton",
+        "LinkButton",
+        "SocialButton"
+      ],
+      "configuration": "Use variant for visual emphasis, size for geometry and props for loading or icons. Use LinkButton for navigation and SocialButton for provider identity; preserve their native semantics. ButtonGroup remains a separate composition.",
+      "members": [
+        {
+          "slug": "button",
+          "label": "Text button",
+          "value": "text"
+        },
+        {
+          "slug": "icon-button",
+          "label": "Icon button",
+          "value": "icon"
+        },
+        {
+          "slug": "link-button",
+          "label": "Link button",
+          "value": "link"
+        },
+        {
+          "slug": "social-button",
+          "label": "Social button",
+          "value": "social"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+export const templatePages = {
+  'agent-workspace':{title:'Agent Workspace',group:'Templates',description:'A focused workspace with a compact rail that controls a collapsible full-height project sidebar, harness-aware content tabs, command search, preserved drafts and a resizable terminal. Narrow and short screens use the shared drawers.',sections:['Preview'],snippet:`<WorkspaceTemplate preset="agent"
+  initialThreads={conversations}
+  tabVariant="card"
+  defaultTerminalOpen
+  onSend={(message, threadId) => sendMessage(threadId, message)}
+/>`},
+  paywall: { title: 'Paywall', group: 'Templates', description: 'A responsive pricing dialog with reusable plan cards, optional contributions and direct installation through the CLI.', sections: ['Preview'], snippet: `<PricingDialog isOpen={open} onOpenChange={setOpen} title="Choose your price" description="Pay what you want, including $0.">\n  <PricingTable plans={plans} />\n</PricingDialog>\n\n<ContributionPicker defaultAmount={1} presets={[0, 1, 5, 10, 15]} onContinueFree={showInstallCommand} onContribute={createCheckout} />` },
+  'ai-chat': { title:'AI Chat', group:'Templates', description:'A complete assistant workspace with navigation, chat history, a prompt composer and a new-chat action.', sections:['Preview'], snippet:`<WorkspaceTemplate preset="chat" onAction={handleAction} />` },
+  'ai-image-generation': { title:'AI Image Generation', group:'Templates', description:'A conversational image workspace with animated generation, a gallery, style presets and a composer.', sections:['Preview'], snippet:`<WorkspaceTemplate preset="image-generation" images={gallery} onGenerate={generateImage} onAction={handleAction} />` },
+  'ai-profile': { title:'AI Profile', group:'Templates', description:'A profile overview with identity, contribution totals and an activity calendar.', sections:['Preview'], snippet:`<ProfileTemplate preset="account" onAction={handleAction} />` },
+  'chat-starter': { title:'Chat Starter', group:'Templates', description:'A first-run chat experience that collects a provider key and opens the message composer.', sections:['Preview'], snippet:`<WorkspaceTemplate preset="starter" onAction={handleAction} />` },
+  'finance-dashboard': { title:'Finance Dashboard', group:'Templates', description:'A finance workspace combining KPI cards, weighted cash flows and transaction comparisons.', sections:['Preview'], snippet:`<DashboardTemplate preset="finance" onAction={handleAction} />` },
+  'home-dashboard': { title:'Home Dashboard', group:'Templates', description:'A workspace landing view that joins key metrics, an activity trend and recent events.', sections:['Preview'], snippet:`<DashboardTemplate preset="overview" onAction={handleAction} />` },
+  'marketing-dashboard': { title:'Marketing Dashboard', group:'Templates', description:'A campaign overview with spend, reach, leads, a conversion funnel and a pipeline.', sections:['Preview'], snippet:`<DashboardTemplate preset="marketing" onAction={handleAction} />` },
+  'medical-profile': { title:'Medical Profile', group:'Templates', description:'A patient overview with identity, core medical details, sleep score and weekly steps.', sections:['Preview'], snippet:`<ProfileTemplate preset="medical" profile={patient} onAction={handleAction} />` },
+  'multi-agent-chat': { title:'Multi-agent Chat', group:'Templates', description:'A conversation where the active specialist agents can be selected before sending a task.', sections:['Preview'], snippet:`<WorkspaceTemplate preset="multi-agent" agentList={agents} onAction={handleAction} />` },
+  'project-board': { title:'Project Board', group:'Templates', description:'A five-stage board with search, animated ticket creation, card details and drag-and-drop status changes.', sections:['Preview'], snippet:`<ProjectBoardTemplate initialItems={tasks} onAction={handleAction} />` },
+} as const;

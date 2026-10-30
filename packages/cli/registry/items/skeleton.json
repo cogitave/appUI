@@ -1,0 +1,63 @@
+{
+  "name": "skeleton",
+  "title": "Skeleton",
+  "group": "Base",
+  "type": "component",
+  "description": "Content-shaped loading placeholders with shimmer, pulse or static motion, a smooth content crossfade and a shared busy region.",
+  "sections": [
+    "Preview",
+    "Shapes and motion",
+    "Preserve dimensions"
+  ],
+  "example": "<SkeletonGroup isLoading={loading} label=\"Loading profile\">\n  <Skeleton isLoading={loading} shape=\"circle\"><Avatar initials=\"MC\" size=\"lg\" /></Skeleton>\n  <Skeleton isLoading={loading} width=\"70%\"><strong>Maya Chen</strong></Skeleton>\n  <Skeleton isLoading={loading}><Button>Open profile</Button></Skeleton>\n</SkeletonGroup>",
+  "entryFiles": [
+    "components/base/skeleton/skeleton.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/skeleton/skeleton.tsx",
+      "names": [
+        "Skeleton",
+        "SkeletonGroup",
+        "SkeletonProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/skeleton/skeleton.tsx",
+      "content": "import type { CSSProperties, ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SkeletonProps = {\n  children?: ReactNode;\n  isLoading?: boolean;\n  shape?: 'line' | 'circle' | 'rectangle';\n  animation?: 'shimmer' | 'pulse' | 'none';\n  width?: CSSProperties['width'];\n  height?: CSSProperties['height'];\n  className?: string;\n  style?: CSSProperties;\n};\n\nexport function Skeleton({ children, isLoading = true, shape = 'line', animation = 'shimmer', width, height, className, style }: SkeletonProps) {\n  const hasContent = children != null;\n  if (!isLoading && !hasContent) return null;\n  // Real content stays mounted and owns the layout throughout the crossfade.\n  // Optional dimensions size the placeholder without narrowing its content.\n  const dimensions = hasContent ? {\n    '--skeleton-width': typeof width === 'number' ? `${width}px` : width,\n    '--skeleton-height': typeof height === 'number' ? `${height}px` : height,\n  } as CSSProperties : { width, height };\n  return <div className={cx('ui-skeleton', className)} data-shape={shape} data-animation={animation} data-loading={isLoading} data-has-content={hasContent || undefined} aria-hidden={isLoading || undefined} style={{ ...dimensions, ...style }}>\n    <div className=\"ui-skeleton__placeholder\" aria-hidden />\n    {hasContent && <div className=\"ui-skeleton__content\" inert={isLoading}>{children}</div>}\n  </div>;\n}\n\nexport function SkeletonGroup({ children, isLoading = true, label = 'Loading content', className }: { children: ReactNode; isLoading?: boolean; label?: string; className?: string }) {\n  return <div className={cx('ui-skeleton-group', className)} data-loading={isLoading} aria-busy={isLoading} aria-label={label} role=\"region\">{children}<span role=\"status\" className=\"sr-only\">{isLoading ? label : 'Content loaded'}</span></div>;\n}\n",
+      "sha256": "76455ab9ca825cd070a8f761573442f7926fe87c16139f3db4ea7b27fcdc37a0",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 75,
+          "end": 85
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-skeleton",
+      "ui-skeleton-group",
+      "ui-skeleton__content",
+      "ui-skeleton__placeholder"
+    ],
+    "prefixes": []
+  }
+}

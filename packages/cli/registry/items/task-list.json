@@ -1,0 +1,71 @@
+{
+  "name": "task-list",
+  "title": "Task List",
+  "group": "Blocks",
+  "type": "block",
+  "description": "An agent activity log that reveals steps one at a time, with animated branches, resource chips, and a live working state.",
+  "sections": [
+    "Preview",
+    "Task states"
+  ],
+  "example": "<TaskList tasks={tasks} startDelay={120} stepInterval={590} />",
+  "entryFiles": [
+    "components/blocks/task-list/task-list.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/task-list/task-list.tsx",
+      "names": [
+        "AgentTask",
+        "AgentTaskEvent",
+        "TaskList",
+        "TaskListProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/blocks/task-list/task-list.tsx",
+      "content": "'use client';\n\nimport { useEffect, useRef, useState } from 'react';\nimport { AnimatePresence, motion, useReducedMotion } from 'motion/react';\nimport {\n  RiArrowDownSLine,\n  RiCodeLine,\n  RiFileTextLine,\n  RiLoader4Line,\n  RiReactjsLine,\n  RiSearchLine,\n  RiSparklingLine,\n} from '@remixicon/react';\nimport { cx } from '@/utils/cx';\n\nexport type AgentTaskEvent = {\n  id: string;\n  label: string;\n  resource?: string;\n  resourceIcon?: 'file' | 'react';\n};\n\nexport type AgentTask = {\n  id: string;\n  title: string;\n  status: 'pending' | 'running' | 'complete' | 'error';\n  duration?: string;\n  detail?: string;\n  resource?: string;\n  kind?: 'file' | 'search' | 'code';\n  events?: AgentTaskEvent[];\n};\n\nexport type TaskListProps = {\n  tasks: AgentTask[];\n  title?: string;\n  defaultExpanded?: boolean;\n  startDelay?: number;\n  stepInterval?: number;\n  /** Kept for existing consumers. Prefer stepInterval. */\n  streamIntervalMs?: number;\n  collapseOnComplete?: boolean;\n  /** Number of visible headers and events. Pass this to drive the log from real events. */\n  revealed?: number;\n  onComplete?: () => void;\n  className?: string;\n};\n\nconst icons = { file: RiFileTextLine, search: RiSearchLine, code: RiCodeLine };\nconst enter = { opacity: 0, height: 0, y: 6, filter: 'blur(4px)' };\nconst visible = { opacity: 1, height: 'auto', y: 0, filter: 'blur(0px)' };\nconst transition = { duration: 0.34, ease: [0.2, 0.75, 0.25, 1] as const };\n\nfunction taskEvents(task: AgentTask): AgentTaskEvent[] {\n  return [\n    ...(task.events ?? []),\n    ...(task.detail ? [{ id: `${task.id}-detail`, label: task.detail }] : []),\n    ...(task.resource ? [{ id: `${task.id}-resource`, label: 'Working in', resource: task.resource }] : []),\n  ];\n}\n\nexport function TaskList({\n  tasks,\n  title = 'Working on your request',\n  defaultExpanded = true,\n  startDelay = 0,\n  stepInterval,\n  streamIntervalMs,\n  collapseOnComplete = false,\n  revealed,\n  onComplete,\n  className,\n}: TaskListProps) {\n  const reducedMotion = useReducedMotion();\n  const interval = stepInterval ?? streamIntervalMs;\n  const totalUnits = tasks.reduce((count, task) => count + 1 + taskEvents(task).length, 0);\n  const [internalRevealed, setInternalRevealed] = useState(interval === undefined ? totalUnits : 0);\n  const [toggled, setToggled] = useState<string[]>([]);\n  const [autoCollapsed, setAutoCollapsed] = useState<string[]>([]);\n  const [elapsed, setElapsed] = useState(0);\n  const startedAt = useRef<number | null>(null);\n  const completed = useRef(false);\n  const onCompleteRef = useRef(onComplete);\n  onCompleteRef.current = onComplete;\n  const hasRunningTask = tasks.some(task => task.status === 'running');\n\n  useEffect(() => {\n    if (!hasRunningTask) return;\n    startedAt.current = Date.now();\n    const timer = window.setInterval(() => {\n      if (startedAt.current !== null) setElapsed((Date.now() - startedAt.current) / 1000);\n    }, 100);\n    return () => window.clearInterval(timer);\n  }, [hasRunningTask]);\n\n  useEffect(() => {\n    if (revealed !== undefined) return;\n    if (interval === undefined || reducedMotion) {\n      setInternalRevealed(totalUnits);\n      return;\n    }\n    setInternalRevealed(0);\n    let ticker: number | undefined;\n    const delay = window.setTimeout(() => {\n      setInternalRevealed(1);\n      ticker = window.setInterval(() => setInternalRevealed(current => {\n        if (current + 1 >= totalUnits) window.clearInterval(ticker);\n        return Math.min(totalUnits, current + 1);\n      }), Math.max(80, interval));\n    }, Math.max(0, startDelay));\n    return () => {\n      window.clearTimeout(delay);\n      window.clearInterval(ticker);\n    };\n  }, [interval, startDelay, totalUnits, revealed, reducedMotion]);\n\n  const visibleUnits = Math.max(0, Math.min(totalUnits, revealed ?? internalRevealed));\n  const allDone = tasks.every(task => task.status === 'complete' || task.status === 'error');\n  useEffect(() => {\n    if (visibleUnits < totalUnits || !allDone) {\n      completed.current = false;\n      return;\n    }\n    if (completed.current) return;\n    completed.current = true;\n    onCompleteRef.current?.();\n  }, [allDone, totalUnits, visibleUnits]);\n\n  let eligibleCursor = 0;\n  const eligibleToCollapse = tasks.flatMap(task => {\n    eligibleCursor += 1 + taskEvents(task).length;\n    return collapseOnComplete && task.status === 'complete' && visibleUnits >= eligibleCursor ? [task.id] : [];\n  });\n  const collapseKey = eligibleToCollapse.join('|');\n  useEffect(() => {\n    if (!collapseKey) return;\n    const timer = window.setTimeout(() => {\n      const ids = collapseKey.split('|');\n      setAutoCollapsed(current => [...new Set([...current, ...ids])]);\n    }, reducedMotion ? 0 : 650);\n    return () => window.clearTimeout(timer);\n  }, [collapseKey, reducedMotion]);\n\n  let cursor = 0;\n  return <div className={cx('ui-task-list', className)} role=\"group\" aria-label={title}>\n    <ol className=\"ui-task-list__tree\">\n      <AnimatePresence initial={false}>\n        {tasks.map(task => {\n          const events = taskEvents(task);\n          const headerUnit = ++cursor;\n          const eventEnd = cursor + events.length;\n          const visibleEvents = Math.max(0, Math.min(events.length, visibleUnits - cursor));\n          cursor = eventEnd;\n          if (visibleUnits < headerUnit) return null;\n\n          const Icon = task.kind ? icons[task.kind] : RiSparklingLine;\n          const effectiveStatus = visibleEvents < events.length && task.status === 'complete' ? 'running' : task.status;\n          const expanded = (defaultExpanded && !autoCollapsed.includes(task.id)) !== toggled.includes(task.id);\n          const hasChildren = events.length > 0;\n          const displayDuration = task.duration ?? (task.status === 'running' ? `${elapsed.toFixed(1)}s` : undefined);\n\n          return <motion.li\n            key={task.id}\n            data-status={effectiveStatus}\n            className=\"ui-task-list__task\"\n            initial={reducedMotion ? false : enter}\n            animate={visible}\n            exit={enter}\n            transition={reducedMotion ? { duration: 0 } : transition}\n          >\n            <button\n              type=\"button\"\n              className=\"ui-task-list__heading\"\n              aria-expanded={hasChildren ? expanded : undefined}\n              onClick={() => hasChildren && setToggled(current => current.includes(task.id) ? current.filter(id => id !== task.id) : [...current, task.id])}\n            >\n              <span className=\"ui-task-list__status\" aria-hidden>\n                {task.status === 'running' ? <RiLoader4Line size={15} className=\"ui-task-list__spin\" /> : <Icon size={15} />}\n              </span>\n              <strong>{task.title}</strong>\n              {displayDuration && <time>{displayDuration}</time>}\n              {hasChildren && <RiArrowDownSLine className=\"ui-task-list__chevron\" size={16} aria-hidden />}\n            </button>\n            <AnimatePresence initial={false}>\n              {hasChildren && expanded && visibleEvents > 0 && <motion.ul\n                className=\"ui-task-list__events\"\n                initial={reducedMotion ? false : { height: 0, opacity: 0 }}\n                animate={{ height: 'auto', opacity: 1 }}\n                exit={{ height: 0, opacity: 0 }}\n                transition={{ duration: reducedMotion ? 0 : 0.24 }}\n              >\n                <AnimatePresence initial={false}>\n                  {events.slice(0, visibleEvents).map(event => {\n                    const ResourceIcon = event.resourceIcon === 'react' || event.resource?.endsWith('.tsx') ? RiReactjsLine : RiFileTextLine;\n                    return <motion.li\n                      key={event.id}\n                      initial={reducedMotion ? false : enter}\n                      animate={visible}\n                      exit={enter}\n                      transition={reducedMotion ? { duration: 0 } : transition}\n                    >\n                      <span className=\"ui-task-list__event-label\">{event.label}</span>\n                      {event.resource && <span className=\"ui-task-list__resource\" title={event.resource}>\n                        <ResourceIcon size={13} aria-hidden />\n                        <span>{event.resource}</span>\n                      </span>}\n                    </motion.li>;\n                  })}\n                </AnimatePresence>\n              </motion.ul>}\n            </AnimatePresence>\n          </motion.li>;\n        })}\n      </AnimatePresence>\n    </ol>\n  </div>;\n}\n",
+      "sha256": "12c1ed0709d5732f25983e00d8dd2097be4af4bc74a7413564e8cd87ada95b17",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 319,
+          "end": 329
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-task-list",
+      "ui-task-list__chevron",
+      "ui-task-list__event-label",
+      "ui-task-list__events",
+      "ui-task-list__heading",
+      "ui-task-list__resource",
+      "ui-task-list__spin",
+      "ui-task-list__status",
+      "ui-task-list__task",
+      "ui-task-list__tree"
+    ],
+    "prefixes": []
+  }
+}

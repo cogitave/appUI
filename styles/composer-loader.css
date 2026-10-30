@@ -1,0 +1,16 @@
+.ui-composer-loader { position: relative; isolation: isolate; width: 100%; min-width: 0; border-radius: var(--loader-radius, 999px); background: var(--surface-base); box-shadow: var(--shadow-control); }
+.ui-composer-loader__light { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; opacity: 0; pointer-events: none; transition: opacity 450ms ease; }
+.ui-composer-loader[data-active] > .ui-composer-loader__light { opacity: 1; }
+.ui-composer-loader__light svg { display: block; }
+.ui-composer-loader__light rect { animation: ui-loader-rim var(--loader-speed) linear infinite var(--loader-direction); }
+.ui-composer-loader:not([data-active]) .ui-composer-loader__light rect { animation-play-state: paused; }
+.ui-composer-loader__content { position: relative; border-radius: inherit; }
+.ui-composer-loader__content > .ui-composer { width: 100%; max-width: 100%; }
+.ui-composer-loader .ui-composer__panel { padding: 8px; border: 0; border-radius: var(--loader-radius); background: transparent; box-shadow: none; }
+.ui-composer-loader .ui-composer__entry { min-height: 36px; gap: 10px; }
+.ui-composer-loader .ui-composer__entry > textarea { min-height: 20px; padding-block: 0; }
+.ui-composer-loader .ui-composer__status { display: none; }
+.ui-composer-loader :is(.ui-composer__add, .ui-composer__voice, .ui-composer-model__trigger) { transition: background-color 480ms ease, border-color 480ms ease, box-shadow 480ms ease; }
+.ui-composer-loader[data-active] :is(.ui-composer__add, .ui-composer__voice, .ui-composer-model__trigger) { border-color: transparent; background: color-mix(in srgb, var(--surface-base) 18%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / .25), 0 1px 1px rgb(0 0 0 / .035); backdrop-filter: blur(6px) saturate(160%); }
+@keyframes ui-loader-rim { to { stroke-dashoffset: -100; } }
+@media (prefers-reduced-motion: reduce) { .ui-composer-loader__light { transition: none; } .ui-composer-loader__light rect { animation: none; } }

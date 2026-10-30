@@ -1,0 +1,156 @@
+{
+  "name": "web-search",
+  "title": "Web Search",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A streaming research trail with branching steps, recognizable site marks, and expandable source links.",
+  "sections": [
+    "Preview",
+    "Sources"
+  ],
+  "example": "<WebSearch steps={steps} onComplete={showAnswer} />",
+  "entryFiles": [
+    "components/blocks/web-search/web-search.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/web-search/web-search.tsx",
+      "names": [
+        "SearchSource",
+        "SearchStep",
+        "WebSearch",
+        "WebSearchProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/social-button/social-button.tsx",
+      "content": "import type { ReactNode, CSSProperties } from 'react';\nimport { RiAmazonFill, RiAppleFill, RiDiscordFill, RiDropboxFill, RiFacebookFill, RiFigmaFill, RiGithubFill, RiGitlabFill, RiGlobalLine, RiGoogleFill, RiInstagramFill, RiLinkedinFill, RiMicrosoftFill, RiNotionFill, RiRedditFill, RiSlackFill, RiSpotifyFill, RiTelegramFill, RiTiktokFill, RiTwitchFill, RiTwitterXFill, RiWhatsappFill } from '@remixicon/react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nconst providers: Record<string, { label: string; color: string; icon?: IconComponent }> = {\n  google: { label: 'Google', color: '#2678f5', icon: RiGoogleFill },\n  apple: { label: 'Apple', color: '#111318', icon: RiAppleFill },\n  github: { label: 'GitHub', color: '#111318', icon: RiGithubFill },\n  gitlab: { label: 'GitLab', color: '#e96e30', icon: RiGitlabFill },\n  microsoft: { label: 'Microsoft', color: '#4e6f98', icon: RiMicrosoftFill },\n  x: { label: 'X', color: '#111318', icon: RiTwitterXFill },\n  facebook: { label: 'Facebook', color: '#1877f2', icon: RiFacebookFill },\n  linkedin: { label: 'LinkedIn', color: '#0a66c2', icon: RiLinkedinFill },\n  discord: { label: 'Discord', color: '#5865f2', icon: RiDiscordFill },\n  slack: { label: 'Slack', color: '#5b285f', icon: RiSlackFill },\n  figma: { label: 'Figma', color: '#9b4cee', icon: RiFigmaFill },\n  notion: { label: 'Notion', color: '#111318', icon: RiNotionFill },\n  dropbox: { label: 'Dropbox', color: '#0061fe', icon: RiDropboxFill },\n  spotify: { label: 'Spotify', color: '#16883b', icon: RiSpotifyFill },\n  twitch: { label: 'Twitch', color: '#9146ff', icon: RiTwitchFill },\n  reddit: { label: 'Reddit', color: '#ff4500', icon: RiRedditFill },\n  tiktok: { label: 'TikTok', color: '#111318', icon: RiTiktokFill },\n  instagram: { label: 'Instagram', color: '#d62976', icon: RiInstagramFill },\n  telegram: { label: 'Telegram', color: '#229ed9', icon: RiTelegramFill },\n  whatsapp: { label: 'WhatsApp', color: '#138c4a', icon: RiWhatsappFill },\n  amazon: { label: 'Amazon', color: '#e48619', icon: RiAmazonFill },\n  bitbucket: { label: 'Bitbucket', color: '#0052cc' },\n  auth0: { label: 'Auth0', color: '#d95225' },\n  okta: { label: 'Okta', color: '#007dc1' },\n};\n\nexport type SocialProvider = keyof typeof providers;\nexport type SocialButtonProps = {\n  provider?: SocialProvider;\n  label?: string;\n  logo?: ReactNode;\n  color?: string;\n  appearance?: 'brand' | 'neutral' | 'outline';\n  size?: 'medium' | 'small';\n  iconOnly?: boolean;\n  href?: string;\n  onPress?: () => void;\n  disabled?: boolean;\n  className?: string;\n};\n\nexport function SocialButton({ provider = 'google', label, logo, color, appearance = 'outline', size = 'medium', iconOnly = false, href, onPress, disabled = false, className }: SocialButtonProps) {\n  const config = providers[provider];\n  const name = label ?? config?.label ?? provider;\n  const Icon = config?.icon;\n  const style = { '--social-brand': color ?? config?.color ?? 'var(--accent-strong)' } as CSSProperties;\n  const content = <>{logo ?? (Icon ? <Icon size={size === 'small' ? 17 : 19} aria-hidden /> : <span className=\"ui-social-button__monogram\" aria-hidden=\"true\">{name[0]}</span>)}{!iconOnly && <span>Continue with {name}</span>}</>;\n  const common = { className: cx('ui-social-button', className), 'data-appearance': appearance, 'data-size': size, 'data-icon-only': iconOnly || undefined, style, 'aria-label': iconOnly ? `Continue with ${name}` : undefined };\n  return href && !disabled ? <a {...common} href={href} onClick={onPress}>{content}</a> : <button {...common} type=\"button\" disabled={disabled} onClick={onPress}>{content}</button>;\n}\n\nexport const socialProviderNames = Object.keys(providers) as SocialProvider[];\n\nexport function SocialMark({ provider, size = 14, className }: { provider?: SocialProvider; size?: number; className?: string }) {\n  const config = provider ? providers[provider] : undefined;\n  const Icon = config?.icon ?? RiGlobalLine;\n  const monochrome = provider === 'x' || provider === 'github' || provider === 'notion' || provider === 'apple' || provider === 'tiktok';\n  return <Icon size={size} className={className} style={{ color: monochrome ? 'var(--text-main)' : config?.color ?? 'var(--text-muted)' }} aria-hidden />;\n}\n",
+      "sha256": "b9349d54682b61edf2b300b496658109b4904789759704cc144f099c3d1c439c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 450,
+          "end": 485
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 508,
+          "end": 518
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/agent-thinking/agent-thinking.tsx",
+      "content": "'use client';\n\nimport { useEffect, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AgentThinkingProps = {\n  variant?: 'wave' | 'spin' | 'stars' | 'infinity' | 'orb';\n  label?: string;\n  active?: boolean;\n  showTimer?: boolean;\n  shimmer?: boolean;\n  tone?: 'subtle' | 'accent';\n  className?: string;\n};\n\nconst orbitOrder = [0, 1, 2, 7, -1, 3, 6, 5, 4];\n\nfunction ThinkingIndicator({ variant }: { variant: NonNullable<AgentThinkingProps['variant']> }) {\n  if (variant === 'wave' || variant === 'spin') {\n    return <span className=\"ui-agent-thinking__dots\">{Array.from({ length: 9 }, (_, index) => <i key={index} style={{ animationDelay: variant === 'wave' ? `${(Math.floor(index / 3) + index % 3) * 95}ms` : `${orbitOrder[index] * -165}ms` }} />)}</span>;\n  }\n  if (variant === 'stars') return <span className=\"ui-agent-thinking__stars\">{Array.from({ length: 5 }, (_, index) => <i key={index} style={{ animationDelay: `${index * -320}ms` }} />)}</span>;\n  if (variant === 'infinity') return <svg className=\"ui-agent-thinking__infinity\" viewBox=\"0 0 30 18\" fill=\"none\" aria-hidden=\"true\"><path className=\"ui-agent-thinking__infinity-track\" d=\"M15 9C10 1 1 1 1 9s9 8 14 0c5-8 14-8 14 0s-9 8-14 0\" pathLength=\"100\" /><path className=\"ui-agent-thinking__infinity-head\" d=\"M15 9C10 1 1 1 1 9s9 8 14 0c5-8 14-8 14 0s-9 8-14 0\" pathLength=\"100\" /></svg>;\n  return <span className=\"ui-agent-thinking__orb\"><i /><i /><i /></span>;\n}\n\nexport function AgentThinking({ variant = 'wave', label = 'Thinking', active = true, showTimer = true, shimmer = true, tone = 'subtle', className }: AgentThinkingProps) {\n  const [elapsed, setElapsed] = useState(0);\n  useEffect(() => {\n    if (!active || !showTimer) return;\n    const start = performance.now();\n    const timer = window.setInterval(() => setElapsed((performance.now() - start) / 1000), 100);\n    return () => window.clearInterval(timer);\n  }, [active, showTimer]);\n\n  return <div className={cx('ui-agent-thinking', className)} data-variant={variant} data-active={active} data-tone={tone} role=\"status\" aria-live=\"polite\"><span className=\"ui-agent-thinking__indicator\" aria-hidden=\"true\"><ThinkingIndicator variant={variant} /></span><span className={cx('ui-agent-thinking__label', shimmer && active && 'ui-agent-thinking__label--shimmer')}>{active ? label : 'Ready'}</span>{active && showTimer && <time aria-hidden=\"true\">{elapsed.toFixed(1)}s</time>}</div>;\n}\n",
+      "sha256": "4efd3c824aab68812ccf45bd6c583a4157093720b11e96355696467b87116ccf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 80,
+          "end": 90
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/web-search/web-search.tsx",
+      "content": "'use client';\n\nimport { useEffect, useMemo, useRef, useState } from 'react';\nimport { AnimatePresence, motion, useReducedMotion } from 'motion/react';\nimport { RiArrowDownSLine, RiLightbulbLine, RiRefreshLine, RiSearchLine } from '@remixicon/react';\nimport { AgentThinking } from '@/components/blocks/agent-thinking/agent-thinking';\nimport { SocialMark, type SocialProvider } from '@/components/base/social-button/social-button';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type SearchSource = {\n  id: string;\n  title: string;\n  url?: string;\n  href?: string;\n  domain?: string;\n  description?: string;\n  brand?: SocialProvider;\n  icon?: IconComponent;\n};\n\nexport type SearchStep = {\n  id: string;\n  label?: string;\n  query?: string;\n  meta?: string;\n  brand?: SocialProvider;\n  icon?: IconComponent;\n  heading?: boolean;\n  dwell?: number;\n  status?: 'searching' | 'complete';\n  sources?: SearchSource[];\n};\n\nexport type WebSearchProps = {\n  steps: SearchStep[];\n  title?: string;\n  startDelay?: number;\n  stepInterval?: number;\n  /** Kept for existing consumers. Prefer stepInterval. */\n  streamIntervalMs?: number;\n  /** Number of visible rows. A step with sources counts as two rows. */\n  revealed?: number;\n  working?: string | false;\n  onComplete?: () => void;\n  onRunAgain?: () => void;\n  className?: string;\n};\n\nconst revealFrom = { opacity: 0, height: 0, y: 6, filter: 'blur(4px)' };\nconst revealTo = { opacity: 1, height: 'auto', y: 0, filter: 'blur(0px)' };\nconst revealTransition = { duration: 0.34, ease: [0.2, 0.75, 0.25, 1] as const };\n\nfunction sourceDomain(source: SearchSource) {\n  if (source.domain) return source.domain;\n  try { return new URL(source.href ?? source.url ?? '').hostname; } catch { return ''; }\n}\n\nfunction sourceBrand(source: SearchSource): SocialProvider | undefined {\n  if (source.brand) return source.brand;\n  const domain = sourceDomain(source);\n  if (domain.includes('reddit.')) return 'reddit';\n  if (domain.includes('linkedin.')) return 'linkedin';\n  if (domain.includes('github.')) return 'github';\n  if (domain.includes('figma.')) return 'figma';\n  if (domain.includes('notion.')) return 'notion';\n  if (domain.includes('google.')) return 'google';\n  if (domain.includes('x.com') || domain.includes('twitter.')) return 'x';\n  return undefined;\n}\n\nfunction SourceMark({ source }: { source: SearchSource }) {\n  const Icon = source.icon;\n  return <span className=\"ui-web-search__mark\" title={`${source.title}${sourceDomain(source) ? ` · ${sourceDomain(source)}` : ''}`}>\n    {Icon ? <Icon size={13} aria-hidden /> : <SocialMark provider={sourceBrand(source)} size={13} />}\n  </span>;\n}\n\nfunction StepIcon({ step }: { step: SearchStep }) {\n  if (step.icon) { const Icon = step.icon; return <Icon size={16} aria-hidden />; }\n  if (step.brand) return <SocialMark provider={step.brand} size={16} />;\n  return step.heading ? <RiSearchLine size={16} aria-hidden /> : <RiLightbulbLine size={16} aria-hidden />;\n}\n\nexport function WebSearch({\n  steps,\n  title,\n  startDelay = 100,\n  stepInterval,\n  streamIntervalMs,\n  revealed,\n  working = 'Working',\n  onComplete,\n  onRunAgain,\n  className,\n}: WebSearchProps) {\n  const reducedMotion = useReducedMotion();\n  const interval = stepInterval ?? streamIntervalMs ?? 900;\n  const heading = useMemo<SearchStep>(() => steps[0]?.heading ? steps[0] : { id: 'search-heading', label: title ?? `Ran ${steps.filter(step => step.query || step.brand || step.sources?.length).length} searches`, heading: true, dwell: interval }, [steps, title, interval]);\n  const trail = useMemo(() => steps[0]?.heading ? steps.slice(1) : steps, [steps]);\n  const rows = useMemo(() => [\n    { id: heading.id, after: heading.dwell ?? interval },\n    ...trail.flatMap(step => [\n      { id: step.id, after: step.sources?.length ? 520 : step.dwell ?? interval },\n      ...(step.sources?.length ? [{ id: `${step.id}-sources`, after: step.dwell ?? interval }] : []),\n    ]),\n  ], [heading.id, heading.dwell, interval, trail]);\n  const totalUnits = rows.length;\n  const [internalRevealed, setInternalRevealed] = useState(0);\n  const [finished, setFinished] = useState(false);\n  const [openSources, setOpenSources] = useState<string[]>([]);\n  const completeRef = useRef(false);\n  const onCompleteRef = useRef(onComplete);\n  onCompleteRef.current = onComplete;\n\n  useEffect(() => {\n    if (revealed !== undefined) {\n      setFinished(revealed >= totalUnits);\n      return;\n    }\n    if (reducedMotion) {\n      setInternalRevealed(totalUnits);\n      setFinished(true);\n      return;\n    }\n    setInternalRevealed(0);\n    setFinished(false);\n    let timer: number;\n    let shown = 0;\n    const showNext = () => {\n      shown += 1;\n      setInternalRevealed(shown);\n      if (shown >= totalUnits) {\n        timer = window.setTimeout(() => setFinished(true), Math.min(rows[shown - 1]?.after ?? interval, 1200));\n      } else {\n        timer = window.setTimeout(showNext, rows[shown - 1]?.after ?? interval);\n      }\n    };\n    timer = window.setTimeout(showNext, Math.max(0, startDelay));\n    return () => window.clearTimeout(timer);\n  }, [interval, reducedMotion, revealed, rows, startDelay, totalUnits]);\n\n  const visibleUnits = Math.max(0, Math.min(totalUnits, revealed ?? internalRevealed));\n  const isFinished = revealed !== undefined ? visibleUnits >= totalUnits : finished;\n  useEffect(() => {\n    if (!isFinished) { completeRef.current = false; return; }\n    if (completeRef.current) return;\n    completeRef.current = true;\n    onCompleteRef.current?.();\n  }, [isFinished]);\n\n  let cursor = 1;\n  return <div className={cx('ui-web-search', className)} role=\"group\" aria-label={title ?? heading.label ?? 'Web search activity'}>\n    <AnimatePresence initial={false}>\n      {visibleUnits > 0 && <motion.div className=\"ui-web-search__heading\" key={heading.id} initial={reducedMotion ? false : revealFrom} animate={revealTo} exit={revealFrom} transition={reducedMotion ? { duration: 0 } : revealTransition}>\n        <StepIcon step={heading} />\n        <span>{title ?? heading.label}</span>\n      </motion.div>}\n    </AnimatePresence>\n\n    <ol className=\"ui-web-search__steps\" aria-live=\"polite\">\n      <AnimatePresence initial={false}>\n        {trail.map(step => {\n          const stepUnit = ++cursor;\n          const sourceUnit = step.sources?.length ? ++cursor : 0;\n          if (visibleUnits < stepUnit) return null;\n          const sourcesVisible = sourceUnit > 0 && visibleUnits >= sourceUnit;\n          const isActive = !isFinished && visibleUnits === stepUnit;\n          const sourceOpen = openSources.includes(step.id);\n          return <motion.li className=\"ui-web-search__step\" key={step.id} initial={reducedMotion ? false : revealFrom} animate={revealTo} exit={revealFrom} transition={reducedMotion ? { duration: 0 } : revealTransition}>\n            <div className=\"ui-web-search__row\" data-active={isActive || step.status === 'searching' || undefined}>\n              <span className=\"ui-web-search__icon\"><StepIcon step={step} /></span>\n              <span className=\"ui-web-search__label\">{step.label ?? step.query}{step.label && step.query && <code>{step.query}</code>}</span>\n              {(step.meta || step.sources?.length) && <span className=\"ui-web-search__meta\">{step.meta ?? `${step.sources?.length} results`}</span>}\n            </div>\n            <AnimatePresence initial={false}>\n              {sourcesVisible && <motion.div className=\"ui-web-search__source-branch\" initial={reducedMotion ? false : revealFrom} animate={revealTo} exit={revealFrom} transition={reducedMotion ? { duration: 0 } : revealTransition}>\n                <button type=\"button\" className=\"ui-web-search__source-trigger\" aria-expanded={sourceOpen} aria-label={`Sources for ${step.label ?? step.query}`} onClick={() => setOpenSources(current => current.includes(step.id) ? current.filter(id => id !== step.id) : [...current, step.id])}>\n                  <span>Sources</span>\n                  <span className=\"ui-web-search__marks\" aria-hidden>\n                    {step.sources?.slice(0, 6).map(source => <SourceMark key={source.id} source={source} />)}\n                    {(step.sources?.length ?? 0) > 6 && <span className=\"ui-web-search__mark ui-web-search__mark--extra\">+{(step.sources?.length ?? 0) - 6}</span>}\n                  </span>\n                  <RiArrowDownSLine size={16} aria-hidden />\n                </button>\n                <AnimatePresence initial={false}>\n                  {sourceOpen && <motion.ul className=\"ui-web-search__source-links\" initial={reducedMotion ? false : { height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: reducedMotion ? 0 : 0.27, ease: [0.2, 0.75, 0.25, 1] }}>\n                    {step.sources?.map(source => {\n                      const content = <><SourceMark source={source} /><span className=\"ui-web-search__source-title\">{source.title}</span><small>{sourceDomain(source)}</small></>;\n                      const href = source.href ?? source.url;\n                      return <li key={source.id}>{href ? <a href={href} target=\"_blank\" rel=\"noopener noreferrer\" title={source.description}>{content}</a> : <span className=\"ui-web-search__source-static\" title={source.description}>{content}</span>}</li>;\n                    })}\n                  </motion.ul>}\n                </AnimatePresence>\n              </motion.div>}\n            </AnimatePresence>\n          </motion.li>;\n        })}\n      </AnimatePresence>\n    </ol>\n\n    <AnimatePresence initial={false}>\n      {!isFinished && working !== false && <motion.div key=\"working\" className=\"ui-web-search__tail\" initial={reducedMotion ? false : revealFrom} animate={revealTo} exit={revealFrom} transition={reducedMotion ? { duration: 0 } : revealTransition}><AgentThinking variant=\"stars\" label={working} /></motion.div>}\n      {isFinished && onRunAgain && <motion.button key=\"restart\" type=\"button\" className=\"ui-web-search__restart\" onClick={onRunAgain} initial={reducedMotion ? false : revealFrom} animate={revealTo} exit={revealFrom} transition={reducedMotion ? { duration: 0 } : revealTransition}><RiRefreshLine size={16} aria-hidden />Run again</motion.button>}\n    </AnimatePresence>\n  </div>;\n}\n",
+      "sha256": "9d385c6afd55f0285da31ae86fe34f1d7cdaf318359d2152579be9160d0b609e",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/blocks/agent-thinking/agent-thinking",
+          "target": "components/blocks/agent-thinking/agent-thinking.tsx",
+          "start": 281,
+          "end": 330
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/social-button/social-button",
+          "target": "components/base/social-button/social-button.tsx",
+          "start": 382,
+          "end": 427
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 466,
+          "end": 501
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 524,
+          "end": 534
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-agent-thinking",
+      "ui-agent-thinking__dots",
+      "ui-agent-thinking__indicator",
+      "ui-agent-thinking__infinity",
+      "ui-agent-thinking__infinity-head",
+      "ui-agent-thinking__infinity-track",
+      "ui-agent-thinking__label",
+      "ui-agent-thinking__label--shimmer",
+      "ui-agent-thinking__orb",
+      "ui-agent-thinking__stars",
+      "ui-social-button",
+      "ui-social-button__monogram",
+      "ui-web-search",
+      "ui-web-search__heading",
+      "ui-web-search__icon",
+      "ui-web-search__label",
+      "ui-web-search__mark",
+      "ui-web-search__mark--extra",
+      "ui-web-search__marks",
+      "ui-web-search__meta",
+      "ui-web-search__restart",
+      "ui-web-search__row",
+      "ui-web-search__source-branch",
+      "ui-web-search__source-links",
+      "ui-web-search__source-static",
+      "ui-web-search__source-title",
+      "ui-web-search__source-trigger",
+      "ui-web-search__step",
+      "ui-web-search__steps",
+      "ui-web-search__tail"
+    ],
+    "prefixes": []
+  }
+}

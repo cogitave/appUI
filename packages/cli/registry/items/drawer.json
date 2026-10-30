@@ -1,0 +1,131 @@
+{
+  "name": "drawer",
+  "title": "Drawer",
+  "group": "Base",
+  "type": "component",
+  "description": "A side or bottom detail surface that shares Dialog behavior, fits its viewport and keeps header and actions reachable.",
+  "sections": [
+    "Preview",
+    "Placement",
+    "Bottom sheet"
+  ],
+  "example": "<Drawer\n  side=\"end\"\n  title=\"Project settings\"\n  isOpen={open}\n  onOpenChange={setOpen}\n>\n  <ProjectSettings />\n</Drawer>",
+  "entryFiles": [
+    "components/base/drawer/drawer.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/drawer/drawer.tsx",
+      "names": [
+        "Drawer",
+        "DrawerProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/close-button.tsx",
+      "content": "import type { ButtonHTMLAttributes, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CloseButtonSize = '2xs' | 'xs' | 'sm' | 'md';\n\nexport type CloseButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'> & {\n  size?: CloseButtonSize;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nconst glyphSizes: Record<CloseButtonSize, number> = { '2xs': 8, xs: 11, sm: 13, md: 17 };\nconst strokes: Record<CloseButtonSize, number> = { '2xs': 1.6, xs: 2, sm: 2, md: 2.5 };\n\nexport function CloseButton({ size = 'xs', className, type = 'button', ...props }: CloseButtonProps) {\n  const glyph = glyphSizes[size];\n  const inset = size === '2xs' ? 1.4 : 2;\n  return (\n    <button type={type} data-size={size} className={cx('ui-close-button', className)} {...props}>\n      <svg width={glyph} height={glyph} viewBox={`0 0 ${glyph} ${glyph}`} fill=\"none\" aria-hidden=\"true\">\n        <path d={`M${inset} ${inset}L${glyph - inset} ${glyph - inset}M${glyph - inset} ${inset}L${inset} ${glyph - inset}`} stroke=\"currentColor\" strokeWidth={strokes[size]} strokeLinecap=\"round\" />\n      </svg>\n    </button>\n  );\n}\n",
+      "sha256": "c670608d6b5b2e2c1d8d50bb37efbca9c38463fd0fecc5b3525464bff6cbed78",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/dialog/dialog.tsx",
+      "content": "'use client';\n\nimport { useId, type ReactNode } from 'react';\nimport { Dialog as AriaDialog, Heading, Modal, ModalOverlay } from 'react-aria-components';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\nimport { CloseButton } from '@/components/base/buttons/close-button';\nimport { cx } from '@/utils/cx';\n\ntype DialogContent = ReactNode | ((options: { close: () => void }) => ReactNode);\nexport type DialogProps = {\n  title: string;\n  description?: string;\n  children: DialogContent;\n  footer?: DialogContent;\n  isOpen?: boolean;\n  defaultOpen?: boolean;\n  onOpenChange?: (open: boolean) => void;\n  size?: 'small' | 'medium' | 'large' | 'wide';\n  isDismissable?: boolean;\n  isKeyboardDismissDisabled?: boolean;\n  showCloseButton?: boolean;\n  headerActions?:ReactNode;\n  role?: 'dialog' | 'alertdialog';\n  className?: string;\n};\n\nexport type OverlaySurfaceProps = DialogProps & { presentation?: 'dialog' | 'drawer'; side?: 'start' | 'end' | 'bottom' };\n\n/** Shared modal behavior for dialogs and drawers: focus, dismissal and scroll. */\nexport function OverlaySurface({ title, description, children, footer, isOpen, defaultOpen, onOpenChange, size = 'medium', isDismissable = true, isKeyboardDismissDisabled = false, showCloseButton = true, headerActions, role = 'dialog', className, presentation = 'dialog', side = 'end' }: OverlaySurfaceProps) {\n  const descriptionId = useId();\n  return <ModalOverlay isOpen={isOpen} defaultOpen={defaultOpen} onOpenChange={onOpenChange} isDismissable={isDismissable} isKeyboardDismissDisabled={isKeyboardDismissDisabled} className=\"ui-modal-overlay\" data-presentation={presentation} data-side={side}>\n    <Modal className={cx('ui-modal-surface', className)} data-size={size} data-presentation={presentation} data-side={side}>\n      {({ isExiting }) => <AriaDialog inert={isExiting} role={role} aria-describedby={description ? descriptionId : undefined} className=\"ui-dialog\">\n        {({ close }) => <>\n          <header className=\"ui-dialog__header\"><div><Heading slot=\"title\" className=\"ui-dialog__title\">{title}</Heading>{description && <p id={descriptionId} className=\"ui-dialog__description\">{description}</p>}</div>{headerActions&&<div className=\"ui-dialog__header-actions\">{headerActions}</div>}{showCloseButton && <CloseButton size=\"xs\" aria-label={`Close ${title}`} onClick={close}/>}</header>\n          <div className=\"ui-dialog__body\"><AnimatedHeight><div className=\"ui-dialog__body-content\">{typeof children === 'function' ? children({ close }) : children}</div></AnimatedHeight></div>\n          {footer && <footer className=\"ui-dialog__footer\">{typeof footer === 'function' ? footer({ close }) : footer}</footer>}\n        </>}\n      </AriaDialog>}\n    </Modal>\n  </ModalOverlay>;\n}\n\nexport function Dialog(props: DialogProps) { return <OverlaySurface {...props}/>; }\n",
+      "sha256": "7dba5ed1fe79940d939910c9eb26baee4fba5e2ba379ea4f91bad6aa4d96b2c9",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 186,
+          "end": 235
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 267,
+          "end": 305
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 328,
+          "end": 338
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/drawer/drawer.tsx",
+      "content": "'use client';\n\nimport { OverlaySurface, type DialogProps } from '@/components/base/dialog/dialog';\n\nexport type DrawerProps = DialogProps & { side?: 'start' | 'end' | 'bottom' };\n\nexport function Drawer({ side = 'end', ...props }: DrawerProps) {\n  return <OverlaySurface {...props} presentation=\"drawer\" side={side}/>;\n}\n",
+      "sha256": "ff49571fd4e9d263cfea7f2075f2723e4261bd82178100be6b30231c82beb906",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/dialog/dialog",
+          "target": "components/base/dialog/dialog.tsx",
+          "start": 65,
+          "end": 96
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-close-button",
+      "ui-dialog",
+      "ui-dialog__body",
+      "ui-dialog__body-content",
+      "ui-dialog__description",
+      "ui-dialog__footer",
+      "ui-dialog__header",
+      "ui-dialog__header-actions",
+      "ui-dialog__title",
+      "ui-modal-overlay",
+      "ui-modal-surface"
+    ],
+    "prefixes": []
+  }
+}

@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@import "./theme.css";
+@import "./accent-palettes.css";
+@import "./theme-transition.css";
+@import "./typography.css";
+@import "./components.css";
+@import "./composition-controls.css";
+@import "./segmented-control.css";
+@import "./color-swatch.css";
+@import "./action-menu.css";
+@import "./navigation-menu.css";
+@import "./loading-disclosure.css";
+@import "./meter.css";
+@import "./overlay-fields.css";
+@import "./collection-fields.css";
+@import "./item.css";
+@import "./team-members.css";
+@import "./workspace-tabs.css";
+@import "./ai-content.css";
+@import "./conversation.css";
+@import "./docs.css";
+@import "./docs-extended.css";
+@import "./foundations.css";
+@import "./blocks.css";
+@import "./agent-creator.css";
+@import "./charts.css";
+@import "./templates.css";
+@import "./template-refinement.css";
+@import "./ai-chat-template.css";
+@import "./image-generation-template.css";
+@import "./project-board-template.css";
+@import "./calendar.css";
+@import "./composer-attachments.css";
+@import "./composer-loader.css";
+@import "./composer-menu.css";
+@import "./composer-model-picker.css";
+@import "./composer-panel.css";
+@import "./settings-modal.css";
+@import "./field-feedback.css";
+@import "./field.css";
+@import "./agent-limits.css";
+@import "./journeys.css";
+@import "./table-refinement.css";
+@import "./search-filters.css";
+@import "./scroll-area.css";
+@import "./command.css";
+@import "./task-list-refinement.css";
+@import "./web-search-refinement.css";
+@import "./notification-center-refinement.css";
+@import "./questionnaire-refinement.css";
+@import "./stepper.css";
+@import "./tree.css";
+@import "./split-pane.css";
+@import "./notification-refinement.css";
+@import "./notification-queue.css";
+@import "./chart-refinement.css";
+@import "./template-audit.css";
+@import "./multi-agent-chat.css";
+@import "./paywall.css";
+@import "./installation.css";
+@import "./code-block.css";
+@import "./getting-started.css";
+@import "./ambient-rays.css";
+@import "./metal-surface.css";
+@import "./agent-workspace-template.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+* { box-sizing: border-box; scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+/* Anchor spacing belongs to document sections. Root scroll padding also
+   affects portaled options and can scroll their page while a menu opens. */
+body { margin: 0; background: var(--surface-base); color: var(--text-main); font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; font-kerning: normal; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+::selection { color: white; background: var(--accent-strong); }
+:focus-visible { outline: 1px solid var(--focus-ring); outline-offset: -2px; }
+:where(:focus-visible, [data-focus-visible]) { outline-color: var(--focus-ring) !important; outline-width: 1px !important; outline-offset: -2px !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

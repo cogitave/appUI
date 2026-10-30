@@ -1,0 +1,7 @@
+export const searchFilterPages={
+  'search-field':{title:'Search Field',group:'Base',description:'The shared Input with a search icon, a compact clear action and optional pending indicator. Clearing restores focus to the input.',sections:['Preview','Sizes and surfaces','Loading and disabled'],snippet:`<SearchField label="Search projects"\n  value={query} onChange={setQuery} hideLabel\n  placeholder="Search projects" />`},
+  'tag-group':{title:'Tag Group',group:'Base',description:'A keyboard-accessible group of the library’s Chips for labels, selections and removable filters.',sections:['Preview','Selection','Removal','States and sizes'],snippet:`<TagGroup label="Categories" items={tags}\n  selectionMode="multiple" selectedKeys={selected}\n  onSelectionChange={setSelected} />`},
+  'filter-bar':{title:'Filter Bar',group:'Blocks',description:'Search, Select, removable Chips and a result summary composed into a responsive collection toolbar. The parent owns the filtered data.',sections:['Preview','Applied filters','Compact surface','Empty results'],snippet:`<FilterBar search={query} onSearchChange={setQuery}\n  filters={filters} values={values}\n  onFilterChange={changeFilter}\n  onReset={resetFilters}\n  resultsLabel={results.length + ' projects'} />`},
+} as const;
+export type SearchFilterSlug=keyof typeof searchFilterPages;
+export function isSearchFilterSlug(slug:string):slug is SearchFilterSlug{return Object.hasOwn(searchFilterPages,slug);}

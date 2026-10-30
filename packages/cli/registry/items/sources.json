@@ -1,0 +1,250 @@
+{
+  "name": "sources",
+  "title": "Sources",
+  "group": "Blocks",
+  "type": "block",
+  "description": "Source cards and inline citations use one source record for the summary, preview and destination. The list can collapse without leaving extra space.",
+  "sections": [
+    "Preview",
+    "Inline citations",
+    "List and grid",
+    "Document sources"
+  ],
+  "example": "<p>Keep controls reachable.<InlineCitation source={sources[0]} index={1} /></p>\n<Sources sources={sources} variant=\"grid\" />",
+  "entryFiles": [
+    "components/blocks/sources/sources.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/sources/sources.tsx",
+      "names": [
+        "InlineCitation",
+        "Source",
+        "SourceCard",
+        "Sources",
+        "SourcesProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/badges/badge.tsx",
+      "content": "import type { HTMLAttributes } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type BadgeColor = 'primary' | 'neutral' | 'new';\nexport type BadgeProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & { color?: BadgeColor; variant?: 'count' | 'label' | 'pill' | 'subtle' | 'index' };\n\nexport function Badge({ color = 'neutral', variant = 'count', className, ...props }: BadgeProps) {\n  return <span data-color={color} data-variant={variant} className={cx('ui-badge', className)} {...props} />;\n}\n",
+      "sha256": "86b64775ebecc2e54ff2a0b217626324821a72bfbce71fc355e7ec5a94f16178",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 65,
+          "end": 75
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/button-link.tsx",
+      "content": "import type { AnchorHTMLAttributes, ElementType, ReactNode } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { buttonClassNames, buttonIconClassNames, type ButtonSize, type ButtonVariant } from './button';\n\nexport type ButtonLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {\n  as?: ElementType;\n  children: ReactNode;\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  leadingIcon?: IconComponent;\n  trailingIcon?: IconComponent;\n};\n\n/** Anchor semantics and the same presentation as Button. Router adapters are optional. */\nexport function ButtonLink({ as: Component = 'a', children, variant = 'secondary', size = 'medium', leadingIcon: LeadingIcon, trailingIcon: TrailingIcon, className, ...props }: ButtonLinkProps) {\n  return <Component {...props} className={buttonClassNames(size, false, className)} data-variant={variant} data-size={size}>\n    {LeadingIcon && <LeadingIcon className={buttonIconClassNames[size]} aria-hidden />}\n    <span className=\"ui-button__label\">{children}</span>\n    {TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n  </Component>;\n}\n",
+      "sha256": "6a53c13ed4215ff532ccac181a502cb10e8a5f10121d68c3f95c8a0b261b18b8",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 111,
+          "end": 146
+        },
+        {
+          "kind": "module",
+          "value": "./button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 242,
+          "end": 250
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/button.tsx",
+      "content": "'use client';\n\nimport type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\nimport { Spinner } from '@/components/base/spinner/spinner';\n\nexport type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline' | 'solid' | 'quiet';\nexport type ButtonSize = 'medium' | 'small' | 'xs';\n\ntype NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;\ntype ContentProps =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonProps = NativeButtonProps & ContentProps & {\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  trailingIcon?: IconComponent;\n  isLoading?: boolean;\n  loadingLabel?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\nconst base = 'ui-button inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none outline-none';\nconst sizes: Record<ButtonSize, string> = {\n  medium: 'h-9 rounded-[10px] px-2 gap-0.5',\n  small: 'h-8 rounded-lg px-2 gap-0.5',\n  xs: 'h-6 rounded-[5px] px-2 gap-0.5',\n};\nexport const buttonIconClassNames: Record<ButtonSize, string> = { medium: 'size-5', small: 'size-[18px]', xs: 'size-3.5' };\nexport function buttonClassNames(size: ButtonSize, iconOnly = false, className?: string) {\n  return cx(base, sizes[size], iconOnly && 'ui-button--icon-only !p-0', className);\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'medium',\n  iconOnly = false,\n  leadingIcon: LeadingIcon,\n  trailingIcon: TrailingIcon,\n  children,\n  className,\n  type = 'button',\n  isLoading = false,\n  loadingLabel,\n  disabled,\n  onClick,\n  onKeyDown,\n  ...props\n}: ButtonProps) {\n  return (\n    <button\n      {...props}\n      type={isLoading && type === 'submit' ? 'button' : type}\n      disabled={disabled}\n      aria-disabled={isLoading || props['aria-disabled'] || undefined}\n      aria-busy={isLoading || undefined}\n      aria-description={isLoading && loadingLabel ? loadingLabel : props['aria-description']}\n      data-variant={variant}\n      data-size={size}\n      data-icon-only={iconOnly || undefined}\n      data-loading={isLoading || undefined}\n      data-loading-label={loadingLabel !== undefined || undefined}\n      className={buttonClassNames(size, iconOnly, className)}\n      onClick={event => { if (isLoading || props['aria-disabled'] === true || props['aria-disabled'] === 'true') { event.preventDefault(); event.stopPropagation(); return; } onClick?.(event); }}\n      onKeyDown={event => { if (isLoading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); return; } onKeyDown?.(event); }}\n    >\n      {LeadingIcon && <span className=\"ui-button__leading-slot\" aria-hidden><LeadingIcon className={cx(buttonIconClassNames[size], 'ui-button__leading-icon')}/></span>}\n      {!iconOnly && <span className=\"ui-button__label\">{children}</span>}\n      {!iconOnly && TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n      <Spinner className=\"ui-button__busy-spinner\" size={size === 'xs' ? 'xs' : size === 'small' ? 'sm' : 'md'}/>\n    </button>\n  );\n}\n",
+      "sha256": "bcfc2d2db4debfd2c11dd8ba8b23a167c705ad3bf7d9151571e501ed195fe158",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 118,
+          "end": 153
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 176,
+          "end": 186
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 214,
+          "end": 247
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/collapsible/collapsible.tsx",
+      "content": "import type { HTMLAttributes, ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CollapsibleProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & { isOpen: boolean; children: ReactNode };\n\n/** Keep descendants mounted while hiding their focus targets and animating flow. */\nexport function Collapsible({ isOpen, children, className, ...props }: CollapsibleProps) {\n  return <div {...props} className={cx('ui-collapsible', className)} data-open={isOpen || undefined} aria-hidden={!isOpen} inert={!isOpen}>\n    <div className=\"ui-collapsible__inner\"><div className=\"ui-collapsible__content\">{children}</div></div>\n  </div>;\n}\n",
+      "sha256": "639642d279efcb03d280423ca16442c74c8d97c0a83d3692047ac43d0748fa3c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/hover-card/hover-card.tsx",
+      "content": "'use client';\n\nimport { cloneElement, useContext, useId, useRef, useState, type ComponentProps, type KeyboardEvent, type ReactNode, type Ref, type RefObject } from 'react';\nimport { Focusable, OverlayArrow, OverlayTriggerStateContext, Popover, PreviewTrigger, type PopoverProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\n\nexport type HoverCardProps = {\n  trigger: ComponentProps<typeof Focusable>['children'];\n  children: ReactNode;\n  title?: string;\n  label?: string;\n  placement?: PopoverProps['placement'];\n  delay?: number;\n  closeDelay?: number;\n  isDisabled?: boolean;\n  showArrow?: boolean;\n  className?: string;\n};\n\n/** A non-modal preview: hover keeps page focus; Tab can enter its controls. */\nfunction PointerTrigger({trigger,isDisabled,triggerRef,suppressRestore}:{trigger:HoverCardProps['trigger'];isDisabled?:boolean;triggerRef:Ref<HTMLElement>;suppressRestore:RefObject<boolean>}) {\n  const state = useContext(OverlayTriggerStateContext);\n  const element = trigger;\n  // A first hover can precede a pointer press. Use the public trigger state so\n  // it keeps the configured warmup, safe area and focus behavior without\n  // changing the page's keyboard modality.\n  const pointerTrigger = cloneElement(element,{onPointerEnter:event=>{\n    element.props.onPointerEnter?.(event);\n    if(!isDisabled&&!event.defaultPrevented&&(event.pointerType==='mouse'||event.pointerType==='pen')&&!state?.isOpen)state?.open();\n  },onFocusCapture:event=>{\n    element.props.onFocusCapture?.(event);\n    if(suppressRestore.current){suppressRestore.current=false;event.stopPropagation();element.props.onFocus?.(event);}\n  }}) as HoverCardProps['trigger'];\n  return <Focusable ref={triggerRef}>{pointerTrigger}</Focusable>;\n}\n\nfunction PreviewContent({children,title,titleId,label,isExiting,onDismiss}:{children:ReactNode;title?:string;titleId:string;label:string;isExiting:boolean;onDismiss:()=>void}) {\n  const state = useContext(OverlayTriggerStateContext);\n  function handleKeyDown(event:KeyboardEvent<HTMLElement>) {\n    if(event.key!=='Escape'||event.defaultPrevented)return;\n    // Keep the public preview state's cooldown and cancellation bookkeeping,\n    // then close the controlled surface immediately for explicit dismissal.\n    state?.close();\n    onDismiss();\n  }\n  return <section onKeyDown={handleKeyDown} inert={isExiting} aria-hidden={isExiting || undefined} className=\"ui-popover__dialog\" role=\"region\" aria-labelledby={title ? titleId : undefined} aria-label={title ? undefined : label}>\n    {title && <header className=\"ui-popover__header\"><h3 id={titleId}>{title}</h3></header>}<div className=\"ui-popover__body\">{children}</div>\n  </section>;\n}\n\nexport function HoverCard({ trigger, children, title, label = 'Preview details', placement = 'top', delay = 400, closeDelay = 180, isDisabled, showArrow = true, className }: HoverCardProps) {\n  const titleId = useId();\n  const triggerRef = useRef<HTMLElement>(null);\n  const suppressRestore = useRef(false);\n  const [open, setOpen] = useState(false);\n  function dismiss() {\n    // Pointer travel keeps its close delay; an explicit dismissal starts the\n    // exit immediately so Tab cannot return to the outgoing preview.\n    setOpen(false);\n    suppressRestore.current=true;\n    triggerRef.current?.focus({preventScroll:true});\n  }\n  return <PreviewTrigger isOpen={open} onOpenChange={setOpen} delay={delay} closeDelay={closeDelay} isDisabled={isDisabled}>\n    <PointerTrigger trigger={trigger} isDisabled={isDisabled} triggerRef={triggerRef} suppressRestore={suppressRestore}/>\n    <Popover shouldSkipAnimation={false} placement={placement} offset={showArrow ? 10 : 6} aria-labelledby={title ? titleId : undefined} aria-label={title ? undefined : label} className={cx('ui-popover ui-hover-card', className)}>\n      {({isExiting})=><>\n      {showArrow && <OverlayArrow className=\"ui-popover__arrow\"><svg width=\"12\" height=\"8\" viewBox=\"0 0 12 8\" aria-hidden><path d=\"M0 0 6 6 12 0\"/></svg></OverlayArrow>}\n      <PreviewContent isExiting={isExiting} title={title} titleId={titleId} label={label} onDismiss={dismiss}>{children}</PreviewContent>\n      </>}\n    </Popover>\n  </PreviewTrigger>;\n}\n",
+      "sha256": "cf830bb000b237c815e8efc2b45f7909d00eb85e83641ad52c08f58389e910ac",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 330,
+          "end": 340
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/sources/sources.tsx",
+      "content": "'use client';\n\nimport { useId, useState } from 'react';\nimport { RiArrowDownSLine, RiArrowRightUpLine, RiFileTextLine, RiGlobalLine } from '@remixicon/react';\nimport { Badge } from '@/components/base/badges/badge';\nimport { ButtonLink } from '@/components/base/buttons/button-link';\nimport { Collapsible } from '@/components/base/collapsible/collapsible';\nimport { HoverCard } from '@/components/base/hover-card/hover-card';\nimport { cx } from '@/utils/cx';\nimport { safeUrl, urlHostname } from '@/utils/safe-url';\n\nexport type Source = { id: string; title: string; url?: string; description?: string; publisher?: string; type?: 'web' | 'document'; date?: string; };\nexport type SourcesProps = { sources: Source[]; title?: string; defaultExpanded?: boolean; variant?: 'list' | 'grid'; className?: string; };\n\nexport function SourceCard({ source, index, compact = false }: { source: Source; index?: number; compact?: boolean }) {\n  const url = safeUrl(source.url), publisher = source.publisher ?? urlHostname(url) ?? (source.type === 'document' ? 'Document' : 'Source');\n  const Icon = source.type === 'document' ? RiFileTextLine : RiGlobalLine;\n  return <article className=\"ui-source-card\" data-compact={compact || undefined}>\n    <div className=\"ui-source-card__meta\"><span className=\"ui-source-card__publisher\"><Icon size={14} aria-hidden/>{publisher}</span>{index != null && <Badge>{index}</Badge>}</div>\n    <h4>{source.title}</h4>{source.description && <p>{source.description}</p>}\n    {(source.date || url) && <div className=\"ui-source-card__footer\">{source.date && <span>{source.date}</span>}{url && <ButtonLink href={url} target={/^https?:/.test(url) ? '_blank' : undefined} rel={/^https?:/.test(url) ? 'noopener noreferrer' : undefined} size=\"xs\" variant=\"ghost\" trailingIcon={RiArrowRightUpLine}>Open source</ButtonLink>}</div>}\n  </article>;\n}\n\nexport function InlineCitation({ source, index }: { source: Source; index: number }) {\n  return <HoverCard trigger={<button type=\"button\" className=\"ui-inline-citation\" aria-label={`Source ${index}: ${source.title}`}><Badge variant=\"index\">{index}</Badge></button>} label={`Source ${index}: ${source.title}`} placement=\"top\">\n    <SourceCard source={source} compact/>\n  </HoverCard>;\n}\n\nexport function Sources({ sources, title = 'Sources', defaultExpanded = true, variant = 'list', className }: SourcesProps) {\n  const [open, setOpen] = useState(defaultExpanded), id = useId();\n  return <section className={cx('ui-sources', className)} aria-label={title}>\n    <button type=\"button\" className=\"ui-sources__trigger\" aria-expanded={open} aria-controls={id} onClick={() => setOpen(value => !value)}><RiGlobalLine size={16} aria-hidden/><span>{title}</span><Badge>{sources.length}</Badge><RiArrowDownSLine size={16} aria-hidden/></button>\n    <Collapsible id={id} isOpen={open}><div className=\"ui-sources__items\" data-variant={variant}>{sources.length ? sources.map((source,index)=><SourceCard source={source} key={source.id} index={index+1}/>) : <p className=\"ui-sources__empty\">No sources are attached to this response.</p>}</div></Collapsible>\n  </section>;\n}\n",
+      "sha256": "1e0b1aacde426cd9e0558ea031b5cbe46fbd3d75b05b4fa1814a219aed550ace",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/badges/badge",
+          "target": "components/base/badges/badge.tsx",
+          "start": 182,
+          "end": 212
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button-link",
+          "target": "components/base/buttons/button-link.tsx",
+          "start": 243,
+          "end": 280
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/collapsible/collapsible",
+          "target": "components/base/collapsible/collapsible.tsx",
+          "start": 312,
+          "end": 353
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/hover-card/hover-card",
+          "target": "components/base/hover-card/hover-card.tsx",
+          "start": 383,
+          "end": 422
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 445,
+          "end": 455
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/safe-url",
+          "target": "utils/safe-url.ts",
+          "start": 496,
+          "end": 512
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/safe-url.ts",
+      "content": "/** Permit web links and application paths without accepting script protocols. */\nexport function safeUrl(value: string | undefined): string | undefined {\n  if (!value) return undefined;\n  const trimmed = value.trim();\n  if (/^https?:\\/\\//i.test(trimmed)) {\n    try { return new URL(trimmed).href; } catch { return undefined; }\n  }\n  if (/^[\\/#]/.test(trimmed) && !/^\\/\\//.test(trimmed) && !/[\\u0000-\\u001f\\\\]/.test(trimmed)) return trimmed;\n  return undefined;\n}\n\nexport function urlHostname(value: string | undefined) {\n  try { return new URL(value ?? '').hostname.replace(/^www\\./, ''); } catch { return undefined; }\n}\n",
+      "sha256": "39b87138c81964b20c1259b9b116f2720d193f35065e17a0ee7d7ae065dd8679",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-badge",
+      "ui-button",
+      "ui-button--icon-only",
+      "ui-button__busy-spinner",
+      "ui-button__label",
+      "ui-button__leading-icon",
+      "ui-button__leading-slot",
+      "ui-collapsible",
+      "ui-collapsible__content",
+      "ui-collapsible__inner",
+      "ui-hover-card",
+      "ui-inline-citation",
+      "ui-popover",
+      "ui-popover__arrow",
+      "ui-popover__body",
+      "ui-popover__dialog",
+      "ui-popover__header",
+      "ui-source-card",
+      "ui-source-card__footer",
+      "ui-source-card__meta",
+      "ui-source-card__publisher",
+      "ui-sources",
+      "ui-sources__empty",
+      "ui-sources__items",
+      "ui-sources__trigger",
+      "ui-spinner"
+    ],
+    "prefixes": []
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "name": "popover",
+  "title": "Popover",
+  "group": "Base",
+  "type": "component",
+  "description": "A positioned content surface with focus management, optional arrow, controlled state and dismissal that returns to its trigger.",
+  "sections": [
+    "Preview",
+    "Placement and arrows",
+    "Interactive content"
+  ],
+  "example": "<Popover\n  trigger={<Button variant=\"secondary\">Project details</Button>}\n  title=\"Studio launch\"\n  showArrow\n>\n  <p>A shared place for your next release.</p>\n</Popover>",
+  "entryFiles": [
+    "components/base/popover/popover.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/popover/popover.tsx",
+      "names": [
+        "Popover",
+        "PopoverProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/buttons/close-button.tsx",
+      "content": "import type { ButtonHTMLAttributes, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CloseButtonSize = '2xs' | 'xs' | 'sm' | 'md';\n\nexport type CloseButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'> & {\n  size?: CloseButtonSize;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nconst glyphSizes: Record<CloseButtonSize, number> = { '2xs': 8, xs: 11, sm: 13, md: 17 };\nconst strokes: Record<CloseButtonSize, number> = { '2xs': 1.6, xs: 2, sm: 2, md: 2.5 };\n\nexport function CloseButton({ size = 'xs', className, type = 'button', ...props }: CloseButtonProps) {\n  const glyph = glyphSizes[size];\n  const inset = size === '2xs' ? 1.4 : 2;\n  return (\n    <button type={type} data-size={size} className={cx('ui-close-button', className)} {...props}>\n      <svg width={glyph} height={glyph} viewBox={`0 0 ${glyph} ${glyph}`} fill=\"none\" aria-hidden=\"true\">\n        <path d={`M${inset} ${inset}L${glyph - inset} ${glyph - inset}M${glyph - inset} ${inset}L${inset} ${glyph - inset}`} stroke=\"currentColor\" strokeWidth={strokes[size]} strokeLinecap=\"round\" />\n      </svg>\n    </button>\n  );\n}\n",
+      "sha256": "c670608d6b5b2e2c1d8d50bb37efbca9c38463fd0fecc5b3525464bff6cbed78",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/popover/popover.tsx",
+      "content": "'use client';\n\nimport type { ComponentProps, ReactNode } from 'react';\nimport { Dialog, DialogTrigger, Heading, OverlayArrow, Popover as AriaPopover, Pressable, type PopoverProps as AriaPopoverProps } from 'react-aria-components';\nimport { CloseButton } from '@/components/base/buttons/close-button';\nimport { cx } from '@/utils/cx';\n\nexport type PopoverProps = {\n  trigger: ComponentProps<typeof Pressable>['children'];\n  title?: string;\n  children: ReactNode | ((options: { close: () => void }) => ReactNode);\n  placement?: AriaPopoverProps['placement'];\n  showArrow?: boolean;\n  showCloseButton?: boolean;\n  isOpen?: boolean;\n  defaultOpen?: boolean;\n  onOpenChange?: (open: boolean) => void;\n  className?: string;\n  'aria-label'?: string;\n};\n\nexport function Popover({ trigger, title, children, placement = 'bottom start', showArrow = false, showCloseButton = false, isOpen, defaultOpen, onOpenChange, className, 'aria-label': label }: PopoverProps) {\n  return <DialogTrigger isOpen={isOpen} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>\n    <Pressable>{trigger}</Pressable>\n    <AriaPopover className={cx('ui-popover', className)} placement={placement} offset={showArrow ? 10 : 6}>\n      {({isExiting})=><>\n      {showArrow && <OverlayArrow className=\"ui-popover__arrow\"><svg width=\"12\" height=\"8\" viewBox=\"0 0 12 8\" aria-hidden><path d=\"M0 0 6 6 12 0\"/></svg></OverlayArrow>}\n      <Dialog inert={isExiting} className=\"ui-popover__dialog\" aria-label={title ? undefined : label ?? 'Additional information'}>{({ close }) => <>\n        {(title || showCloseButton) && <header className=\"ui-popover__header\">{title && <Heading slot=\"title\">{title}</Heading>}{showCloseButton && <CloseButton aria-label=\"Close popover\" size=\"xs\" onClick={close}/>}</header>}\n        <div className=\"ui-popover__body\">{typeof children === 'function' ? children({ close }) : children}</div>\n      </>}</Dialog>\n      </>}\n    </AriaPopover>\n  </DialogTrigger>;\n}\n",
+      "sha256": "61747a42d9522f35c0fb84cb0ec1549ee5196f586d4326032385d6fd3bf2331d",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 260,
+          "end": 298
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 321,
+          "end": 331
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-close-button",
+      "ui-popover",
+      "ui-popover__arrow",
+      "ui-popover__body",
+      "ui-popover__dialog",
+      "ui-popover__header"
+    ],
+    "prefixes": []
+  }
+}

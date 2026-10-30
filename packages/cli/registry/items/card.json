@@ -1,0 +1,65 @@
+{
+  "name": "card",
+  "title": "Card",
+  "group": "Base",
+  "type": "component",
+  "description": "A shared content surface with measured padding, headers and footers. Compose it from the same controls as the rest of your product.",
+  "sections": [
+    "Preview",
+    "Surfaces",
+    "Padding and composition"
+  ],
+  "example": "<Card variant=\"bordered\">\n  <CardHeader title=\"Project details\" description=\"The work behind the next release.\" />\n  <Progress label=\"Tasks completed\" value={72} />\n  <CardFooter><Button>Open project</Button></CardFooter>\n</Card>",
+  "entryFiles": [
+    "components/base/card/card.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/card/card.tsx",
+      "names": [
+        "Card",
+        "CardFooter",
+        "CardHeader",
+        "CardProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/card/card.tsx",
+      "content": "import type { HTMLAttributes, ReactNode, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CardProps = HTMLAttributes<HTMLDivElement> & { ref?: Ref<HTMLDivElement>; variant?: 'bordered' | 'raised' | 'soft'; padding?: 'none' | 'small' | 'medium' | 'large' };\nexport function Card({ variant = 'bordered', padding = 'medium', className, ...props }: CardProps) {\n  return <div {...props} className={cx('ui-card', className)} data-variant={variant} data-padding={padding}/>;\n}\nexport function CardHeader({ title, description, actions, leading }: { title: string; description?: string; actions?: ReactNode; leading?: ReactNode }) {\n  return <header className=\"ui-card__header\">{leading && <span className=\"ui-card__leading\" aria-hidden>{leading}</span>}<div><h3>{title}</h3>{description && <p>{description}</p>}</div>{actions && <div className=\"ui-card__actions\">{actions}</div>}</header>;\n}\nexport function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) { return <div {...props} className={cx('ui-card__footer', className)}/>; }\n",
+      "sha256": "742356565d970d6e79db31da7e8fc650e7f9044a9a11c50b9335dc40a449e1b8",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 81,
+          "end": 91
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-card",
+      "ui-card__actions",
+      "ui-card__footer",
+      "ui-card__header",
+      "ui-card__leading"
+    ],
+    "prefixes": []
+  }
+}

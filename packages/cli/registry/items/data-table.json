@@ -1,0 +1,465 @@
+{
+  "name": "data-table",
+  "title": "Data Table",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A searchable, sortable and paginated data grid driven by TanStack Table, with filters and row selection.",
+  "sections": [
+    "Preview"
+  ],
+  "example": "<DataTable data={customers} columns={columns} getRowId={row => row.id} filters={filters} />",
+  "entryFiles": [
+    "components/blocks/data-table/data-table.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/data-table/data-table.tsx",
+      "names": [
+        "DataTable",
+        "DataTableFilter",
+        "DataTableProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/close-button.tsx",
+      "content": "import type { ButtonHTMLAttributes, Ref } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type CloseButtonSize = '2xs' | 'xs' | 'sm' | 'md';\n\nexport type CloseButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'> & {\n  size?: CloseButtonSize;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nconst glyphSizes: Record<CloseButtonSize, number> = { '2xs': 8, xs: 11, sm: 13, md: 17 };\nconst strokes: Record<CloseButtonSize, number> = { '2xs': 1.6, xs: 2, sm: 2, md: 2.5 };\n\nexport function CloseButton({ size = 'xs', className, type = 'button', ...props }: CloseButtonProps) {\n  const glyph = glyphSizes[size];\n  const inset = size === '2xs' ? 1.4 : 2;\n  return (\n    <button type={type} data-size={size} className={cx('ui-close-button', className)} {...props}>\n      <svg width={glyph} height={glyph} viewBox={`0 0 ${glyph} ${glyph}`} fill=\"none\" aria-hidden=\"true\">\n        <path d={`M${inset} ${inset}L${glyph - inset} ${glyph - inset}M${glyph - inset} ${inset}L${inset} ${glyph - inset}`} stroke=\"currentColor\" strokeWidth={strokes[size]} strokeLinecap=\"round\" />\n      </svg>\n    </button>\n  );\n}\n",
+      "sha256": "c670608d6b5b2e2c1d8d50bb37efbca9c38463fd0fecc5b3525464bff6cbed78",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/field-feedback.tsx",
+      "content": "'use client';\n\nimport { useContext, useLayoutEffect, useRef, useState } from 'react';\nimport { FieldError, FieldErrorContext, Text } from 'react-aria-components';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\n\nfunction ErrorContent({ error }: { error?: string }) {\n  const present = useIsPresent();\n  const element = useRef<HTMLElement>(null);\n  const [snapshot, setSnapshot] = useState(error ?? '');\n  useLayoutEffect(() => {\n    if (present && element.current) {\n      const text = element.current.textContent ?? '';\n      setSnapshot(previous => previous === text ? previous : text);\n    }\n  });\n  return <div className=\"ui-field-feedback__error\" inert={!present} aria-hidden={!present || undefined}>\n    {present ? <FieldError ref={element} className=\"ui-input-field__message\">{error}</FieldError> : <span className=\"ui-input-field__message\">{snapshot}</span>}\n  </div>;\n}\n\n/** Keep native validation messages associated while animating their actual layout. */\nexport function FieldFeedback({ hint, error }: { hint?: string; error?: string }) {\n  const validation = useContext(FieldErrorContext);\n  const reduced = useReducedMotion();\n  const invalid = validation?.isInvalid ?? Boolean(error);\n  const showHint = Boolean(hint && !error);\n  return <div className=\"ui-field-feedback\" data-content={invalid || showHint || undefined}>\n    <AnimatedHeight>\n      {showHint && <Text slot=\"description\" className=\"ui-input-field__message\">{hint}</Text>}\n      <AnimatePresence initial={false} mode=\"popLayout\">\n        {invalid && <motion.div key=\"error\" initial={{ opacity: 0, y: reduced ? 0 : 2 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -2 }} transition={{ duration: reduced ? 0 : .16, ease: [.2, .75, .25, 1] }}>\n          <ErrorContent error={error}/>\n        </motion.div>}\n      </AnimatePresence>\n    </AnimatedHeight>\n  </div>;\n}\n",
+      "sha256": "91b0aa0dcdb56c7d7e4a4923a1ac4ba946de997ab1d233e364d75f36f1a00056",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 283,
+          "end": 332
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input/input.tsx",
+      "content": "'use client';\n\nimport type { AriaAttributes, ReactNode, Ref } from 'react';\nimport { TextField, Label, Input as AriaInput, type TextFieldProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type InputProps = Omit<TextFieldProps, 'children' | 'className'> & {\n  'aria-busy'?: AriaAttributes['aria-busy'];\n  label: string;\n  placeholder?: string;\n  hint?: string;\n  error?: string;\n  leading?: ReactNode;\n  trailing?: ReactNode;\n  trailingAction?: ReactNode;\n  leadingAction?: ReactNode;\n  blockStart?: ReactNode;\n  blockEnd?: ReactNode;\n  className?: string;\n  hideLabel?: boolean;\n  inputRef?: Ref<HTMLInputElement>;\n  variant?: 'default' | 'plain' | 'soft';\n  size?: 'small' | 'medium' | 'large';\n  maxLength?: number;\n};\n\nexport function Input({ label, placeholder, hint, error, leading, trailing, trailingAction, leadingAction, blockStart, blockEnd, className, isInvalid, hideLabel = false, inputRef, variant = 'default', size = 'medium', maxLength, ...props }: InputProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  const stacked = blockStart !== undefined || blockEnd !== undefined;\n  const control = <>{leadingAction && <span className=\"ui-input-field__action\">{leadingAction}</span>}{leading && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{leading}</span>}<AriaInput ref={inputRef} maxLength={maxLength} aria-busy={props['aria-busy']} className=\"ui-input-field__input\" placeholder={placeholder} />{trailing && <span className=\"ui-input-field__adornment\" aria-hidden=\"true\">{trailing}</span>}{trailingAction && <span className=\"ui-input-field__action\">{trailingAction}</span>}</>;\n  return <TextField {...props} isDisabled={isDisabled} data-variant={variant} data-size={size} isInvalid={error ? true : isInvalid} className={cx('ui-input-field', className)}>\n    <Label className={cx('ui-input-field__label', hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden=\"true\">*</span>}</Label>\n    <div className={cx('ui-input-field__control', stacked && 'ui-input-field__control--stacked')}>{blockStart !== undefined && <div className=\"ui-input-group__block\" data-align=\"start\">{blockStart}</div>}{stacked ? <div className=\"ui-input-field__row\">{control}</div> : control}{blockEnd !== undefined && <div className=\"ui-input-group__block\" data-align=\"end\">{blockEnd}</div>}</div>\n    <FieldFeedback hint={hint} error={error}/>\n  </TextField>;\n}\n",
+      "sha256": "9fcddd095a0972e70cb391de936dfddd3beaff3e4243d459cef4f9e8e721d87c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 195,
+          "end": 205
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 239,
+          "end": 277
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 314,
+          "end": 351
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/pagination/pagination.tsx",
+      "content": "'use client';\n\nimport { RiArrowLeftLine, RiArrowRightLine } from '@remixicon/react';\nimport { cx } from '@/utils/cx';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\n\nexport type PaginationProps = {\n  page: number;\n  totalPages: number;\n  onPageChange: (page: number) => void;\n  siblingCount?: number;\n  className?: string;\n  'aria-label'?: string;\n};\n\nfunction visiblePages(page: number, total: number, siblings: number) {\n  const numbers = new Set([1, total]);\n  for (let value = Math.max(1, page - siblings); value <= Math.min(total, page + siblings); value++) numbers.add(value);\n  const sorted = [...numbers].sort((a, b) => a - b);\n  const result: Array<number | 'ellipsis'> = [];\n  sorted.forEach((value, index) => {\n    if (index > 0) {\n      const gap = value - sorted[index - 1];\n      if (gap === 2) result.push(value - 1);\n      if (gap > 2) result.push('ellipsis');\n    }\n    result.push(value);\n  });\n  return result;\n}\n\nexport function Pagination({ page, totalPages, onPageChange, siblingCount = 1, className, 'aria-label': ariaLabel = 'Pagination' }: PaginationProps) {\n  const total = Number.isFinite(totalPages) ? Math.max(1, Math.floor(totalPages)) : 1;\n  const current = Number.isFinite(page) ? Math.min(total, Math.max(1, Math.floor(page))) : 1;\n  const siblings = Number.isFinite(siblingCount) ? Math.max(0, Math.floor(siblingCount)) : 1;\n  return <nav className={cx('ui-pagination', className)} aria-label={ariaLabel}>\n    <button type=\"button\" className=\"ui-pagination__edge\" disabled={current === 1} onClick={() => onPageChange(current - 1)}><RiArrowLeftLine size={16} aria-hidden /> Previous</button>\n    <AnimatedHeight className=\"ui-pagination__range\"><div className=\"ui-pagination__pages\">{visiblePages(current, total, siblings).map((item, index) => item === 'ellipsis' ? <span className=\"ui-pagination__ellipsis\" aria-hidden=\"true\" key={`gap-${index}`}>···</span> : <button key={item} type=\"button\" aria-label={`Page ${item}`} aria-current={item === current ? 'page' : undefined} onClick={() => onPageChange(item)}>{item}</button>)}</div></AnimatedHeight>\n    <button type=\"button\" className=\"ui-pagination__edge\" disabled={current === total} onClick={() => onPageChange(current + 1)}>Next <RiArrowRightLine size={16} aria-hidden /></button>\n  </nav>;\n}\n",
+      "sha256": "cda5369a96cc80a06c53e37cf1479c3b87517467cb6a2ea0a3d6194e216a46c6",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 105,
+          "end": 115
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 150,
+          "end": 199
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/scroll-area/scroll-area.tsx",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type Ref, type RefObject } from 'react';\nimport { RiArrowDownSLine, RiArrowUpSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type ScrollAreaViewportProps = { ref: Ref<HTMLDivElement>; className: string; children: ReactNode };\nexport type ScrollAreaProps = {\n  children?: ReactNode;\n  label: string;\n  className?: string;\n  viewportClassName?: string;\n  orientation?: 'vertical' | 'horizontal' | 'both';\n  /** Let a collection own the scroll viewport, keeping its keyboard scrolling native. */\n  renderViewport?: (props: ScrollAreaViewportProps) => ReactElement;\n  /** Keep a pointer action in a searchable input without stealing its focus. */\n  preservePointerFocus?: boolean;\n  /** Restore a virtual collection's input when a focused edge disappears. */\n  focusRef?: RefObject<HTMLElement | null>;\n  /** Keep arrow controls outside the item viewport in constrained collections. */\n  indicatorPlacement?: 'overlay' | 'gutter';\n};\n\n/** Keep native scrolling, with directional controls only when content overflows. */\nexport function ScrollArea({ children, label, className, viewportClassName, renderViewport, orientation = 'vertical', preservePointerFocus = false, focusRef, indicatorPlacement='overlay' }: ScrollAreaProps) {\n  const viewport = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);\n  const [mountedViewport, setMountedViewport] = useState<HTMLDivElement | null>(null);\n  const setViewport = useCallback((element: HTMLDivElement | null) => {\n    viewport.current = element;\n    setMountedViewport(element);\n  }, []);\n  const [edges, setEdges] = useState({ up: false, down: false, left: false, right: false });\n  const measuredEdges = useRef(edges);\n  useLayoutEffect(() => {\n    const el = mountedViewport;\n    if (!el) return;\n    function measure() {\n      if (!el) return;\n      const up = orientation !== 'horizontal' && el.scrollTop > 1, down = orientation !== 'horizontal' && el.scrollHeight - el.clientHeight - el.scrollTop > 1;\n      const rtl = getComputedStyle(el).direction === 'rtl', maximum = el.scrollWidth - el.clientWidth;\n      const left = orientation !== 'vertical' && (rtl ? maximum + el.scrollLeft : el.scrollLeft) > 1;\n      const right = orientation !== 'vertical' && (rtl ? -el.scrollLeft : maximum - el.scrollLeft) > 1;\n      const next = { up, down, left, right };\n      const focusedEdge = document.activeElement?.closest('.ui-scroll-area__edge');\n      const direction = focusedEdge?.getAttribute('data-direction') as keyof typeof next | undefined;\n      if (focusedEdge && el.parentElement?.contains(focusedEdge) && direction && !next[direction]) (focusRef?.current ?? el).focus({ preventScroll: true });\n      if (Object.keys(next).some(key => measuredEdges.current[key as keyof typeof next] !== next[key as keyof typeof next])) {\n        measuredEdges.current = next;\n        setEdges(measuredEdges.current);\n      }\n    }\n    const observer = new ResizeObserver(measure);\n    const observed = new Set<Element>();\n    function observeContent() {\n      if (!el) return;\n      // A collection may not allow a wrapper between itself and its sections.\n      // Observe those sections directly so filtering and density changes are measured.\n      const next = new Set<Element>([el, ...el.children]);\n      for (const child of observed) if (!next.has(child)) { observer.unobserve(child); observed.delete(child); }\n      for (const child of next) if (!observed.has(child)) { observer.observe(child); observed.add(child); }\n      measure();\n    }\n    const mutations = new MutationObserver(observeContent);\n    mutations.observe(el, { childList: true, subtree: true });\n    observeContent();\n    el.addEventListener('scroll', measure, { passive: true });\n    return () => { observer.disconnect(); mutations.disconnect(); el.removeEventListener('scroll', measure); };\n  }, [focusRef, mountedViewport, orientation]);\n  function scroll(direction: number, horizontal = false) {\n    const el = viewport.current;\n    if (!el) return;\n    el.scrollBy({ [horizontal ? 'left' : 'top']: direction * Math.max(80, (horizontal ? el.clientWidth : el.clientHeight) * .7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });\n  }\n  return <div className={cx('ui-scroll-area', className)} data-orientation={orientation} data-indicator-placement={indicatorPlacement} data-overflow-y={edges.up || edges.down || undefined}>\n    {renderViewport ? renderViewport({ ref: setViewport, className: cx('ui-scroll-area__viewport', viewportClassName), children }) : <div ref={setViewport} className={cx('ui-scroll-area__viewport', viewportClassName)} role=\"region\" aria-label={label} tabIndex={0}><div ref={content} className=\"ui-scroll-area__content\">{children}</div></div>}\n    <div className=\"ui-scroll-area__edge\" data-direction=\"up\" data-visible={edges.up || undefined} aria-hidden={!edges.up}><IconButton icon={RiArrowUpSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} up`} disabled={!edges.up} tabIndex={edges.up ? 0 : -1} onClick={() => scroll(-1)}/></div>\n    <div className=\"ui-scroll-area__edge\" data-direction=\"down\" data-visible={edges.down || undefined} aria-hidden={!edges.down}><IconButton icon={RiArrowDownSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} down`} disabled={!edges.down} tabIndex={edges.down ? 0 : -1} onClick={() => scroll(1)}/></div>\n    {orientation !== 'vertical' && <>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"left\" data-visible={edges.left || undefined} aria-hidden={!edges.left}><IconButton icon={RiArrowLeftSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} left`} disabled={!edges.left} tabIndex={edges.left ? 0 : -1} onClick={() => scroll(-1, true)}/></div>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"right\" data-visible={edges.right || undefined} aria-hidden={!edges.right}><IconButton icon={RiArrowRightSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} right`} disabled={!edges.right} tabIndex={edges.right ? 0 : -1} onClick={() => scroll(1, true)}/></div>\n    </>}\n  </div>;\n}\n",
+      "sha256": "6a0b95325225bbeb5dbcfb3fc4d3069c72e5d022d897f9e6bee1e96c34243bcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 282,
+          "end": 319
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 342,
+          "end": 352
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/search-field/search-field.tsx",
+      "content": "'use client';\n\nimport { useImperativeHandle, useRef, useState, type Ref } from 'react';\nimport { RiSearchLine } from '@remixicon/react';\nimport { AnimatePresence, motion, useReducedMotion } from 'motion/react';\nimport { Input, type InputProps } from '@/components/base/input/input';\nimport { CloseButton } from '@/components/base/buttons/close-button';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport { cx } from '@/utils/cx';\n\nexport type SearchFieldProps = Omit<InputProps,'type'|'leading'|'trailing'|'trailingAction'|'inputRef'> & {isLoading?:boolean;onClear?:()=>void;inputRef?:Ref<HTMLInputElement>;};\nexport function SearchField({value,defaultValue='',onChange,onClear,isLoading=false,className,isDisabled,inputRef,...props}:SearchFieldProps) {\n  const [internal,setInternal]=useState(defaultValue),text=value??internal,input=useRef<HTMLInputElement>(null);\n  const reduced = useReducedMotion();\n  useImperativeHandle(inputRef,()=>input.current!,[]);\n  function change(next:string){if(value===undefined)setInternal(next);onChange?.(next);}\n  return <Input {...props} type=\"search\" aria-busy={isLoading || undefined} value={text} onChange={change} isDisabled={isDisabled} inputRef={input} className={cx('ui-search-field',className)} leading={<RiSearchLine size={17}/>} trailing={<AnimatePresence initial={false}>{isLoading && <motion.span className=\"ui-search-field__pending\" initial={{width:0,opacity:0}} animate={{width:14,opacity:1}} exit={{width:0,opacity:0}} transition={{duration:reduced?0:.16,ease:[.2,.75,.25,1]}}><Spinner size=\"xs\"/></motion.span>}</AnimatePresence>} trailingAction={text?<CloseButton size=\"xs\" aria-label={`Clear ${props.label.toLowerCase()}`} disabled={isDisabled} onClick={()=>{change('');onClear?.();input.current?.focus();}}/>:undefined}/>;\n}\n",
+      "sha256": "022eebdbdaf5bb8fc328eb64eb19a762523bab8749424e839a823146c6c86ce3",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/input/input",
+          "target": "components/base/input/input.tsx",
+          "start": 251,
+          "end": 280
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/close-button",
+          "target": "components/base/buttons/close-button.tsx",
+          "start": 312,
+          "end": 350
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 378,
+          "end": 411
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 434,
+          "end": 444
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/select/select.tsx",
+      "content": "'use client';\n\nimport { Select as AriaSelect, Label, Button, SelectValue, Popover, ListBox, ListBoxItem, SelectStateContext, type SelectProps as AriaSelectProps } from 'react-aria-components';\nimport { RiArrowDownSLine, RiCheckLine } from '@remixicon/react';\nimport {useOverlayPosition,usePreventScroll} from 'react-aria';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\nimport { useCallback, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';\nimport { ScrollArea } from '@/components/base/scroll-area/scroll-area';\nimport {useAnchorScrollGuard} from '@/hooks/use-anchor-scroll-guard';\nimport { FieldFeedback } from '@/components/base/input/field-feedback';\n\nfunction DisabledSelectCloser({isDisabled}:{isDisabled?:boolean}) {\n  const state=useContext(SelectStateContext);\n  usePreventScroll({isDisabled:!state?.isOpen});\n  useEffect(()=>{if(isDisabled&&state?.isOpen)state.close();},[isDisabled,state]);\n  return null;\n}\n\nfunction SelectTrigger({trigger,className,children}:{trigger:RefObject<HTMLButtonElement|null>;className?:string;children:ReactNode}) {\n  const state=useContext(SelectStateContext);\n  const dismissPress=useRef(false);\n  return <Button ref={trigger} render={domProps=><button {...domProps} aria-invalid={state?.displayValidation.isInvalid || undefined} onPointerDownCapture={event=>{\n    // Native select-style mouse presses open on down. A second press closes\n    // through the public state, before the native opening handler can run.\n    dismissPress.current=Boolean(state?.isOpen)&&event.button===0;\n    if(dismissPress.current){event.preventDefault();event.stopPropagation();state?.close();trigger.current?.focus({preventScroll:true});}\n  }} onClickCapture={event=>{if(dismissPress.current){event.preventDefault();event.stopPropagation();dismissPress.current=false;}}}/>} className={className}>{children}</Button>;\n}\n\nfunction SelectExitFocus({isExiting,trigger,surface,restore,children}:{isExiting:boolean;trigger:RefObject<HTMLButtonElement|null>;surface:RefObject<HTMLElement|null>;restore:RefObject<boolean>;children:ReactNode}) {\n  const state=useContext(SelectStateContext);\n  useEffect(()=>{\n    if(!state?.isOpen||isExiting)return;\n    const focusOnOpening=()=>{\n      const list=surface.current?.querySelector<HTMLElement>('[role=\"listbox\"]');\n      if(!list||list.contains(document.activeElement))return;\n      const options=[...list.querySelectorAll<HTMLElement>('.ui-select__option:not([data-disabled])')];\n      const selected=options.find(option=>option.hasAttribute('data-selected'));\n      const target=selected??(state.focusStrategy==='last'?options.at(-1):options[0])??list;\n      target.focus({preventScroll:true});\n    };\n    // A reversal keeps the collection mounted. Restore its focus only after\n    // containment resumes, without overwriting navigation already inside it.\n    const frame=requestAnimationFrame(focusOnOpening);\n    return()=>cancelAnimationFrame(frame);\n  },[isExiting,state?.isOpen,state?.collection.size,state?.focusStrategy,surface]);\n  useEffect(()=>{\n    if(!isExiting){\n      const element=surface.current;\n      const remember=()=>{restore.current=!!element?.contains(document.activeElement);};\n      remember();element?.addEventListener('focusin',remember);\n      return()=>element?.removeEventListener('focusin',remember);\n    }\n    if(!restore.current)return;\n    const active=document.activeElement,dialog=trigger.current?.closest('[role=\"dialog\"], [role=\"alertdialog\"]');\n    // The popover releases containment during exit. Its inert option may have\n    // blurred into the enclosing dialog; preserve deliberate focus elsewhere.\n    if(active===document.body||active===dialog||surface.current?.contains(active))trigger.current?.focus({preventScroll:true});\n    restore.current=false;\n  },[isExiting,restore,surface,trigger]);\n  return children;\n}\n\nexport type SelectOption = { id: string; label: string; detail?: string; leading?: ReactNode; isDisabled?: boolean };\nexport type SelectProps = Omit<AriaSelectProps<SelectOption>, 'children' | 'className' | 'items' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {\n  options: SelectOption[];\n  label?: string;\n  name?: string;\n  placeholder?: string;\n  selectedKey?: string | null;\n  defaultSelectedKey?: string;\n  onSelectionChange?: (key: string | null) => void;\n  isDisabled?: boolean;\n  className?: string;\n  triggerClassName?: string;\n  popoverClassName?: string;\n  hideIndicator?: boolean;\n  hideLabel?: boolean;\n  hint?: string;\n  error?: string;\n  size?: 'small' | 'medium' | 'large';\n  density?: 'comfortable' | 'compact' | 'touch';\n  isOpen?: boolean;\n  onOpenChange?: (isOpen: boolean) => void;\n  'aria-label'?: string;\n  'aria-describedby'?: string;\n};\n\nexport function Select({ options, label, name, placeholder = 'Select an option', selectedKey, defaultSelectedKey, onSelectionChange, isDisabled: disabled, className, triggerClassName, popoverClassName, hideIndicator = false, hideLabel = false, hint, error, isInvalid, size = 'medium', density = 'comfortable', isOpen, onOpenChange, 'aria-label': ariaLabel, 'aria-describedby': descriptionId, ...props }: SelectProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const trigger=useRef<HTMLButtonElement>(null),surface=useRef<HTMLElement>(null);\n  const [surfaceMounted,setSurfaceMounted]=useState(false);\n  const setSurface=useCallback((element:HTMLElement|null)=>{surface.current=element;setSurfaceMounted(Boolean(element));},[]);\n  const restoreOnExit=useRef(false);\n  const [internalOpen,setInternalOpen]=useState(false);\n  const open=isOpen??internalOpen;\n  const ignoreScrollClose=useAnchorScrollGuard(open,trigger);\n  const position=useOverlayPosition({targetRef:trigger,overlayRef:surface,isOpen:open||surfaceMounted,placement:'bottom start',offset:6,maxHeight:312,onClose:null});\n  useEffect(()=>{\n    if(!open&&!surfaceMounted)return;let frame=0,previous='';\n    // An ancestor can move during a height/grid transition without resizing\n    // the trigger. Follow its actual rectangle through the public position hook.\n    // Keep following during exit: the surface is painted until it unmounts.\n    function follow(){const rect=trigger.current?.getBoundingClientRect();if(rect){const next=[rect.x,rect.y,rect.width,rect.height].join(':');if(next!==previous){previous=next;position.updatePosition();}}frame=requestAnimationFrame(follow);}\n    frame=requestAnimationFrame(follow);return()=>cancelAnimationFrame(frame);\n  },[open,surfaceMounted,position.updatePosition]);\n  function changeOpen(open:boolean){\n    if(!open&&ignoreScrollClose())return;\n    if(isOpen===undefined)setInternalOpen(open);\n    restoreOnExit.current=!open&&!!surface.current?.contains(document.activeElement);\n    onOpenChange?.(open);\n  }\n  return <AriaSelect {...props} name={name} selectedKey={selectedKey} defaultSelectedKey={defaultSelectedKey} onSelectionChange={key => onSelectionChange?.(key == null ? null : String(key))} isDisabled={isDisabled} isInvalid={error ? true : isInvalid} isOpen={open} onOpenChange={changeOpen} aria-describedby={descriptionId} aria-label={ariaLabel ?? (label ? undefined : placeholder)} data-size={size} className={cx('ui-select', className)}>\n    <DisabledSelectCloser isDisabled={isDisabled}/>\n    {label && <Label className={cx('ui-select__label',hideLabel && 'sr-only')}>{label}{props.isRequired && <span aria-hidden>*</span>}</Label>}\n    <SelectTrigger trigger={trigger} className={cx('ui-select__trigger', triggerClassName)}><SelectValue<SelectOption>>{({ selectedItem, selectedText }) => <span className=\"ui-select__value\">{selectedItem?.leading}<span>{selectedText || placeholder}</span></span>}</SelectValue>{!hideIndicator && <RiArrowDownSLine size={16} aria-hidden />}</SelectTrigger>\n    <Popover isNonModal style={position.overlayProps.style} ref={setSurface} data-density={density} className={cx('ui-select__popover', popoverClassName)} placement=\"bottom start\" offset={6} maxHeight={312}>{({isExiting})=><SelectExitFocus isExiting={isExiting} trigger={trigger} surface={surface} restore={restoreOnExit}><div className=\"ui-select__surface\" inert={isExiting || Boolean(isDisabled)}><ScrollArea indicatorPlacement=\"gutter\" label={`${label ?? ariaLabel ?? 'Select'} options`} className=\"ui-select__scroll\" renderViewport={({ref,className:viewportClassName})=><ListBox ref={ref} className={cx('ui-select__list',viewportClassName)} items={options}>{item => <ListBoxItem id={item.id} textValue={item.label} isDisabled={item.isDisabled} className=\"ui-select__option\"><span><strong>{item.leading && <span className=\"ui-select__leading\">{item.leading}</span>}{item.label}</strong>{item.detail && <small>{item.detail}</small>}</span><RiCheckLine size={16} aria-hidden /></ListBoxItem>}</ListBox>}/></div></SelectExitFocus>}</Popover>\n    <FieldFeedback hint={hint} error={error}/>\n  </AriaSelect>;\n}\n",
+      "sha256": "5ed12c96b0129996fd858fa720369c41e772da54ae1604e8c7453fc4b44c55c3",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 343,
+          "end": 353
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 390,
+          "end": 427
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 568,
+          "end": 609
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-anchor-scroll-guard",
+          "target": "hooks/use-anchor-scroll-guard.ts",
+          "start": 648,
+          "end": 679
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/input/field-feedback",
+          "target": "components/base/input/field-feedback.tsx",
+          "start": 713,
+          "end": 751
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/data-table/data-table-row.tsx",
+      "content": "'use client';\n\nimport {useLayoutEffect,useRef,type ReactNode} from 'react';\nimport {animate,motion,usePresence,useReducedMotion} from 'motion/react';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\n\n/** Native rows collapse their cells together; outgoing controls become inert at once. */\nexport function DataTableRow({children,id,isSelected,animateOnMount}:{children:ReactNode;id:string;isSelected?:boolean;animateOnMount:boolean}) {\n const root=useRef<HTMLTableRowElement>(null),[present,safeToRemove]=usePresence(),reduced=useReducedMotion(),tokens=useMotionTokens(root),entered=useRef(!animateOnMount),lastPresent=useRef(true);\n useLayoutEffect(()=>{\n  const row=root.current,reversing=present&&!lastPresent.current;lastPresent.current=present;if(!row||present&&entered.current&&!reversing)return;\n  let cancelled=false;\n  const cells=[...row.cells].map(cell=>{const inner=cell.firstElementChild as HTMLElement;return {cell,inner,current:{height:cell.getBoundingClientRect().height,inner:inner.getBoundingClientRect().height,top:parseFloat(getComputedStyle(cell).paddingTop),bottom:parseFloat(getComputedStyle(cell).paddingBottom)}};});\n  for(const {cell,inner} of cells){cell.style.height='';cell.style.paddingTop='';cell.style.paddingBottom='';inner.style.height='';}\n  const controls=cells.flatMap(({cell,inner,current})=>{\n   const end={height:cell.getBoundingClientRect().height,inner:inner.getBoundingClientRect().height,top:parseFloat(getComputedStyle(cell).paddingTop),bottom:parseFloat(getComputedStyle(cell).paddingBottom)};\n   const from=present&&!entered.current?{height:0,inner:0,top:0,bottom:0}:current;\n   inner.style.overflow='hidden';\n   return [animate(cell,{height:[from.height,present?end.height:0],paddingTop:[from.top,present?end.top:0],paddingBottom:[from.bottom,present?end.bottom:0]},{duration:reduced?0:tokens.standard,ease:tokens.ease}),animate(inner,{height:[from.inner,present?end.inner:0]},{duration:reduced?0:tokens.standard,ease:tokens.ease})];\n  });\n  const rowStyle=getComputedStyle(row),rowPadding={top:parseFloat(rowStyle.paddingTop)||0,bottom:parseFloat(rowStyle.paddingBottom)||0,gap:parseFloat(rowStyle.rowGap)||0};\n  controls.push(animate(row,{opacity:[present&&!entered.current?0:+getComputedStyle(row).opacity,present?1:0],paddingTop:[rowPadding.top,present?rowPadding.top:0],paddingBottom:[rowPadding.bottom,present?rowPadding.bottom:0],rowGap:[rowPadding.gap,present?rowPadding.gap:0]},{duration:reduced?0:tokens.standard,ease:tokens.ease}));\n  Promise.all(controls).then(()=>{if(cancelled)return;if(present){entered.current=true;row.style.opacity='';row.style.paddingTop='';row.style.paddingBottom='';row.style.rowGap='';for(const {cell,inner} of cells){cell.style.height='';cell.style.paddingTop='';cell.style.paddingBottom='';inner.style.height='';inner.style.overflow='';}}else safeToRemove?.();});\n  return()=>{cancelled=true;for(const control of controls)control.stop();};\n },[present,reduced,tokens.standard,tokens.ease,safeToRemove]);\n return <motion.tr layout=\"position\" transition={{duration:reduced?0:tokens.standard,ease:tokens.ease}} ref={root} data-row-id={id} data-selected={isSelected||undefined} data-exiting={!present||undefined} inert={!present} aria-hidden={!present||undefined}>{children}</motion.tr>;\n}\n",
+      "sha256": "23ff81ff8d53675cb6ef06b1af2d10cea8d77ef427043ed344b876c2c55e5529",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 181,
+          "end": 206
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/data-table/data-table.tsx",
+      "content": "'use client';\n\nimport { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';\nimport { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type RowData, type RowSelectionState, type SortingState } from '@tanstack/react-table';\nimport { RiArrowDownSLine } from '@remixicon/react';\nimport { Pagination } from '@/components/base/pagination/pagination';\nimport { SearchField } from '@/components/base/search-field/search-field';\nimport { Select } from '@/components/base/select/select';\nimport { cx } from '@/utils/cx';\nimport {AnimatePresence} from 'motion/react';\nimport {AnimatedHeight} from '@/components/base/animated-height/animated-height';\nimport {ScrollArea} from '@/components/base/scroll-area/scroll-area';\nimport {DataTableRow} from './data-table-row';\n\ndeclare module '@tanstack/react-table' {\n  interface ColumnMeta<TData extends RowData, TValue> {\n    width?: number;\n  }\n}\n\nexport type DataTableFilter<T> = { id: string; label: string; ariaLabel?: string; options: { value: string; label: string }[]; getValue: (row: T) => string };\nexport type DataTableProps<T> = {\n  data: T[];\n  columns: ColumnDef<T, any>[];\n  getRowId: (row: T) => string;\n  filters?: DataTableFilter<T>[];\n  pageSize?: number;\n  size?: 'md' | 'sm';\n  searchPlaceholder?: string;\n  resultLabel?: string;\n  defaultSelectedRowIds?: string[];\n  onSelectionChange?: (rows: T[]) => void;\n  enableRowSelection?:boolean;\n  showPagination?:boolean;\n  toolbarActions?:ReactNode;\n  emptyState?: ReactNode;\n  className?: string;\n};\n\nexport function DataTable<T>({ data, columns, getRowId, filters = [], pageSize = 8, size = 'md', searchPlaceholder = 'Search', resultLabel = 'results', defaultSelectedRowIds = [], onSelectionChange, enableRowSelection=true, showPagination=true, toolbarActions, emptyState = 'No results found.', className }: DataTableProps<T>) {\n  const [sorting, setSorting] = useState<SortingState>([]);\n  const [selection, setSelection] = useState<RowSelectionState>(() => Object.fromEntries(defaultSelectedRowIds.map(id => [id, true])));\n  const [search, setSearch] = useState('');\n  const [filterValues, setFilterValues] = useState<Record<string, string>>({});\n  const [pageIndex, setPageIndex] = useState(0);\n  const lastReportedSelection = useRef(selection);\n  const hydrated=useRef(false);useEffect(()=>{hydrated.current=true;},[]);\n  const selectionProps = useRef({ data, getRowId, onSelectionChange });\n  const effectivePageSize=showPagination?(Number.isFinite(pageSize)?Math.max(1,Math.floor(pageSize)):8):Math.max(1,data.length);\n  selectionProps.current = { data, getRowId, onSelectionChange };\n\n  const filteredData = useMemo(() => data.filter(row => filters.every(filter => !filterValues[filter.id] || filterValues[filter.id] === 'all' || filter.getValue(row) === filterValues[filter.id])), [data, filters, filterValues]);\n\n  useEffect(() => {\n    const validIds = new Set(data.map(getRowId));\n    setSelection(current => Object.keys(current).some(id => !validIds.has(id)) ? Object.fromEntries(Object.entries(current).filter(([id]) => validIds.has(id))) : current);\n  }, [data, getRowId]);\n\n  useEffect(() => {\n    if (selection === lastReportedSelection.current) return;\n    lastReportedSelection.current = selection;\n    const { data: rows, getRowId: rowId, onSelectionChange: notify } = selectionProps.current;\n    notify?.(rows.filter(row => selection[rowId(row)]));\n  }, [selection]);\n\n  const table = useReactTable({\n    data: filteredData, columns, getRowId,\n    state: { sorting, rowSelection: selection, globalFilter: search, pagination: { pageIndex, pageSize:effectivePageSize } },\n    onSortingChange: setSorting,\n    onRowSelectionChange: setSelection,\n    onPaginationChange: updater => {\n      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize:effectivePageSize }) : updater;\n      setPageIndex(next.pageIndex);\n    },\n    getCoreRowModel: getCoreRowModel(), getFilteredRowModel: getFilteredRowModel(), getSortedRowModel: getSortedRowModel(), getPaginationRowModel: getPaginationRowModel(),\n    enableRowSelection,\n  });\n  const visibleRows = table.getRowModel().rows;\n  const totalPages = Math.max(1, table.getPageCount());\n  const selectedCount = Object.values(selection).filter(Boolean).length;\n\n  useEffect(() => { if (pageIndex >= totalPages) setPageIndex(totalPages - 1); }, [pageIndex, totalPages]);\n\n  return <div className={cx('ui-data-table', className)} data-size={size}>\n    <div className=\"ui-data-table__toolbar\">\n      <div className=\"ui-data-table__count\"><span>Total Results</span><strong>{table.getFilteredRowModel().rows.length} {resultLabel}</strong></div>\n      {filters.length > 0 && <div className=\"ui-data-table__filters\">{filters.map(filter => <Select key={filter.id} aria-label={filter.ariaLabel ?? filter.label} selectedKey={filterValues[filter.id] ?? 'all'} options={[{id:'all',label:filter.label},...filter.options.map(option=>({id:option.value,label:option.label}))]} onSelectionChange={value=>{setFilterValues(current=>({...current,[filter.id]:value??'all'}));setPageIndex(0);}}/>)}</div>}\n      <SearchField label={searchPlaceholder} hideLabel className=\"ui-data-table__search\" value={search} onChange={value=>{setSearch(value);setPageIndex(0);}} placeholder={searchPlaceholder}/>\n      {toolbarActions&&<div className=\"ui-data-table__toolbar-actions\">{toolbarActions}</div>}\n    </div>\n    <AnimatedHeight><ScrollArea className=\"ui-data-table__scroll\" orientation=\"horizontal\" label=\"Table columns\" renderViewport={({ref,className,children})=><div ref={ref} className={cx(className,'ui-data-table__viewport')} role=\"region\" aria-label=\"Table columns\" tabIndex={0}>{children}</div>}>\n      <table className=\"ui-table\" aria-label={`${resultLabel} table`}>\n        <thead>{table.getHeaderGroups().map(group => <tr key={group.id}>\n          {enableRowSelection&&<th className=\"ui-data-table__select\" scope=\"col\"><input type=\"checkbox\" aria-label=\"Select all visible rows\" disabled={visibleRows.length === 0} checked={visibleRows.length > 0 && table.getIsAllPageRowsSelected()} ref={element => { if (element) element.indeterminate = table.getIsSomePageRowsSelected(); }} onChange={table.getToggleAllPageRowsSelectedHandler()} /></th>}\n          {group.headers.map(header => <th scope=\"col\" key={header.id} style={{ width: header.column.columnDef.meta?.width }} aria-sort={header.column.getIsSorted() === 'asc' ? 'ascending' : header.column.getIsSorted() === 'desc' ? 'descending' : undefined}>\n            {header.column.getCanSort() ? <button type=\"button\" onClick={header.column.getToggleSortingHandler()}>{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}<RiArrowDownSLine className=\"ui-data-table__sort-indicator\" data-sort={header.column.getIsSorted()||'none'} size={16} aria-hidden/></button> : header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}\n          </th>)}\n        </tr>)}</thead>\n        <tbody><AnimatePresence initial={false}>{visibleRows.length ? visibleRows.map(row => <DataTableRow key={`row:${row.id}`} id={row.id} isSelected={enableRowSelection&&row.getIsSelected()} animateOnMount={hydrated.current}>\n          {enableRowSelection&&<td className=\"ui-data-table__select\"><div className=\"ui-data-table__cell\"><input type=\"checkbox\" aria-label={`Select row ${row.id}`} checked={row.getIsSelected()} onChange={row.getToggleSelectedHandler()} /></div></td>}\n          {row.getVisibleCells().map(cell => <td key={cell.id} data-column={cell.column.id} style={{ width: cell.column.columnDef.meta?.width }}><div className=\"ui-data-table__cell\">{flexRender(cell.column.columnDef.cell, cell.getContext())}</div></td>)}\n        </DataTableRow>) : <DataTableRow key=\"empty\" id=\"empty\" animateOnMount={hydrated.current}><td className=\"ui-data-table__empty\" colSpan={columns.length + (enableRowSelection?1:0)}><div className=\"ui-data-table__cell\">{emptyState}</div></td></DataTableRow>}</AnimatePresence></tbody>\n      </table>\n    </ScrollArea></AnimatedHeight>\n    <div className=\"ui-data-table__foot\"><span>{enableRowSelection?`${selectedCount} selected`:`${table.getFilteredRowModel().rows.length} of ${data.length} ${resultLabel}`}</span>{showPagination&&<Pagination page={Math.min(pageIndex + 1, totalPages)} totalPages={totalPages} onPageChange={page => setPageIndex(page - 1)} />}</div>\n  </div>;\n}\n",
+      "sha256": "84c2ad796af87e5b5ac4bef2d8a613d1d2d6def09518813afc7c81d7f03b47d2",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/pagination/pagination",
+          "target": "components/base/pagination/pagination.tsx",
+          "start": 394,
+          "end": 433
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/search-field/search-field",
+          "target": "components/base/search-field/search-field.tsx",
+          "start": 465,
+          "end": 508
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/select/select",
+          "target": "components/base/select/select.tsx",
+          "start": 535,
+          "end": 566
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 589,
+          "end": 599
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 678,
+          "end": 727
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 756,
+          "end": 797
+        },
+        {
+          "kind": "module",
+          "value": "./data-table-row",
+          "target": "components/blocks/data-table/data-table-row.tsx",
+          "start": 828,
+          "end": 844
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-anchor-scroll-guard.ts",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';\n\n/** Ignore only a queued scroll's dismissal when its anchor did not move. */\nexport function useAnchorScrollGuard(isOpen: boolean, anchor: RefObject<Element|null>|undefined) {\n  const guard=useRef<(()=>boolean)|null>(null);\n  useLayoutEffect(()=>{\n    const trigger=anchor?.current;if(!isOpen||!trigger)return;\n    const openedAt=trigger.getBoundingClientRect();\n    let unchanged=false,scrollEvent:Event|null=null;\n    const ignore=()=>unchanged&&scrollEvent!==null&&scrollEvent.eventPhase!==Event.NONE;\n    guard.current=ignore;\n    function onScroll(event:Event){\n      if(event.target instanceof Node&&!event.target.contains(trigger??null))return;\n      const current=trigger!.getBoundingClientRect();\n      unchanged=Math.abs(current.x-openedAt.x)<.5&&Math.abs(current.y-openedAt.y)<.5;\n      scrollEvent=event;\n    }\n    window.addEventListener('scroll',onScroll,true);\n    return()=>{window.removeEventListener('scroll',onScroll,true);if(guard.current===ignore)guard.current=null;};\n  },[isOpen,anchor]);\n  return useCallback(()=>guard.current?.()??false,[]);\n}\n",
+      "sha256": "0a69c28c08d424b9cb5b0c485c83027aee9972154e7dddc1e6e5da87b07e6594",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "@tanstack/react-table": "^8.21.3",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-close-button",
+      "ui-data-table",
+      "ui-data-table__cell",
+      "ui-data-table__count",
+      "ui-data-table__empty",
+      "ui-data-table__filters",
+      "ui-data-table__foot",
+      "ui-data-table__scroll",
+      "ui-data-table__search",
+      "ui-data-table__select",
+      "ui-data-table__sort-indicator",
+      "ui-data-table__toolbar",
+      "ui-data-table__toolbar-actions",
+      "ui-data-table__viewport",
+      "ui-field-feedback",
+      "ui-field-feedback__error",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-input-field",
+      "ui-input-field__action",
+      "ui-input-field__adornment",
+      "ui-input-field__control",
+      "ui-input-field__control--stacked",
+      "ui-input-field__input",
+      "ui-input-field__label",
+      "ui-input-field__message",
+      "ui-input-field__row",
+      "ui-input-group__block",
+      "ui-pagination",
+      "ui-pagination__edge",
+      "ui-pagination__ellipsis",
+      "ui-pagination__pages",
+      "ui-pagination__range",
+      "ui-scroll-area",
+      "ui-scroll-area__content",
+      "ui-scroll-area__edge",
+      "ui-scroll-area__viewport",
+      "ui-search-field",
+      "ui-search-field__pending",
+      "ui-select",
+      "ui-select__label",
+      "ui-select__leading",
+      "ui-select__list",
+      "ui-select__option",
+      "ui-select__popover",
+      "ui-select__scroll",
+      "ui-select__surface",
+      "ui-select__trigger",
+      "ui-select__value",
+      "ui-spinner",
+      "ui-table"
+    ],
+    "prefixes": []
+  }
+}

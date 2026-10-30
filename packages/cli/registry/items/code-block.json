@@ -1,0 +1,312 @@
+{
+  "name": "code-block",
+  "title": "Code Block",
+  "group": "Base",
+  "type": "component",
+  "description": "A shared code surface with exact-source copying, animated format changes, optional line numbers, highlighted lines, wrapping and native scrolling. Code remains selectable and the surrounding layout follows content height.",
+  "sections": [
+    "Preview",
+    "Lines and wrapping",
+    "Long code",
+    "Surfaces and density",
+    "Empty and disabled"
+  ],
+  "example": "<CodeBlock code={source} label=\"theme.css\" language=\"CSS\"\n  lineNumbers highlightedLines={[2, 3]} wrap maxHeight={280}\n  onCopy={notify} />\n\n<CodeBlock examples={commands} label=\"Install\"\n  value={format} onValueChange={setFormat} />",
+  "entryFiles": [
+    "components/base/code-block/code-block.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/code-block/code-block.tsx",
+      "names": [
+        "CodeBlock",
+        "CodeBlockProps",
+        "CodeExample"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/buttons/icon-button.tsx",
+      "content": "'use client';\n\nimport {useMemo,useRef,type AnchorHTMLAttributes,type ButtonHTMLAttributes,type Ref} from 'react';\nimport {mergeRefs} from 'react-aria';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport { Button as AriaButton, ProgressBar as AriaProgressBar, type ButtonProps as AriaButtonProps } from 'react-aria-components';\nimport { AnimatePresence, motion } from 'motion/react';\nimport { useMediaQuery } from '@/hooks/use-media-query';\nimport { Spinner } from '@/components/base/spinner/spinner';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type IconButtonSize = 'medium' | 'small' | 'xs';\n\nexport type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label' | 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick'> & Pick<AriaButtonProps, 'onFocus' | 'onBlur' | 'onKeyDown' | 'onKeyUp' | 'onClick' | 'isPending' | 'preventFocusOnPress'> & {\n  icon: IconComponent;\n  /** Animate a glyph change without moving or remounting its button. */\n  iconKey?: string | number;\n  pendingLabel?: string;\n  size?: IconButtonSize;\n  variant?: 'secondary' | 'ghost';\n  badge?: number;\n  ref?: Ref<HTMLButtonElement>;\n  'aria-label': string;\n};\n\nexport type IconLinkButtonProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'aria-label'> & {\n  icon: IconComponent;\n  size?: IconButtonSize;\n  'aria-label': string;\n};\n\nexport function IconButton({ icon: Icon, iconKey, pendingLabel = 'Working', isPending, size = 'medium', variant = 'secondary', badge, className, type = 'button', disabled, value, ref, ...props }: IconButtonProps) {\n  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');\n  const root=useRef<HTMLButtonElement>(null),composed=useMemo(()=>mergeRefs(root,ref),[ref]),tokens=useMotionTokens(root);\n  return <AriaButton {...props} ref={composed} type={type} value={value === undefined ? undefined : String(value)} isDisabled={disabled} isPending={isPending} data-size={size} data-variant={variant} className={cx('ui-icon-button', className)}>{iconKey === undefined ? <Icon className=\"ui-icon-button__icon\" aria-hidden /> : <span className=\"ui-icon-button__glyph\" aria-hidden><AnimatePresence initial={false}><motion.span key={iconKey} data-icon-key={iconKey} initial={reducedMotion ? false : { opacity: 0, scale: .65, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .65, y: -2 }} transition={{ duration: reducedMotion ? 0 : tokens.fast, ease: tokens.ease }}><Icon className=\"ui-icon-button__icon\"/></motion.span></AnimatePresence></span>}<span className=\"ui-icon-button__pending\" aria-hidden><Spinner size={size === 'medium' ? 'md' : 'sm'}/></span>{isPending && <AriaProgressBar aria-label={pendingLabel} isIndeterminate className=\"sr-only\"/>}{badge !== undefined && badge > 0 && <span className=\"ui-icon-button__badge\" aria-hidden>{badge > 99 ? '99+' : badge}</span>}</AriaButton>;\n}\n\nexport function IconLinkButton({ icon: Icon, size = 'medium', className, ...props }: IconLinkButtonProps) {\n  return <a data-size={size} className={cx('ui-icon-button', className)} {...props}><Icon className=\"ui-icon-button__icon\" aria-hidden /></a>;\n}\n",
+      "sha256": "a7c58cc10a7a3cb09ff9f351f9a066b55aba9d28bf123050a4c688a09f945e5f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 183,
+          "end": 208
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 429,
+          "end": 452
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 480,
+          "end": 513
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 552,
+          "end": 587
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 610,
+          "end": 620
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/code-block/code-block.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';\nimport { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';\nimport { RiCheckLine, RiFileCopyLine, RiLoader4Line } from '@remixicon/react';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { ScrollArea } from '@/components/base/scroll-area/scroll-area';\nimport { SegmentedControl } from '@/components/base/segmented-control/segmented-control';\nimport { Tooltip } from '@/components/base/tooltip/tooltip';\nimport { cx } from '@/utils/cx';\n\nexport type CodeExample = { value: string; label: string; code: string; language?: string };\nexport type CodeBlockProps = {\n  code?: string;\n  examples?: CodeExample[];\n  label?: string;\n  language?: string;\n  value?: string;\n  defaultValue?: string;\n  onValueChange?: (value: string) => void;\n  onCopy?: (message: string) => void;\n  disabled?: boolean;\n  lineNumbers?: boolean;\n  startLine?: number;\n  highlightedLines?: number[];\n  wrap?: boolean;\n  maxHeight?: number | string;\n  /** Fill a flex parent's remaining height instead of measuring natural height. */\n  fill?: boolean;\n  density?: 'normal' | 'compact';\n  variant?: 'soft' | 'bordered' | 'plain';\n  /** Hide the header/actions when the consuming toolbar already provides them. */\n  showHeader?: boolean;\n  showCopy?: boolean;\n  headerAction?: ReactNode;\n  /** Supply a highlighter without changing the source copied to the clipboard. */\n  renderLine?: (line: string, lineNumber: number) => ReactNode;\n  contentKey?: string;\n  className?: string;\n};\n\nfunction CodeContent({ source, lineNumbers, startLine, highlightedLines, renderLine }: Pick<CodeBlockProps, 'lineNumbers' | 'highlightedLines' | 'renderLine'> & { source: string; startLine: number }) {\n  const present = useIsPresent();\n  return <pre className=\"ui-code-block__source\" dir=\"ltr\" inert={!present} aria-hidden={!present || undefined}><code>{source.split('\\n').map((line, index) => {\n    const number = startLine + index;\n    return <span className=\"ui-code-block__line\" key={index} data-highlighted={highlightedLines?.includes(number) || undefined}>\n      {lineNumbers && <span className=\"ui-code-block__number\" aria-hidden>{number}</span>}\n      <span className=\"ui-code-block__text\">{renderLine ? renderLine(line, number) : line || ' '}</span>\n    </span>;\n  })}</code></pre>;\n}\n\nexport function CodeBlock({ code, examples = [], label = 'Code', language, value, defaultValue, onValueChange, onCopy, disabled = false, lineNumbers = false, startLine = 1, highlightedLines, wrap = false, maxHeight, fill = false, density = 'normal', variant = 'soft', showHeader = true, showCopy = true, headerAction, renderLine, contentKey, className }: CodeBlockProps) {\n  const [internal, setInternal] = useState(defaultValue ?? examples[0]?.value ?? '');\n  const [copied, setCopied] = useState(false), [status, setStatus] = useState(''), [pending, setPending] = useState(false);\n  const example = examples.find(item => item.value === (value ?? internal)) ?? examples[0];\n  const source = code ?? example?.code ?? '';\n  const identity = `${label}:${contentKey ?? (code === undefined ? example?.value : '') ?? ''}:${source}`;\n  const currentIdentity = useRef(identity), request = useRef(0), resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);\n  const reduced = useReducedMotion();\n  useLayoutEffect(() => {\n    currentIdentity.current = identity;\n    request.current += 1;\n    clearTimeout(resetTimer.current);\n    setCopied(false); setStatus(''); setPending(false);\n    return () => { request.current += 1; clearTimeout(resetTimer.current); };\n  }, [identity]);\n  async function copy() {\n    if (disabled || pending || !source) return;\n    const sequence = ++request.current, capturedIdentity = identity;\n    clearTimeout(resetTimer.current); setPending(true); setCopied(false); setStatus(`Copying ${label.toLowerCase()}…`);\n    try {\n      await navigator.clipboard.writeText(source);\n      if (sequence !== request.current || capturedIdentity !== currentIdentity.current) return;\n      setCopied(true); setStatus(`${label} copied.`); onCopy?.(`${label} copied.`);\n      resetTimer.current = setTimeout(() => { setCopied(false); setStatus(''); }, 2200);\n    } catch {\n      if (sequence === request.current && capturedIdentity === currentIdentity.current) setStatus('Could not copy. Select the code to copy it manually.');\n    } finally {\n      if (sequence === request.current && capturedIdentity === currentIdentity.current) setPending(false);\n    }\n  }\n  const count = source.split('\\n').length;\n  const firstLine = Number.isFinite(startLine) ? Math.min(Number.MAX_SAFE_INTEGER - count, Math.max(1, Math.trunc(startLine))) : 1;\n  return <div className={cx('ui-code-block', className)} data-density={density} data-variant={variant} data-wrap={wrap || undefined} data-fill={fill || undefined} aria-busy={pending || undefined} style={{ '--code-max-height': typeof maxHeight === 'number' ? Number.isFinite(maxHeight) ? `${Math.max(0, maxHeight)}px` : undefined : maxHeight, '--code-number-width': `${Math.max(2, String(firstLine + count - 1).length) + 2}ch` } as CSSProperties}>\n    {showHeader && <header className=\"ui-code-block__header\">\n      {code === undefined && examples.length > 1 ? <SegmentedControl aria-label={`${label} format`} options={examples} value={example?.value} onValueChange={next => { if (value === undefined) setInternal(next); onValueChange?.(next); }}/> : <span className=\"ui-code-block__label\" title={label}>{label}</span>}\n      <div className=\"ui-code-block__actions\">{(language ?? example?.language) && <span className=\"ui-code-block__language\">{language ?? example?.language}</span>}{headerAction}\n        {showCopy && <Tooltip content={copied ? 'Copied' : pending ? 'Copying code' : 'Copy code'}><IconButton icon={pending ? RiLoader4Line : copied ? RiCheckLine : RiFileCopyLine} iconKey={pending ? 'pending' : copied ? 'copied' : 'copy'} size=\"xs\" variant=\"ghost\" disabled={disabled || !source} isPending={pending} pendingLabel=\"Copying code\" aria-label={`Copy ${label.toLowerCase()}`} onClick={copy}/></Tooltip>}\n      </div>\n    </header>}\n    <AnimatedHeight className=\"ui-code-block__body\"><ScrollArea label={label} orientation=\"both\" className=\"ui-code-block__scroll\" viewportClassName=\"ui-code-block__viewport\">\n      <AnimatePresence initial={false} mode=\"popLayout\"><motion.div key={identity} className=\"ui-code-block__content\" initial={reduced ? false : { opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: reduced ? 0 : .16, ease: [.2,.75,.25,1] }}>\n        <CodeContent source={source} lineNumbers={lineNumbers} startLine={firstLine} highlightedLines={highlightedLines} renderLine={renderLine}/>\n      </motion.div></AnimatePresence>\n    </ScrollArea></AnimatedHeight>\n    <span className=\"sr-only\" role=\"status\">{status}</span>\n  </div>;\n}\n",
+      "sha256": "dd8af070de81a167e754c9668f90b269feda28ebff1d7984c22fd52bea25f5df",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 309,
+          "end": 358
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 389,
+          "end": 426
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/scroll-area/scroll-area",
+          "target": "components/base/scroll-area/scroll-area.tsx",
+          "start": 457,
+          "end": 498
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/segmented-control/segmented-control",
+          "target": "components/base/segmented-control/segmented-control.tsx",
+          "start": 535,
+          "end": 588
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/tooltip/tooltip",
+          "target": "components/base/tooltip/tooltip.tsx",
+          "start": 616,
+          "end": 649
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 672,
+          "end": 682
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/scroll-area/scroll-area.tsx",
+      "content": "'use client';\n\nimport { useCallback, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type Ref, type RefObject } from 'react';\nimport { RiArrowDownSLine, RiArrowUpSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type ScrollAreaViewportProps = { ref: Ref<HTMLDivElement>; className: string; children: ReactNode };\nexport type ScrollAreaProps = {\n  children?: ReactNode;\n  label: string;\n  className?: string;\n  viewportClassName?: string;\n  orientation?: 'vertical' | 'horizontal' | 'both';\n  /** Let a collection own the scroll viewport, keeping its keyboard scrolling native. */\n  renderViewport?: (props: ScrollAreaViewportProps) => ReactElement;\n  /** Keep a pointer action in a searchable input without stealing its focus. */\n  preservePointerFocus?: boolean;\n  /** Restore a virtual collection's input when a focused edge disappears. */\n  focusRef?: RefObject<HTMLElement | null>;\n  /** Keep arrow controls outside the item viewport in constrained collections. */\n  indicatorPlacement?: 'overlay' | 'gutter';\n};\n\n/** Keep native scrolling, with directional controls only when content overflows. */\nexport function ScrollArea({ children, label, className, viewportClassName, renderViewport, orientation = 'vertical', preservePointerFocus = false, focusRef, indicatorPlacement='overlay' }: ScrollAreaProps) {\n  const viewport = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);\n  const [mountedViewport, setMountedViewport] = useState<HTMLDivElement | null>(null);\n  const setViewport = useCallback((element: HTMLDivElement | null) => {\n    viewport.current = element;\n    setMountedViewport(element);\n  }, []);\n  const [edges, setEdges] = useState({ up: false, down: false, left: false, right: false });\n  const measuredEdges = useRef(edges);\n  useLayoutEffect(() => {\n    const el = mountedViewport;\n    if (!el) return;\n    function measure() {\n      if (!el) return;\n      const up = orientation !== 'horizontal' && el.scrollTop > 1, down = orientation !== 'horizontal' && el.scrollHeight - el.clientHeight - el.scrollTop > 1;\n      const rtl = getComputedStyle(el).direction === 'rtl', maximum = el.scrollWidth - el.clientWidth;\n      const left = orientation !== 'vertical' && (rtl ? maximum + el.scrollLeft : el.scrollLeft) > 1;\n      const right = orientation !== 'vertical' && (rtl ? -el.scrollLeft : maximum - el.scrollLeft) > 1;\n      const next = { up, down, left, right };\n      const focusedEdge = document.activeElement?.closest('.ui-scroll-area__edge');\n      const direction = focusedEdge?.getAttribute('data-direction') as keyof typeof next | undefined;\n      if (focusedEdge && el.parentElement?.contains(focusedEdge) && direction && !next[direction]) (focusRef?.current ?? el).focus({ preventScroll: true });\n      if (Object.keys(next).some(key => measuredEdges.current[key as keyof typeof next] !== next[key as keyof typeof next])) {\n        measuredEdges.current = next;\n        setEdges(measuredEdges.current);\n      }\n    }\n    const observer = new ResizeObserver(measure);\n    const observed = new Set<Element>();\n    function observeContent() {\n      if (!el) return;\n      // A collection may not allow a wrapper between itself and its sections.\n      // Observe those sections directly so filtering and density changes are measured.\n      const next = new Set<Element>([el, ...el.children]);\n      for (const child of observed) if (!next.has(child)) { observer.unobserve(child); observed.delete(child); }\n      for (const child of next) if (!observed.has(child)) { observer.observe(child); observed.add(child); }\n      measure();\n    }\n    const mutations = new MutationObserver(observeContent);\n    mutations.observe(el, { childList: true, subtree: true });\n    observeContent();\n    el.addEventListener('scroll', measure, { passive: true });\n    return () => { observer.disconnect(); mutations.disconnect(); el.removeEventListener('scroll', measure); };\n  }, [focusRef, mountedViewport, orientation]);\n  function scroll(direction: number, horizontal = false) {\n    const el = viewport.current;\n    if (!el) return;\n    el.scrollBy({ [horizontal ? 'left' : 'top']: direction * Math.max(80, (horizontal ? el.clientWidth : el.clientHeight) * .7), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });\n  }\n  return <div className={cx('ui-scroll-area', className)} data-orientation={orientation} data-indicator-placement={indicatorPlacement} data-overflow-y={edges.up || edges.down || undefined}>\n    {renderViewport ? renderViewport({ ref: setViewport, className: cx('ui-scroll-area__viewport', viewportClassName), children }) : <div ref={setViewport} className={cx('ui-scroll-area__viewport', viewportClassName)} role=\"region\" aria-label={label} tabIndex={0}><div ref={content} className=\"ui-scroll-area__content\">{children}</div></div>}\n    <div className=\"ui-scroll-area__edge\" data-direction=\"up\" data-visible={edges.up || undefined} aria-hidden={!edges.up}><IconButton icon={RiArrowUpSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} up`} disabled={!edges.up} tabIndex={edges.up ? 0 : -1} onClick={() => scroll(-1)}/></div>\n    <div className=\"ui-scroll-area__edge\" data-direction=\"down\" data-visible={edges.down || undefined} aria-hidden={!edges.down}><IconButton icon={RiArrowDownSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} down`} disabled={!edges.down} tabIndex={edges.down ? 0 : -1} onClick={() => scroll(1)}/></div>\n    {orientation !== 'vertical' && <>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"left\" data-visible={edges.left || undefined} aria-hidden={!edges.left}><IconButton icon={RiArrowLeftSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} left`} disabled={!edges.left} tabIndex={edges.left ? 0 : -1} onClick={() => scroll(-1, true)}/></div>\n      <div className=\"ui-scroll-area__edge\" data-direction=\"right\" data-visible={edges.right || undefined} aria-hidden={!edges.right}><IconButton icon={RiArrowRightSLine} variant=\"ghost\" size=\"xs\" preventFocusOnPress={preservePointerFocus} aria-label={`Scroll ${label.toLowerCase()} right`} disabled={!edges.right} tabIndex={edges.right ? 0 : -1} onClick={() => scroll(1, true)}/></div>\n    </>}\n  </div>;\n}\n",
+      "sha256": "6a0b95325225bbeb5dbcfb3fc4d3069c72e5d022d897f9e6bee1e96c34243bcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 282,
+          "end": 319
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 342,
+          "end": 352
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/segmented-control/segmented-control.tsx",
+      "content": "'use client';\n\nimport {useId,useLayoutEffect,useRef,useState,type CSSProperties,type KeyboardEvent,type ReactNode} from 'react';\nimport {motion} from 'motion/react';\nimport {useMediaQuery} from '@/hooks/use-media-query';\nimport {useLocale} from 'react-aria-components';\nimport {useMotionTokens} from '@/hooks/use-motion-tokens';\nimport {useFieldDisabled} from '@/components/base/field/field-context';\nimport {cx} from '@/utils/cx';\n\nexport type SegmentOption={value:string;label:string;icon?:ReactNode;isDisabled?:boolean};\nexport type SegmentedControlProps={\n options:SegmentOption[];value?:string;defaultValue?:string;onValueChange?:(value:string)=>void;\n variant?:'soft'|'outline'|'underline';size?:'small'|'medium';orientation?:'horizontal'|'vertical';fit?:'content'|'equal';isDisabled?:boolean;\n id?:string;'aria-label':string;'aria-describedby'?:string;className?:string;style?:CSSProperties;\n};\n\n/** A compact configuration choice. Native RadioGroup is preferred for form fields. */\nexport function SegmentedControl({options,value,defaultValue,onValueChange,variant='soft',size='medium',orientation='horizontal',fit='content',isDisabled:disabled,id:domId,'aria-label':ariaLabel,'aria-describedby':descriptionId,className,style}:SegmentedControlProps){\n const {direction}=useLocale(),isDisabled=useFieldDisabled(disabled);\n const [internal,setInternal]=useState(defaultValue??options.find(option=>!option.isDisabled)?.value??'');\n const selected=value??internal;\n const tabStop=options.find(option=>!option.isDisabled&&option.value===selected)?.value??options.find(option=>!option.isDisabled)?.value;\n const id=useId(),root=useRef<HTMLDivElement>(null),reduced=useMediaQuery('(prefers-reduced-motion: reduce)'),tokens=useMotionTokens(root);\n function reveal(target:HTMLElement){\n  const group=root.current;if(!group)return;\n  const frame=group.getBoundingClientRect(),item=target.getBoundingClientRect();\n  if(orientation==='vertical'){\n   const scale=frame.height/group.clientHeight||1,delta=item.top<frame.top?item.top-frame.top:item.bottom>frame.bottom?item.bottom-frame.bottom:0;\n   if(group.scrollHeight>group.clientHeight)group.scrollTop+=delta/scale;\n  }else{\n   const scale=frame.width/group.clientWidth||1,delta=item.left<frame.left?item.left-frame.left:item.right>frame.right?item.right-frame.right:0;\n   if(group.scrollWidth>group.clientWidth)group.scrollLeft+=delta/scale;\n  }\n }\n useLayoutEffect(()=>{\n  const target=root.current?.querySelector<HTMLElement>(`[data-value=\"${CSS.escape(selected)}\"]`);if(target)reveal(target);\n },[selected,orientation]);\n function choose(next:string){if(isDisabled)return;if(value===undefined)setInternal(next);onValueChange?.(next);}\n function onKeyDown(event:KeyboardEvent<HTMLDivElement>){\n  if(isDisabled||event.altKey||event.ctrlKey||event.metaKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;\n  event.preventDefault();\n  const enabled=options.filter(option=>!option.isDisabled);if(!enabled.length)return;\n  // Follow actual focus, preserving every key even when a controlled value lags.\n  const focused=event.target instanceof Element?event.target.closest<HTMLElement>('[data-value]')?.dataset.value:undefined;\n  const current=enabled.findIndex(option=>option.value===(focused??selected));\n  const forward=event.key==='ArrowDown'||event.key===(direction==='rtl'?'ArrowLeft':'ArrowRight');\n  const next=event.key==='Home'?0:event.key==='End'?enabled.length-1:forward?(current+1)%enabled.length:(current-1+enabled.length)%enabled.length;\n  const target=enabled[next];if(!target)return;choose(target.value);\n  event.currentTarget.querySelector<HTMLElement>(`[data-value=\"${CSS.escape(target.value)}\"]`)?.focus({preventScroll:true});\n }\n return <div id={domId} ref={root} style={style} className={cx('ui-segmented',className)} role=\"radiogroup\" aria-label={ariaLabel} aria-describedby={descriptionId} aria-orientation={orientation} aria-disabled={isDisabled||undefined} data-variant={variant} data-size={size} data-orientation={orientation} data-fit={fit} onKeyDown={onKeyDown} onFocus={event=>{const target=event.target.closest<HTMLElement>('[data-value]');if(target)reveal(target);}}>{options.map(option=><button key={option.value} type=\"button\" role=\"radio\" data-value={option.value} aria-checked={selected===option.value} tabIndex={tabStop===option.value?0:-1} disabled={isDisabled||option.isDisabled} onClick={()=>choose(option.value)}>{selected===option.value&&<motion.span layoutId={`${id}-segment`} className=\"ui-segmented__indicator\" transition={{duration:reduced?0:tokens.standard,ease:tokens.ease}}/>}<span className=\"ui-segmented__content\">{option.icon}<span className=\"ui-segmented__label\">{option.label}</span></span></button>)}</div>;\n}\n",
+      "sha256": "02730c16d81e67d56c7684c219707f9237158b50bcd0f0fd3b315503fb033c47",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/hooks/use-media-query",
+          "target": "hooks/use-media-query.ts",
+          "start": 195,
+          "end": 218
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 301,
+          "end": 326
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 361,
+          "end": 398
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 419,
+          "end": 429
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/tooltip/tooltip.tsx",
+      "content": "'use client';\n\nimport { isValidElement, type ComponentProps, type ReactNode } from 'react';\nimport { Button as AriaButton, Link as AriaLink, Focusable, TooltipTrigger, Tooltip as AriaTooltip, OverlayArrow, type TooltipProps as AriaTooltipProps } from 'react-aria-components';\nimport { IconButton } from '@/components/base/buttons/icon-button';\nimport { cx } from '@/utils/cx';\n\nexport type TooltipProps = { children: ComponentProps<typeof Focusable>['children']; content: ReactNode; placement?: AriaTooltipProps['placement']; delay?: number; closeDelay?: number; showArrow?: boolean; isDisabled?: boolean; className?: string; /** Aria triggers already consume TooltipTrigger's public focus context. */ triggerType?:'auto'|'native'|'aria' };\nexport function Tooltip({ children, content, placement = 'top', delay = 350, closeDelay = 100, showArrow = true, isDisabled, className, triggerType='auto' }: TooltipProps) {\n  const childDisabled = isValidElement<{disabled?: boolean;isDisabled?: boolean}>(children) && (children.props.disabled || children.props.isDisabled);\n  const disabled = isDisabled ?? Boolean(childDisabled);\n  const triggerComponent:unknown=isValidElement(children)?children.type:null;\n  const ariaTrigger=triggerType==='aria'||triggerType==='auto'&&isValidElement(children)&&[IconButton,AriaButton,AriaLink].some(type=>triggerComponent===type);\n  return <TooltipTrigger delay={delay} closeDelay={closeDelay} isDisabled={disabled}>{ariaTrigger?children:<Focusable isDisabled={disabled}>{children}</Focusable>}<AriaTooltip placement={placement} offset={7} className={cx('ui-tooltip', className)}>{showArrow && <OverlayArrow className=\"ui-tooltip__arrow\"><svg width=\"10\" height=\"6\" viewBox=\"0 0 10 6\" aria-hidden=\"true\"><path d=\"M0 0 5 5 10 0\" /></svg></OverlayArrow>}{content}</AriaTooltip></TooltipTrigger>;\n}\n",
+      "sha256": "39c01ab628a2f9f61af439cbed85804847f0fa6d0bb3261ad1a29bb00b08bd55",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/icon-button",
+          "target": "components/base/buttons/icon-button.tsx",
+          "start": 304,
+          "end": 341
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 364,
+          "end": 374
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-media-query.ts",
+      "content": "'use client';\n\nimport { useCallback, useSyncExternalStore } from 'react';\n\nexport function useMediaQuery(query: string) {\n  const subscribe = useCallback((notify: () => void) => {\n    const media = window.matchMedia(query);\n    media.addEventListener('change', notify);\n    return () => media.removeEventListener('change', notify);\n  }, [query]);\n  const snapshot = useCallback(() => window.matchMedia(query).matches, [query]);\n  return useSyncExternalStore(subscribe, snapshot, () => false);\n}\n\n// Keep these in sync with the navigation and inspector media queries in template CSS.\nexport const TEMPLATE_NAV_QUERY = '(max-width: 1023px)';\nexport const TEMPLATE_PANEL_QUERY = '(max-width: 1279px)';\n",
+      "sha256": "10148c15c2e987394ccb0b05dfe6d29cef1e3c85790bc955165bd102a5353a5c",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "react-aria": "3.52.1",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-code-block",
+      "ui-code-block__actions",
+      "ui-code-block__body",
+      "ui-code-block__content",
+      "ui-code-block__header",
+      "ui-code-block__label",
+      "ui-code-block__language",
+      "ui-code-block__line",
+      "ui-code-block__number",
+      "ui-code-block__scroll",
+      "ui-code-block__source",
+      "ui-code-block__text",
+      "ui-code-block__viewport",
+      "ui-icon-button",
+      "ui-icon-button__badge",
+      "ui-icon-button__glyph",
+      "ui-icon-button__icon",
+      "ui-icon-button__pending",
+      "ui-scroll-area",
+      "ui-scroll-area__content",
+      "ui-scroll-area__edge",
+      "ui-scroll-area__viewport",
+      "ui-segmented",
+      "ui-segmented__content",
+      "ui-segmented__indicator",
+      "ui-segmented__label",
+      "ui-spinner",
+      "ui-tooltip",
+      "ui-tooltip__arrow"
+    ],
+    "prefixes": []
+  }
+}

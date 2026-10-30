@@ -1,0 +1,18 @@
+.ui-theme-transitioning::view-transition-old(root),
+.ui-theme-transitioning::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+.ui-theme-transitioning::view-transition-old(root) { z-index: 1; }
+.ui-theme-transitioning::view-transition-new(root) {
+  z-index: 2;
+  mask-image: var(--theme-reveal-mask);
+  mask-repeat: no-repeat;
+  animation: ui-theme-reveal 820ms cubic-bezier(.16,1,.3,1) both;
+  transform-origin: var(--theme-reveal-x) var(--theme-reveal-y);
+}
+.ui-theme-transitioning, .ui-theme-transitioning * { transition: none !important; }
+@keyframes ui-theme-reveal {
+  from { mask-position: var(--theme-reveal-x) var(--theme-reveal-y); mask-size: 0 0; }
+  to { mask-position: var(--theme-reveal-left) var(--theme-reveal-top); mask-size: var(--theme-reveal-size) var(--theme-reveal-size); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-theme-transitioning::view-transition-new(root) { animation: none; mask-image: none; }
+}

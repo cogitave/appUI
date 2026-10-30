@@ -1,0 +1,81 @@
+{
+  "name": "slider",
+  "title": "Slider",
+  "group": "Base",
+  "type": "component",
+  "description": "A precise value control with an inset track, keyboard-adjustable thumb, formatted output, and a two-ended range variant.",
+  "sections": [
+    "Preview",
+    "Controlled value",
+    "Range and formatting",
+    "Disabled"
+  ],
+  "example": "<Slider label=\"Volume\" value={volume} onChange={setVolume} />\n<RangeSlider label=\"Budget\" value={budget} onChange={setBudget} />",
+  "entryFiles": [
+    "components/base/slider/slider.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/slider/slider.tsx",
+      "names": [
+        "RangeSlider",
+        "RangeSliderProps",
+        "Slider",
+        "SliderProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/slider/slider.tsx",
+      "content": "'use client';\n\nimport { useId, useState } from 'react';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\ntype Common = { min?: number; max?: number; step?: number; isDisabled?: boolean; className?: string; formatValue?: (value: number) => string };\nexport type SliderProps = Common & { label: string; value?: number; defaultValue?: number; onChange?: (value: number) => void };\nexport type RangeSliderProps = Common & { label: string; value?: [number, number]; defaultValue?: [number, number]; onChange?: (value: [number, number]) => void };\nconst percent = (value: number, min: number, max: number) => (value - min) / Math.max(1, max - min) * 100;\n\nexport function Slider({ label, min = 0, max = 100, step = 1, value, defaultValue = min, onChange, isDisabled: disabled, className, formatValue = String }: SliderProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const inputId = useId();\n  const [internal, setInternal] = useState(defaultValue);\n  const current = value ?? internal;\n  function update(next: number) { if (value === undefined) setInternal(next); onChange?.(next); }\n  return <div className={cx('ui-slider', className)} data-disabled={isDisabled || undefined}><div className=\"ui-slider__head\"><label htmlFor={inputId}>{label}</label><output>{formatValue(current)}</output></div><div className=\"ui-slider__track\" style={{ '--start': '0%', '--end': `${percent(current,min,max)}%` } as React.CSSProperties}><span className=\"ui-slider__fill\" /><input id={inputId} type=\"range\" min={min} max={max} step={step} value={current} disabled={isDisabled} aria-valuetext={formatValue(current)} onChange={event => update(Number(event.target.value))} /></div></div>;\n}\n\nexport function RangeSlider({ label, min = 0, max = 100, step = 1, value, defaultValue = [min, max], onChange, isDisabled: disabled, className, formatValue = String }: RangeSliderProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const [internal, setInternal] = useState<[number, number]>(defaultValue);\n  const current = value ?? internal;\n  function update(next: [number, number]) { if (value === undefined) setInternal(next); onChange?.(next); }\n  return <div className={cx('ui-slider ui-slider--range', className)} data-disabled={isDisabled || undefined}><div className=\"ui-slider__head\"><span>{label}</span><span className=\"ui-slider__values\"><output>{formatValue(current[0])}</output><output>{formatValue(current[1])}</output></span></div><div className=\"ui-slider__track\" style={{ '--start': `${percent(current[0],min,max)}%`, '--end': `${percent(current[1],min,max)}%` } as React.CSSProperties}><span className=\"ui-slider__fill\" /><input type=\"range\" min={min} max={current[1]} step={step} value={current[0]} disabled={isDisabled} aria-label={`${label} minimum`} aria-valuetext={formatValue(current[0])} onChange={event => update([Math.min(Number(event.target.value), current[1]), current[1]])} /><input type=\"range\" min={current[0]} max={max} step={step} value={current[1]} disabled={isDisabled} aria-label={`${label} maximum`} aria-valuetext={formatValue(current[1])} onChange={event => update([current[0], Math.max(Number(event.target.value), current[0])])} /></div></div>;\n}\n",
+      "sha256": "e55fd21487540085e39231a804b2a60c8f3142940492ab2897d58e5a1c287975",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 123,
+          "end": 160
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-slider",
+      "ui-slider--range",
+      "ui-slider__fill",
+      "ui-slider__head",
+      "ui-slider__track",
+      "ui-slider__values"
+    ],
+    "prefixes": []
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "name": "radio",
+  "title": "Radio",
+  "group": "Base",
+  "type": "component",
+  "description": "A single-choice control built on React Aria, with keyboard navigation, form semantics, compact sizes, and full-card options.",
+  "sections": [
+    "Preview",
+    "Sizes",
+    "Radio card",
+    "Disabled"
+  ],
+  "example": "<RadioGroup aria-label=\"Billing period\" defaultValue=\"monthly\">\n  <Radio value=\"monthly\">Monthly</Radio>\n  <Radio value=\"yearly\">Yearly</Radio>\n</RadioGroup>",
+  "entryFiles": [
+    "components/base/radio/radio.tsx",
+    "components/base/radio/radio-card.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/radio/radio.tsx",
+      "names": [
+        "Radio",
+        "RadioGroup",
+        "RadioGroupProps",
+        "RadioProps"
+      ]
+    },
+    {
+      "path": "components/base/radio/radio-card.tsx",
+      "names": [
+        "RadioCard",
+        "RadioCardProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/radio/radio-card.tsx",
+      "content": "'use client';\n\nimport { Radio as AriaRadio, type RadioProps as AriaRadioProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type RadioCardProps = Omit<AriaRadioProps, 'children'> & { title: string; description: string; className?: string };\nexport function RadioCard({ title, description, className, ...props }: RadioCardProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaRadio {...props} isDisabled={isDisabled} className={cx('ui-radio-card', className)}><span className=\"ui-radio__control\" aria-hidden=\"true\" /><span><strong>{title}</strong><small>{description}</small></span></AriaRadio>;\n}\n",
+      "sha256": "2ea165785bffcc24da3bac00f1ff85b85d82d4a2027483acb0599bc172d8b584",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 130,
+          "end": 140
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 177,
+          "end": 214
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/radio/radio.tsx",
+      "content": "'use client';\n\nimport type { ReactNode } from 'react';\nimport { RadioGroup as AriaRadioGroup, Radio as AriaRadio, type RadioGroupProps as AriaRadioGroupProps, type RadioProps as AriaRadioProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type RadioGroupProps = AriaRadioGroupProps & { children: ReactNode; className?: string };\nexport function RadioGroup({ children, className, ...props }: RadioGroupProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaRadioGroup {...props} isDisabled={isDisabled} className={cx('ui-radio-group', className)}>{children}</AriaRadioGroup>;\n}\n\nexport type RadioProps = AriaRadioProps & { children: ReactNode; size?: 'md' | 'sm'; className?: string };\nexport function Radio({ children, size = 'md', className, ...props }: RadioProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaRadio {...props} isDisabled={isDisabled} className={cx('ui-radio', className)} data-size={size}><span className=\"ui-radio__control\" aria-hidden=\"true\" /><span>{children}</span></AriaRadio>;\n}\n",
+      "sha256": "0649d4e44af899f67ab02f1c1749d7e3218f9191593daeee875ce19bfc6a3d7d",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 245,
+          "end": 255
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 292,
+          "end": 329
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-radio",
+      "ui-radio-card",
+      "ui-radio-group",
+      "ui-radio__control"
+    ],
+    "prefixes": []
+  }
+}

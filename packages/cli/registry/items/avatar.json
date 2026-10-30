@@ -1,0 +1,63 @@
+{
+  "name": "avatar",
+  "title": "Avatar",
+  "group": "Base",
+  "type": "component",
+  "description": "A person’s photo or initials in four measured sizes. Initials remain visible if the image fails to load.",
+  "sections": [
+    "Preview",
+    "Sizes",
+    "Initial tints",
+    "Photo"
+  ],
+  "example": "<Avatar src=\"/avatars/studio-portrait.png\" alt=\"Maya Chen\" initials=\"MC\" />\n<Avatar size=\"sm\" color=\"blue\" initials=\"MC\" />",
+  "entryFiles": [
+    "components/base/avatar/avatar.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/avatar/avatar.tsx",
+      "names": [
+        "Avatar",
+        "AvatarColor",
+        "AvatarProps",
+        "AvatarSize"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/avatar/avatar.tsx",
+      "content": "'use client';\n\nimport type { HTMLAttributes } from 'react';\nimport { useEffect, useRef, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';\nexport type AvatarColor = 'neutral' | 'blue' | 'lime' | 'pink';\n\nexport type AvatarProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & {\n  size?: AvatarSize;\n  color?: AvatarColor;\n  initials?: string;\n  src?: string;\n  alt?: string;\n};\n\nexport function Avatar({ size = 'md', color = 'neutral', initials, src, alt, className, ...props }: AvatarProps) {\n  const [failedSource, setFailedSource] = useState<string | null>(null);\n  const imageRef = useRef<HTMLImageElement>(null);\n  const showImage = Boolean(src && src !== failedSource);\n\n  useEffect(() => {\n    const image = imageRef.current;\n    if (!image || !src) return;\n    const fail = () => setFailedSource(src);\n    if (image.complete && image.naturalWidth === 0) fail();\n    image.addEventListener('error', fail);\n    return () => image.removeEventListener('error', fail);\n  }, [src, showImage]);\n\n  return (\n    <span role=\"img\" aria-label={alt || initials || 'Avatar'} data-size={size} data-color={color} className={cx('ui-avatar', className)} {...props}>\n      <span className=\"ui-avatar__initials\" aria-hidden=\"true\">{initials}</span>\n      {showImage && <img ref={imageRef} src={src} alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\" onError={() => setFailedSource(src!)} />}\n    </span>\n  );\n}\n",
+      "sha256": "c6e2f1f5909af8da88f8ba420c072d1b421c3ae4a00527fe823ff3e760ccc13c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 133,
+          "end": 143
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-avatar",
+      "ui-avatar__initials"
+    ],
+    "prefixes": []
+  }
+}

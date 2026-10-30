@@ -1,0 +1,70 @@
+{
+  "name": "meter",
+  "title": "Meter",
+  "group": "Base",
+  "type": "component",
+  "description": "A quantity within a known range, for storage, capacity, quotas and usage. Optional segments show its parts while preserving the total and the accessible value.",
+  "sections": [
+    "Preview",
+    "Tones and sizes",
+    "Segments",
+    "Units and ranges",
+    "Edge values"
+  ],
+  "example": "<Meter label=\"Storage used\" value={64} maxValue={100}\n  formatOptions={{style: 'unit', unit: 'gigabyte'}}\n  tone=\"accent\" />",
+  "entryFiles": [
+    "components/base/meter/meter.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/meter/meter.tsx",
+      "names": [
+        "Meter",
+        "MeterProps",
+        "MeterSegment"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/meter/meter.tsx",
+      "content": "'use client';\n\nimport { useId, useMemo } from 'react';\nimport { Label, Meter as AriaMeter, useLocale, type MeterProps as AriaMeterProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\n\nexport type MeterSegment = { id: string; label: string; value: number; color?: string };\nexport type MeterProps = Omit<AriaMeterProps, 'children' | 'className'> & {\n  label: string;\n  hideLabel?: boolean;\n  showValue?: boolean;\n  size?: 'small' | 'medium' | 'large';\n  tone?: 'accent' | 'success' | 'warning' | 'danger';\n  /** Quantities within the displayed amount; remaining usage keeps the base tone. */\n  segments?: MeterSegment[];\n  className?: string;\n};\n\n/** A bounded quantity, with optional parts that share the same value scale. */\nexport function Meter({ label, hideLabel = false, showValue = true, size = 'medium', tone = 'accent', segments, className, value = 0, minValue = 0, maxValue = 100, 'aria-describedby': describedBy, ...props }: MeterProps) {\n  const detailsId = useId();\n  const { locale } = useLocale();\n  const partFormatter = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }), [locale]);\n  const minimum = Number.isFinite(minValue) ? minValue : 0;\n  const maximum = Number.isFinite(maxValue) && maxValue > minimum ? maxValue : minimum + 1;\n  const current = Math.min(maximum, Math.max(minimum, Number.isFinite(value) ? value : minimum));\n  const range = maximum - minimum;\n  let remaining = current - minimum;\n  const parts = segments?.map(segment => {\n    const amount = Math.min(remaining, Math.max(0, Number.isFinite(segment.value) ? segment.value : 0));\n    remaining -= amount;\n    return { ...segment, amount, width: amount / range * 100 };\n  });\n  return <AriaMeter {...props} value={current} minValue={minimum} maxValue={maximum} aria-describedby={[describedBy, parts?.length ? detailsId : undefined].filter(Boolean).join(' ') || undefined} className={cx('ui-meter', className)} data-size={size} data-tone={tone}>\n    {({ percentage, valueText }) => <>\n      <div className=\"ui-meter__heading\"><Label className={cx('ui-meter__label', hideLabel && 'sr-only')}>{label}</Label>{showValue && <span className=\"ui-meter__value\" aria-hidden>{valueText}</span>}</div>\n      <div className=\"ui-meter__track\" aria-hidden>\n        {parts?.length ? <>{parts.map(part => <span key={part.id} className=\"ui-meter__segment\" style={{ width: `${part.width}%`, background: part.color }}/>)}<span className=\"ui-meter__segment ui-meter__remainder\" style={{ width: `${remaining / range * 100}%` }}/></> : <span className=\"ui-meter__fill\" style={{ width: `${percentage}%` }}/>}\n      </div>\n      {!!parts?.length && <span id={detailsId} className=\"sr-only\">{parts.map(part => `${part.label}: ${partFormatter.format(part.amount)}`).join('; ')}{remaining > 0 ? `; Other: ${partFormatter.format(remaining)}` : ''}</span>}\n    </>}\n  </AriaMeter>;\n}\n",
+      "sha256": "0cb903eb46852126418eb413593b58a207f9018e5f4679c94647827d2b5e4ae0",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 188,
+          "end": 198
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-meter",
+      "ui-meter__fill",
+      "ui-meter__heading",
+      "ui-meter__label",
+      "ui-meter__remainder",
+      "ui-meter__segment",
+      "ui-meter__track",
+      "ui-meter__value"
+    ],
+    "prefixes": []
+  }
+}

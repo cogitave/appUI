@@ -1,0 +1,79 @@
+{
+  "name": "button-group",
+  "title": "Button Group",
+  "group": "Base",
+  "type": "component",
+  "description": "Related controls share one border and a quiet shadow. Use the selected state for toolbars and compact filters.",
+  "sections": [
+    "Preview",
+    "Selected item",
+    "Icon only"
+  ],
+  "example": "const [period, setPeriod] = useState('Week');\n\n<ButtonGroup aria-label=\"Period\">\n  {['Day', 'Week', 'Month', 'Year'].map(item => (\n    <ButtonGroupItem key={item} selected={period === item} onClick={() => setPeriod(item)}>\n      {item}\n    </ButtonGroupItem>\n  ))}\n</ButtonGroup>",
+  "entryFiles": [
+    "components/base/buttons/button-group.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/buttons/button-group.tsx",
+      "names": [
+        "ButtonGroup",
+        "ButtonGroupItem",
+        "ButtonGroupItemProps",
+        "ButtonGroupProps",
+        "ButtonGroupSize"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/buttons/button-group.tsx",
+      "content": "'use client';\n\nimport { createContext, useContext } from 'react';\nimport type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type ButtonGroupSize = 'medium' | 'small';\n\nconst SizeContext = createContext<ButtonGroupSize>('medium');\n\nexport type ButtonGroupProps = HTMLAttributes<HTMLDivElement> & {\n  size?: ButtonGroupSize;\n  children: ReactNode;\n};\n\nexport function ButtonGroup({ size = 'medium', children, className, ...props }: ButtonGroupProps) {\n  return <SizeContext.Provider value={size}><div role=\"group\" data-size={size} className={cx('ui-button-group', className)} {...props}>{children}</div></SizeContext.Provider>;\n}\n\ntype ItemContent =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonGroupItemProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & ItemContent & {\n  size?: ButtonGroupSize;\n  selected?: boolean;\n  trailingIcon?: IconComponent;\n};\n\nexport function ButtonGroupItem({ size: sizeProp, selected = false, iconOnly = false, leadingIcon: LeadingIcon, trailingIcon: TrailingIcon, children, className, type = 'button', ...props }: ButtonGroupItemProps) {\n  const inheritedSize = useContext(SizeContext);\n  const size = sizeProp ?? inheritedSize;\n  return <button type={type} aria-pressed={selected} data-size={size} data-selected={selected || undefined} data-icon-only={iconOnly || undefined} className={cx('ui-button-group__item', className)} {...props}>\n    {LeadingIcon && <LeadingIcon className=\"ui-button-group__icon\" aria-hidden />}\n    {!iconOnly && children}\n    {!iconOnly && TrailingIcon && <TrailingIcon className=\"ui-button-group__icon\" aria-hidden />}\n  </button>;\n}\n",
+      "sha256": "a541e630132099cec2bd81cf1c1bce548980c215cd4f6313f944c1d6044157c4",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 180,
+          "end": 215
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 238,
+          "end": 248
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-button-group",
+      "ui-button-group__icon",
+      "ui-button-group__item"
+    ],
+    "prefixes": []
+  }
+}

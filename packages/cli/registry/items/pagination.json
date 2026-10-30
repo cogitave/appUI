@@ -1,0 +1,88 @@
+{
+  "name": "pagination",
+  "title": "Pagination",
+  "group": "Base",
+  "type": "component",
+  "description": "A controlled page navigator that keeps nearby pages visible and collapses long ranges into ellipses.",
+  "sections": [
+    "Preview",
+    "Short range",
+    "Long range"
+  ],
+  "example": "<Pagination page={page} totalPages={181} onPageChange={setPage} />",
+  "entryFiles": [
+    "components/base/pagination/pagination.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/pagination/pagination.tsx",
+      "names": [
+        "Pagination",
+        "PaginationProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/pagination/pagination.tsx",
+      "content": "'use client';\n\nimport { RiArrowLeftLine, RiArrowRightLine } from '@remixicon/react';\nimport { cx } from '@/utils/cx';\nimport { AnimatedHeight } from '@/components/base/animated-height/animated-height';\n\nexport type PaginationProps = {\n  page: number;\n  totalPages: number;\n  onPageChange: (page: number) => void;\n  siblingCount?: number;\n  className?: string;\n  'aria-label'?: string;\n};\n\nfunction visiblePages(page: number, total: number, siblings: number) {\n  const numbers = new Set([1, total]);\n  for (let value = Math.max(1, page - siblings); value <= Math.min(total, page + siblings); value++) numbers.add(value);\n  const sorted = [...numbers].sort((a, b) => a - b);\n  const result: Array<number | 'ellipsis'> = [];\n  sorted.forEach((value, index) => {\n    if (index > 0) {\n      const gap = value - sorted[index - 1];\n      if (gap === 2) result.push(value - 1);\n      if (gap > 2) result.push('ellipsis');\n    }\n    result.push(value);\n  });\n  return result;\n}\n\nexport function Pagination({ page, totalPages, onPageChange, siblingCount = 1, className, 'aria-label': ariaLabel = 'Pagination' }: PaginationProps) {\n  const total = Number.isFinite(totalPages) ? Math.max(1, Math.floor(totalPages)) : 1;\n  const current = Number.isFinite(page) ? Math.min(total, Math.max(1, Math.floor(page))) : 1;\n  const siblings = Number.isFinite(siblingCount) ? Math.max(0, Math.floor(siblingCount)) : 1;\n  return <nav className={cx('ui-pagination', className)} aria-label={ariaLabel}>\n    <button type=\"button\" className=\"ui-pagination__edge\" disabled={current === 1} onClick={() => onPageChange(current - 1)}><RiArrowLeftLine size={16} aria-hidden /> Previous</button>\n    <AnimatedHeight className=\"ui-pagination__range\"><div className=\"ui-pagination__pages\">{visiblePages(current, total, siblings).map((item, index) => item === 'ellipsis' ? <span className=\"ui-pagination__ellipsis\" aria-hidden=\"true\" key={`gap-${index}`}>···</span> : <button key={item} type=\"button\" aria-label={`Page ${item}`} aria-current={item === current ? 'page' : undefined} onClick={() => onPageChange(item)}>{item}</button>)}</div></AnimatedHeight>\n    <button type=\"button\" className=\"ui-pagination__edge\" disabled={current === total} onClick={() => onPageChange(current + 1)}>Next <RiArrowRightLine size={16} aria-hidden /></button>\n  </nav>;\n}\n",
+      "sha256": "cda5369a96cc80a06c53e37cf1479c3b87517467cb6a2ea0a3d6194e216a46c6",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 105,
+          "end": 115
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 150,
+          "end": 199
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-pagination",
+      "ui-pagination__edge",
+      "ui-pagination__ellipsis",
+      "ui-pagination__pages",
+      "ui-pagination__range"
+    ],
+    "prefixes": []
+  }
+}

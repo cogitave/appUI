@@ -1,0 +1,63 @@
+{
+  "name": "table",
+  "title": "Table",
+  "group": "Base",
+  "type": "component",
+  "description": "An accessible React Aria table primitive for keyboard navigation and selection. The preview shows the same table styling with TanStack filtering, sorting and pagination.",
+  "sections": [
+    "Preview",
+    "React Aria primitive"
+  ],
+  "example": "<Table aria-label=\"Customers\">\n  <TableHeader><Column isRowHeader>Name</Column><Column>Status</Column></TableHeader>\n  <TableBody>{rows.map(row => <Row key={row.id}><Cell>{row.name}</Cell><Cell>{row.status}</Cell></Row>)}</TableBody>\n</Table>",
+  "entryFiles": [
+    "components/base/table/table.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/table/table.tsx",
+      "names": [
+        "Cell",
+        "Column",
+        "Row",
+        "Table",
+        "TableBody",
+        "TableHeader",
+        "TableProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/table/table.tsx",
+      "content": "'use client';\n\nimport { Table as AriaTable, TableHeader, Column, TableBody, Row, Cell, type TableProps as AriaTableProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\n\nexport type TableProps = AriaTableProps & { className?: string; size?: 'md' | 'sm' };\nexport function Table({ className, size = 'md', ...props }: TableProps) {\n  return <AriaTable {...props} data-size={size} className={cx('ui-table', className)} />;\n}\nexport { TableHeader, Column, TableBody, Row, Cell };\n",
+      "sha256": "84039bd964cac718921ec1a8488bb30b0e4f3e091c9273b1a02d847424847870",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 173,
+          "end": 183
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-table"
+    ],
+    "prefixes": []
+  }
+}

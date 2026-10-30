@@ -1,0 +1,61 @@
+{
+  "name": "aspect-ratio",
+  "title": "Aspect Ratio",
+  "group": "Base",
+  "type": "component",
+  "description": "A responsive media container that reserves exact bounds before content loads, with cover or contain fitting and four corner options.",
+  "sections": [
+    "Preview",
+    "Ratios",
+    "Cover and contain",
+    "Corner options"
+  ],
+  "example": "<AspectRatio ratio={16 / 9} fit=\"cover\" radius=\"medium\">\n  <ImageArtwork image={{src: '/carousel/coral-arch.webp'}} alt=\"Coral paper arch\" />\n</AspectRatio>",
+  "entryFiles": [
+    "components/base/aspect-ratio/aspect-ratio.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/aspect-ratio/aspect-ratio.tsx",
+      "names": [
+        "AspectRatio",
+        "AspectRatioProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/aspect-ratio/aspect-ratio.tsx",
+      "content": "import type { CSSProperties, HTMLAttributes } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AspectRatioProps = HTMLAttributes<HTMLDivElement> & {\n  ratio?: number;\n  fit?: 'cover' | 'contain';\n  radius?: 'none' | 'small' | 'medium' | 'large';\n};\n\n/** Reserve media layout before it loads. Invalid ratios fall back to 16:9. */\nexport function AspectRatio({ ratio = 16 / 9, fit = 'cover', radius = 'medium', children, className, style, ...props }: AspectRatioProps) {\n  const safeRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : 16 / 9;\n  return <div {...props} className={cx('ui-aspect-ratio', className)} data-fit={fit} data-radius={radius} style={{...style, aspectRatio: safeRatio, '--media-fit': fit} as CSSProperties}><div className=\"ui-aspect-ratio__content\">{children}</div></div>;\n}\n",
+      "sha256": "f36e99df3d445222ceb5e4fb059b8ae52e152930b0fdd6309835acbc55ae148d",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 80,
+          "end": 90
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-aspect-ratio",
+      "ui-aspect-ratio__content"
+    ],
+    "prefixes": []
+  }
+}

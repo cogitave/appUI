@@ -1,0 +1,40 @@
+.ui-notification-presence { min-width:0; width:100%; }
+.ui-notification .ui-close-button { position:absolute; top:12px; inset-inline-end:12px; }
+.ui-notification .ui-close-button:hover { transform:none; }
+.ui-notification[data-exiting] { overflow:hidden; pointer-events:none; }
+.ui-notification__body-height { flex:1; min-width:0; }
+.ui-notification__body-row { display:flex; align-items:flex-start; gap:12px; min-width:0; }
+.ui-notification__icon { transition:background-color var(--motion-fast) var(--motion-ease),color var(--motion-fast) var(--motion-ease); }
+.ui-notification__icon-content { position:absolute; inset:0; display:grid; place-items:center; }
+.ui-notification__content > div > p { margin-top:4px; }
+.ui-notification__content strong { font-family:var(--font-sans); font-size:var(--text-body-medium); font-weight:var(--text-body-medium--font-weight); line-height:var(--text-body-medium--line-height); letter-spacing:var(--text-body-medium--letter-spacing); }
+.ui-notification__content p { font-family:var(--font-sans); font-size:var(--text-body-regular); font-weight:var(--text-body-regular--font-weight); line-height:var(--text-body-regular--line-height); letter-spacing:var(--text-body-regular--letter-spacing); }
+.ui-notification__heading time { font-family:var(--font-sans); font-size:var(--text-body-regular); font-weight:var(--text-body-regular--font-weight); line-height:var(--text-body-regular--line-height); letter-spacing:var(--text-body-regular--letter-spacing); }
+.ui-notification-region { position:fixed; z-index:var(--layer-notification); display:flex; min-width:0; width:min(520px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); outline:none; pointer-events:none; }
+.ui-notification-region[data-empty] { pointer-events:none; }
+.ui-notification-region[data-position^='top'] { top:12px; }
+.ui-notification-region[data-position^='bottom'] { bottom:12px; }
+.ui-notification-region[data-position$='left'] { left:12px; }
+.ui-notification-region[data-position$='right'] { right:12px; }
+.ui-notification-region[data-position$='center'] { left:50%; translate:-50% 0; }
+.ui-notification-region__landmark { display:flex; flex-direction:column; min-width:0; width:100%; max-height:inherit; outline:none; }
+.ui-notification-region__scroll { max-height:inherit; pointer-events:auto; }
+.ui-notification-region[data-empty] .ui-notification-region__scroll { pointer-events:none; }
+.ui-notification-region__scroll > .ui-scroll-area__viewport { max-height:calc(100dvh - 24px); }
+.ui-notification-region__list { position:relative; flex:none; min-width:0; }
+.ui-notification-region__item { position:absolute; top:0; inset-inline:4px; min-width:0; transform-origin:center; }
+.ui-notification-region__item::before { position:absolute; inset:0; border:1px solid var(--border-control); border-radius:16px; background:var(--surface-base); box-shadow:var(--shadow-control); opacity:0; pointer-events:none; content:''; transition:opacity var(--motion-fast) var(--motion-ease); }
+.ui-notification-region__item[data-peek]::before { opacity:1; }
+.ui-notification-region__item > .ui-notification { transition:opacity var(--motion-fast) var(--motion-ease); }
+.ui-notification-region__item[data-peek] > .ui-notification { opacity:0; pointer-events:none; }
+.ui-notification-region__item[data-exiting] { overflow:hidden; pointer-events:none; }
+.ui-notification-stack__toolbar { pointer-events:auto; display:flex; justify-content:flex-end; padding:4px; }
+.ui-notification-stack__toolbar .ui-button { color:var(--text-muted); }
+.ui-notification-stack__toolbar .ui-button > svg { width:14px; height:14px; transition:transform var(--motion-standard) var(--motion-ease); }
+.ui-notification-region[data-expanded] .ui-notification-stack__toolbar .ui-button > svg { transform:rotate(180deg); }
+.ui-notification-region__landmark > .ui-collapsible { flex:none; }
+.ui-notification-region .ui-notification { width:100%; }
+.ui-notification-region .ui-notification:focus-visible { outline:2px solid var(--focus-ring); outline-offset:-2px; }
+.ui-notification-region__scroll .ui-scroll-area__edge { background:transparent; }
+@media (pointer:coarse) { .ui-notification .ui-close-button::before { position:absolute; inset:-12px; content:''; } }
+@media (prefers-reduced-motion:reduce) { .ui-notification__countdown { animation:none; } }

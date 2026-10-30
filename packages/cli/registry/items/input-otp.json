@@ -1,0 +1,75 @@
+{
+  "name": "input-otp",
+  "title": "Input OTP",
+  "group": "Base",
+  "type": "component",
+  "description": "One accessible input rendered as a sequence of code slots. Paste, autofill, and keyboard editing work as a single value.",
+  "sections": [
+    "Preview",
+    "Controlled value",
+    "Length and states"
+  ],
+  "example": "<InputOTP length={6} onComplete={verifyCode} aria-label=\"Verification code\" />",
+  "entryFiles": [
+    "components/base/input-otp/input-otp.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/input-otp/input-otp.tsx",
+      "names": [
+        "InputOTP",
+        "InputOTPProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/input-otp/input-otp.tsx",
+      "content": "'use client';\n\nimport { useState } from 'react';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type InputOTPProps = {\n  length?: number;\n  value?: string;\n  defaultValue?: string;\n  onChange?: (value: string) => void;\n  onComplete?: (value: string) => void;\n  isDisabled?: boolean;\n  isInvalid?: boolean;\n  'aria-label'?: string;\n  className?: string;\n};\n\nexport function InputOTP({ length = 6, value, defaultValue = '', onChange, onComplete, isDisabled: disabled = false, isInvalid = false, 'aria-label': ariaLabel = 'Verification code', className }: InputOTPProps) {\n  const isDisabled = useFieldDisabled(disabled);\n  const [internal, setInternal] = useState(defaultValue.replace(/\\D/g, '').slice(0, length));\n  const current = value === undefined ? internal : value.replace(/\\D/g, '').slice(0, length);\n  function update(next: string) {\n    const cleaned = next.replace(/\\D/g, '').slice(0, length);\n    if (value === undefined) setInternal(cleaned);\n    onChange?.(cleaned);\n    if (cleaned.length === length && current !== cleaned) onComplete?.(cleaned);\n  }\n  return <div className={cx('ui-otp', className)} data-disabled={isDisabled || undefined} data-invalid={isInvalid || undefined}>\n    <input type=\"text\" className=\"ui-otp__input\" inputMode=\"numeric\" autoComplete=\"one-time-code\" pattern=\"[0-9]*\" maxLength={length} value={current} disabled={isDisabled} aria-label={ariaLabel} aria-invalid={isInvalid || undefined} onChange={event => update(event.target.value)} />\n    {Array.from({ length }, (_, index) => <span key={index} className=\"ui-otp__slot\" data-active={index === current.length && current.length < length || undefined} aria-hidden=\"true\">{current[index] || ''}</span>)}\n  </div>;\n}\n",
+      "sha256": "8278918d0168acca3cce467b2e59fb8c0ed11c928f0af601ba683db9c71dbd1f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 69,
+          "end": 79
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 116,
+          "end": 153
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-otp",
+      "ui-otp__input",
+      "ui-otp__slot"
+    ],
+    "prefixes": []
+  }
+}

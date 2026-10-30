@@ -1,0 +1,110 @@
+{
+  "name": "switch",
+  "title": "Switch",
+  "group": "Base",
+  "type": "component",
+  "description": "An accessible toggle with pill and rectangular tracks, three sizes, labelled states, and a full-card variant.",
+  "sections": [
+    "Preview",
+    "Shapes and sizes",
+    "Labels and states",
+    "Card"
+  ],
+  "example": "<Switch defaultSelected>Notifications</Switch>\n<SwitchCard title=\"Product updates\" description=\"Occasional release notes.\" />",
+  "entryFiles": [
+    "components/base/switch/switch.tsx",
+    "components/base/switch/switch-card.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/switch/switch.tsx",
+      "names": [
+        "Switch",
+        "SwitchProps"
+      ]
+    },
+    {
+      "path": "components/base/switch/switch-card.tsx",
+      "names": [
+        "SwitchCard",
+        "SwitchCardProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/switch/switch-card.tsx",
+      "content": "'use client';\n\nimport { Switch as AriaSwitch, type SwitchProps as AriaSwitchProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type SwitchCardProps = AriaSwitchProps & { title: string; description: string; className?: string };\nexport function SwitchCard({ title, description, className, ...props }: SwitchCardProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaSwitch {...props} isDisabled={isDisabled} className={cx('ui-switch-card', className)}><span className=\"ui-switch-card__copy\"><strong>{title}</strong><small>{description}</small></span><span className=\"ui-switch__track\" aria-hidden=\"true\"><span className=\"ui-switch__thumb\" /></span></AriaSwitch>;\n}\n",
+      "sha256": "b60de00e8f4280a3612f00bd5783d61edb221bf70ba243f43a5cba8287976a9d",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 134,
+          "end": 144
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 181,
+          "end": 218
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/switch/switch.tsx",
+      "content": "'use client';\n\nimport type { ReactNode } from 'react';\nimport { Switch as AriaSwitch, type SwitchProps as AriaSwitchProps } from 'react-aria-components';\nimport { cx } from '@/utils/cx';\nimport { useFieldDisabled } from '@/components/base/field/field-context';\n\nexport type SwitchProps = AriaSwitchProps & { children?: ReactNode; size?: 'sm' | 'md' | 'lg'; shape?: 'pill' | 'rectangle'; className?: string };\nexport function Switch({ children, size = 'md', shape = 'pill', className, ...props }: SwitchProps) {\n  const isDisabled = useFieldDisabled(props.isDisabled);\n  return <AriaSwitch {...props} isDisabled={isDisabled} data-size={size} data-shape={shape} className={cx('ui-switch', className)}><span className=\"ui-switch__track\" aria-hidden=\"true\"><span className=\"ui-switch__thumb\" /></span>{children && <span className=\"ui-switch__label\">{children}</span>}</AriaSwitch>;\n}\n",
+      "sha256": "7ea8568d227056327af66529fa0d57b1e9f3727858baed9a0bf7ca9d7484ba1a",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 174,
+          "end": 184
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/field/field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 221,
+          "end": 258
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "react-aria-components": "^1.21.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-switch",
+      "ui-switch-card",
+      "ui-switch-card__copy",
+      "ui-switch__label",
+      "ui-switch__thumb",
+      "ui-switch__track"
+    ],
+    "prefixes": []
+  }
+}

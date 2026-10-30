@@ -1,0 +1,154 @@
+{
+  "name": "stepper",
+  "title": "Stepper",
+  "group": "Base",
+  "type": "component",
+  "description": "An ordered journey with numbered or label-only steps, optional descriptions, explicit completion and error states, and keyboard navigation. Narrow containers stack numbered steps without shrinking the text.",
+  "sections": [
+    "Preview",
+    "Labels",
+    "Vertical",
+    "Read only",
+    "In Questionnaire"
+  ],
+  "example": "const [current, setCurrent] = useState('workspace');\nconst panelId = useId();\n\n<Stepper selectedKey={current} onSelectionChange={setCurrent}\n  steps={[\n    {id: 'workspace', label: 'Workspace', controls: panelId, status: saved ? 'complete' : 'pending'},\n    {id: 'team', label: 'Team', controls: panelId, isOptional: true},\n    {id: 'review', label: 'Review', controls: panelId, isDisabled: !saved},\n  ]}\n/>\n<section id={panelId} aria-label={current}>\n  <StepContent step={current} />\n</section>",
+  "entryFiles": [
+    "components/base/stepper/stepper.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/stepper/stepper.tsx",
+      "names": [
+        "Stepper",
+        "StepperProps",
+        "StepperStep"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/buttons/button.tsx",
+      "content": "'use client';\n\nimport type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\nimport { Spinner } from '@/components/base/spinner/spinner';\n\nexport type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline' | 'solid' | 'quiet';\nexport type ButtonSize = 'medium' | 'small' | 'xs';\n\ntype NativeButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;\ntype ContentProps =\n  | { iconOnly: true; 'aria-label': string; leadingIcon: IconComponent; children?: never }\n  | { iconOnly?: false; children: ReactNode; leadingIcon?: IconComponent };\n\nexport type ButtonProps = NativeButtonProps & ContentProps & {\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  trailingIcon?: IconComponent;\n  isLoading?: boolean;\n  loadingLabel?: string;\n  ref?: Ref<HTMLButtonElement>;\n};\n\nconst base = 'ui-button inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none outline-none';\nconst sizes: Record<ButtonSize, string> = {\n  medium: 'h-9 rounded-[10px] px-2 gap-0.5',\n  small: 'h-8 rounded-lg px-2 gap-0.5',\n  xs: 'h-6 rounded-[5px] px-2 gap-0.5',\n};\nexport const buttonIconClassNames: Record<ButtonSize, string> = { medium: 'size-5', small: 'size-[18px]', xs: 'size-3.5' };\nexport function buttonClassNames(size: ButtonSize, iconOnly = false, className?: string) {\n  return cx(base, sizes[size], iconOnly && 'ui-button--icon-only !p-0', className);\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'medium',\n  iconOnly = false,\n  leadingIcon: LeadingIcon,\n  trailingIcon: TrailingIcon,\n  children,\n  className,\n  type = 'button',\n  isLoading = false,\n  loadingLabel,\n  disabled,\n  onClick,\n  onKeyDown,\n  ...props\n}: ButtonProps) {\n  return (\n    <button\n      {...props}\n      type={isLoading && type === 'submit' ? 'button' : type}\n      disabled={disabled}\n      aria-disabled={isLoading || props['aria-disabled'] || undefined}\n      aria-busy={isLoading || undefined}\n      aria-description={isLoading && loadingLabel ? loadingLabel : props['aria-description']}\n      data-variant={variant}\n      data-size={size}\n      data-icon-only={iconOnly || undefined}\n      data-loading={isLoading || undefined}\n      data-loading-label={loadingLabel !== undefined || undefined}\n      className={buttonClassNames(size, iconOnly, className)}\n      onClick={event => { if (isLoading || props['aria-disabled'] === true || props['aria-disabled'] === 'true') { event.preventDefault(); event.stopPropagation(); return; } onClick?.(event); }}\n      onKeyDown={event => { if (isLoading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); return; } onKeyDown?.(event); }}\n    >\n      {LeadingIcon && <span className=\"ui-button__leading-slot\" aria-hidden><LeadingIcon className={cx(buttonIconClassNames[size], 'ui-button__leading-icon')}/></span>}\n      {!iconOnly && <span className=\"ui-button__label\">{children}</span>}\n      {!iconOnly && TrailingIcon && <TrailingIcon className={buttonIconClassNames[size]} aria-hidden />}\n      <Spinner className=\"ui-button__busy-spinner\" size={size === 'xs' ? 'xs' : size === 'small' ? 'sm' : 'md'}/>\n    </button>\n  );\n}\n",
+      "sha256": "bcfc2d2db4debfd2c11dd8ba8b23a167c705ad3bf7d9151571e501ed195fe158",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 118,
+          "end": 153
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 176,
+          "end": 186
+        },
+        {
+          "kind": "module",
+          "value": "@/components/base/spinner/spinner",
+          "target": "components/base/spinner/spinner.tsx",
+          "start": 214,
+          "end": 247
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/spinner/spinner.tsx",
+      "content": "import type { CSSProperties } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type SpinnerProps = {\n  size?: 'xs' | 'sm' | 'md' | 'lg';\n  label?: string;\n  className?: string;\n  style?: CSSProperties;\n};\n\n/** Omit the label when a containing busy control already names the operation. */\nexport function Spinner({ size = 'md', label, className, style }: SpinnerProps) {\n  return <span className={cx('ui-spinner', className)} data-size={size} role={label ? 'status' : undefined} aria-label={label} aria-hidden={!label || undefined} style={style}>\n    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden><circle cx=\"12\" cy=\"12\" r=\"9\" stroke=\"currentColor\" strokeWidth=\"2\" opacity=\".18\"/><path d=\"M12 3a9 9 0 0 1 9 9\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\"/></svg>\n  </span>;\n}\n",
+      "sha256": "8027aaac533f9a79167da8060da94df0c60e23d62aa111b13547c41612b95c94",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 64,
+          "end": 74
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/stepper/stepper.tsx",
+      "content": "'use client';\n\nimport { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';\nimport { motion, useReducedMotion } from 'motion/react';\nimport { RiCheckLine, RiErrorWarningLine } from '@remixicon/react';\nimport { Button } from '@/components/base/buttons/button';\nimport { useMotionTokens } from '@/hooks/use-motion-tokens';\nimport { cx } from '@/utils/cx';\n\nexport type StepperStep = { id: string; label: string; description?: string; controls?: string; status?: 'pending' | 'complete' | 'error'; isOptional?: boolean; isDisabled?: boolean };\nexport type StepperProps = {\n  steps: StepperStep[];\n  selectedKey?: string;\n  defaultSelectedKey?: string;\n  onSelectionChange?: (key: string) => void;\n  variant?: 'numbered' | 'labels';\n  orientation?: 'horizontal' | 'vertical';\n  isReadOnly?: boolean;\n  className?: string;\n  'aria-label'?: string;\n};\n\n/** Selection describes location; only caller-supplied status describes completion. */\nexport function Stepper({ steps, selectedKey, defaultSelectedKey, onSelectionChange, variant = 'numbered', orientation = 'horizontal', isReadOnly = false, className, 'aria-label': label = 'Progress steps' }: StepperProps) {\n  const [internal, setInternal] = useState(defaultSelectedKey ?? steps.find(step => !step.isDisabled)?.id ?? '');\n  const [focused, setFocused] = useState<string | null>(null);\n  const selected = selectedKey ?? internal;\n  const enabled = steps.filter(step => !step.isDisabled);\n  const tabStop = enabled.find(step => step.id === focused)?.id ?? enabled.find(step => step.id === selected)?.id ?? enabled[0]?.id;\n  const buttons = useRef(new Map<string, HTMLButtonElement>());\n  const id = useId(), reduced = useReducedMotion(), root = useRef<HTMLElement>(null), tokens = useMotionTokens(root);\n  const geometry = JSON.stringify(steps.map(step => [step.id, step.label, step.description, step.isOptional]));\n  useLayoutEffect(() => {\n    const element = root.current;\n    if (!element || variant === 'labels') return;\n    const items = [...element.querySelectorAll<HTMLElement>('.ui-stepper__item')];\n    function measure() {\n      const rtl = getComputedStyle(element!).direction === 'rtl';\n      const marks = items.map(item => item.querySelector<HTMLElement>('.ui-stepper__mark')!.getBoundingClientRect());\n      items.forEach((item, index) => {\n        const mark = marks[index], next = marks[index + 1], box = item.getBoundingClientRect();\n        if (!next) return;\n        const vertical = Math.abs(next.top - mark.top) > Math.abs(next.left - mark.left);\n        const center = mark.left + mark.width / 2, nextCenter = next.left + next.width / 2;\n        const inlineCenter = rtl ? box.right - center : center - box.left;\n        item.style.setProperty('--step-line-inline', `${vertical ? inlineCenter : inlineCenter + 21}px`);\n        item.style.setProperty('--step-line-top', `${mark.top - box.top + mark.height / 2 + (vertical ? 21 : 0)}px`);\n        item.style.setProperty('--step-line-width', `${vertical ? 1 : Math.max(0, (rtl ? center - nextCenter : nextCenter - center) - 42)}px`);\n        item.style.setProperty('--step-line-height', `${vertical ? Math.max(0, next.top - mark.top - 42) : 1}px`);\n      });\n    }\n    measure();\n    const observer = new ResizeObserver(measure);\n    observer.observe(element, {box:'border-box'});\n    items.forEach(item => observer.observe(item, {box:'border-box'}));\n    element.querySelectorAll('.ui-stepper__content').forEach(content => observer.observe(content, {box:'border-box'}));\n    const direction = new MutationObserver(measure);\n    for (let parent: HTMLElement | null = element; parent; parent = parent.parentElement) direction.observe(parent, {attributes:true, attributeFilter:['dir','class']});\n    return () => { observer.disconnect(); direction.disconnect(); };\n  }, [geometry, orientation, variant]);\n  function choose(key: string) {\n    if (isReadOnly || key === selected || !enabled.some(step => step.id === key)) return;\n    if (selectedKey === undefined) setInternal(key);\n    onSelectionChange?.(key);\n  }\n  function navigate(event: KeyboardEvent<HTMLElement>) {\n    if (isReadOnly || event.altKey || event.ctrlKey || event.metaKey || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key) || !enabled.length) return;\n    const key = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-step-key]')?.dataset.stepKey;\n    if (!key) return;\n    event.preventDefault();\n    const current = enabled.findIndex(step => step.id === key);\n    const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';\n    const forward = event.key === 'ArrowDown' || (event.key === 'ArrowRight' && !rtl) || (event.key === 'ArrowLeft' && rtl);\n    const index = event.key === 'Home' ? 0 : event.key === 'End' ? enabled.length - 1 : (current + (forward ? 1 : -1) + enabled.length) % enabled.length;\n    buttons.current.get(enabled[index].id)?.focus();\n  }\n  return <nav ref={root} className={cx('ui-stepper', className)} data-variant={variant} data-orientation={orientation} data-readonly={isReadOnly || undefined} aria-label={label} onKeyDown={navigate}>\n    <ol className=\"ui-stepper__list\">{steps.map((step, index) => {\n      const current = selected === step.id, status = step.status ?? 'pending', detailId = `${id}-${index}`;\n      const content = <><span className=\"ui-stepper__content\"><span className=\"ui-stepper__mark\" aria-hidden>{(['pending','complete','error'] as const).map(kind => <span className=\"ui-stepper__glyph\" key={kind} data-status={kind} data-active={status === kind || undefined}>{kind === 'complete' ? <RiCheckLine/> : kind === 'error' ? <RiErrorWarningLine/> : index + 1}</span>)}</span><span className=\"ui-stepper__copy\"><span className=\"ui-stepper__title\">{step.label}</span>{step.isOptional && <span className=\"ui-stepper__optional\">Optional</span>}{step.description && <span className=\"ui-stepper__description\">{step.description}</span>}</span></span>{variant === 'labels' && current && <motion.span className=\"ui-stepper__indicator\" layoutId={`${id}-step`} transition={{ duration: reduced ? 0 : tokens.standard, ease: tokens.ease }}/>}</>;\n      return <li key={step.id} className=\"ui-stepper__item\" data-current={current || undefined} data-status={status} data-disabled={step.isDisabled || undefined}>\n        {isReadOnly ? <div className=\"ui-stepper__control\" aria-current={current ? 'step' : undefined} aria-describedby={detailId}>{content}</div> : <Button ref={element => { if (element) buttons.current.set(step.id, element); else buttons.current.delete(step.id); }} variant=\"ghost\" size=\"small\" className=\"ui-stepper__control\" data-step-key={step.id} tabIndex={tabStop === step.id ? 0 : -1} disabled={step.isDisabled} aria-label={step.label} aria-describedby={detailId} aria-controls={step.controls} aria-current={current ? 'step' : undefined} onFocus={() => setFocused(step.id)} onBlur={event => { if (!event.currentTarget.closest('.ui-stepper')?.contains(event.relatedTarget)) setFocused(null); }} onClick={() => choose(step.id)}>{content}</Button>}\n        <span id={detailId} className=\"sr-only\">Step {index + 1} of {steps.length}.{current ? ' Current step.' : ''}{status === 'complete' ? ' Complete.' : status === 'error' ? ' Needs attention.' : ''}{step.isOptional ? ' Optional.' : ''}{step.isDisabled ? ' Unavailable.' : ''}{step.description ? ` ${step.description}` : ''}</span>\n      </li>;\n    })}</ol>\n  </nav>;\n}\n",
+      "sha256": "777f46ac8367577b0a4ff46f10bf958a250c5103f6544a111be4cae7f4926e46",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/buttons/button",
+          "target": "components/base/buttons/button.tsx",
+          "start": 250,
+          "end": 282
+        },
+        {
+          "kind": "module",
+          "value": "@/hooks/use-motion-tokens",
+          "target": "hooks/use-motion-tokens.ts",
+          "start": 318,
+          "end": 343
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 366,
+          "end": 376
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "hooks/use-motion-tokens.ts",
+      "content": "'use client';\n\nimport {useLayoutEffect,useState,type RefObject} from 'react';\n\nexport type MotionTokens={fast:number;standard:number;settle:number;ease:[number,number,number,number]};\nconst defaults:MotionTokens={fast:.16,standard:.24,settle:.36,ease:[.2,.75,.25,1]};\nfunction seconds(value:string,fallback:number){const match=value.trim().match(/^([\\d.]+)(ms|s)$/);if(!match)return fallback;const amount=Number(match[1])/(match[2]==='ms'?1000:1);return Number.isFinite(amount)&&amount>=0?amount:fallback;}\n\n/** Use the same scoped CSS tokens for JavaScript layout/glyph animation. */\nexport function useMotionTokens(scope?:RefObject<Element|null>){\n  const [tokens,setTokens]=useState<MotionTokens>(defaults);\n  useLayoutEffect(()=>{\n    const element=scope?.current??document.documentElement;\n    function read(){\n      const style=getComputedStyle(element),curve=style.getPropertyValue('--motion-ease').match(/^\\s*cubic-bezier\\(([^)]+)\\)/)?.[1].split(',').map(Number);\n      const ease=curve?.length===4&&curve.every(Number.isFinite)?curve as MotionTokens['ease']:defaults.ease;\n      const next={fast:seconds(style.getPropertyValue('--motion-fast'),defaults.fast),standard:seconds(style.getPropertyValue('--motion-standard'),defaults.standard),settle:seconds(style.getPropertyValue('--motion-settle'),defaults.settle),ease};\n      setTokens(current=>current.fast===next.fast&&current.standard===next.standard&&current.settle===next.settle&&current.ease.every((value,index)=>value===next.ease[index])?current:next);\n    }\n    read();const observer=new MutationObserver(read);\n    observer.observe(document.documentElement,{attributes:true,attributeFilter:['style','class','data-accent']});\n    if(element!==document.documentElement)observer.observe(element,{attributes:true,attributeFilter:['style','class']});\n    return()=>observer.disconnect();\n  },[scope]);\n  return tokens;\n}\n",
+      "sha256": "e15a8292e29a110d41024b3ce90a9361573f1c206fac920a154deff1665704ca",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-button",
+      "ui-button--icon-only",
+      "ui-button__busy-spinner",
+      "ui-button__label",
+      "ui-button__leading-icon",
+      "ui-button__leading-slot",
+      "ui-spinner",
+      "ui-stepper",
+      "ui-stepper__content",
+      "ui-stepper__control",
+      "ui-stepper__copy",
+      "ui-stepper__description",
+      "ui-stepper__glyph",
+      "ui-stepper__indicator",
+      "ui-stepper__item",
+      "ui-stepper__list",
+      "ui-stepper__mark",
+      "ui-stepper__optional",
+      "ui-stepper__title"
+    ],
+    "prefixes": []
+  }
+}

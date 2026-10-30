@@ -1,0 +1,79 @@
+{
+  "name": "stat-cards",
+  "title": "Stat Cards",
+  "group": "Blocks",
+  "type": "block",
+  "description": "Data-driven KPI tiles with a strong value, icon, comparison, and positive or negative change.",
+  "sections": [
+    "Preview",
+    "Compact variant",
+    "Bring your own data"
+  ],
+  "example": "<StatCards items={metrics} variant=\"expanded\" />",
+  "entryFiles": [
+    "components/blocks/stat-cards/stat-cards.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/stat-cards/stat-cards.tsx",
+      "names": [
+        "StatCardItem",
+        "StatCards",
+        "StatCardsProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/blocks/stat-cards/stat-cards.tsx",
+      "content": "'use client';\n\nimport { RiInformationLine, RiArrowUpLine, RiArrowDownLine } from '@remixicon/react';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type StatCardItem = { id: string; label: string; value: string; change?: number; comparison?: string; icon?: IconComponent; color?: 'blue' | 'orange' | 'violet' | 'pink'; description?: string };\nexport type StatCardsProps = { items: StatCardItem[]; variant?: 'compact' | 'expanded'; className?: string };\nexport function StatCards({ items, variant = 'expanded', className }: StatCardsProps) { return <div className={cx('ui-stat-cards', className)} data-variant={variant}>{items.map(item => { const Icon = item.icon; return <article className=\"ui-stat-card\" key={item.id} data-color={item.color ?? 'blue'}>{Icon && <div className=\"ui-stat-card__icon\"><Icon size={19} aria-hidden /></div>}{item.description && <span className=\"ui-stat-card__info\" title={item.description}><RiInformationLine size={16} aria-hidden /><span className=\"sr-only\">{item.description}</span></span>}<span className=\"ui-stat-card__label\">{item.label}</span><strong>{item.value}</strong>{item.change !== undefined && <div className=\"ui-stat-card__foot\"><span>{item.comparison ?? 'From last month'}</span><em data-negative={item.change < 0 || undefined}>{item.change < 0 ? <RiArrowDownLine size={13} aria-hidden /> : <RiArrowUpLine size={13} aria-hidden />}{Math.abs(item.change)}%</em></div>}</article>; })}</div>; }\n",
+      "sha256": "4bf98ff3f7049138d65a3396457b88fddbce0425bc4826ad3abcbb7b40494dcf",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 137,
+          "end": 172
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 195,
+          "end": 205
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-stat-card",
+      "ui-stat-card__foot",
+      "ui-stat-card__icon",
+      "ui-stat-card__info",
+      "ui-stat-card__label",
+      "ui-stat-cards"
+    ],
+    "prefixes": []
+  }
+}

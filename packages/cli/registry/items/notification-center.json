@@ -1,0 +1,108 @@
+{
+  "name": "notification-center",
+  "title": "Notification Center",
+  "group": "Blocks",
+  "type": "block",
+  "description": "An inbox with category tabs, unread state, inline actions, and a mark-all-read control.",
+  "sections": [
+    "Preview",
+    "Categories"
+  ],
+  "example": "<NotificationCenter items={notifications} onReadChange={markRead} />",
+  "entryFiles": [
+    "components/blocks/notification-center/notification-center.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/notification-center/notification-center.tsx",
+      "names": [
+        "InboxNotification",
+        "NotificationCenter",
+        "NotificationCenterProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/avatar/avatar.tsx",
+      "content": "'use client';\n\nimport type { HTMLAttributes } from 'react';\nimport { useEffect, useRef, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';\nexport type AvatarColor = 'neutral' | 'blue' | 'lime' | 'pink';\n\nexport type AvatarProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & {\n  size?: AvatarSize;\n  color?: AvatarColor;\n  initials?: string;\n  src?: string;\n  alt?: string;\n};\n\nexport function Avatar({ size = 'md', color = 'neutral', initials, src, alt, className, ...props }: AvatarProps) {\n  const [failedSource, setFailedSource] = useState<string | null>(null);\n  const imageRef = useRef<HTMLImageElement>(null);\n  const showImage = Boolean(src && src !== failedSource);\n\n  useEffect(() => {\n    const image = imageRef.current;\n    if (!image || !src) return;\n    const fail = () => setFailedSource(src);\n    if (image.complete && image.naturalWidth === 0) fail();\n    image.addEventListener('error', fail);\n    return () => image.removeEventListener('error', fail);\n  }, [src, showImage]);\n\n  return (\n    <span role=\"img\" aria-label={alt || initials || 'Avatar'} data-size={size} data-color={color} className={cx('ui-avatar', className)} {...props}>\n      <span className=\"ui-avatar__initials\" aria-hidden=\"true\">{initials}</span>\n      {showImage && <img ref={imageRef} src={src} alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\" onError={() => setFailedSource(src!)} />}\n    </span>\n  );\n}\n",
+      "sha256": "c6e2f1f5909af8da88f8ba420c072d1b421c3ae4a00527fe823ff3e760ccc13c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 133,
+          "end": 143
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/notification-center/notification-center.tsx",
+      "content": "'use client';\n\nimport { useState } from 'react';\nimport { motion, AnimatePresence, useReducedMotion } from 'motion/react';\nimport { RiCheckDoubleLine, RiNotification3Line } from '@remixicon/react';\nimport { Avatar } from '@/components/base/avatar/avatar';\nimport type { IconComponent } from '@/components/foundations/icon-types';\nimport { cx } from '@/utils/cx';\n\nexport type InboxNotification = { id: string; category: 'mentions' | 'system' | 'activity'; title: string; description: string; time: string; group?: string; unread?: boolean; status?: 'neutral' | 'information' | 'success' | 'error'; icon?: IconComponent; avatar?: { src?: string; alt: string; initials: string }; action?: { label: string; variant?: 'primary' | 'secondary' | 'danger'; onPress: () => void }; secondaryAction?: { label: string; variant?: 'primary' | 'secondary' | 'danger'; onPress: () => void } };\ntype Filter = 'all' | 'mentions' | 'system';\nexport type NotificationCenterProps = { items: InboxNotification[]; tab?: Filter; defaultTab?: Filter; onTabChange?: (tab: Filter) => void; onReadChange?: (id: string, read: boolean) => void; onMarkAllRead?: () => void; onAction?: (notificationId: string, actionLabel: string) => void; className?: string };\nexport function NotificationCenter({ items, tab, defaultTab = 'all', onTabChange, onReadChange, onMarkAllRead, onAction, className }: NotificationCenterProps) {\n  const [internalFilter, setInternalFilter] = useState<Filter>(defaultTab);\n  const filter = tab ?? internalFilter;\n  const [readIds, setReadIds] = useState<string[]>([]);\n  const reducedMotion = useReducedMotion();\n  const unread = items.filter(item => item.unread && !readIds.includes(item.id)).length;\n  const visible = items.filter(item => filter === 'all' || item.category === filter);\n  function markRead(id: string) { if (readIds.includes(id)) return; setReadIds(current => [...current,id]); onReadChange?.(id,true); }\n  function markAll() { if (!unread) return; setReadIds(items.map(item => item.id)); onMarkAllRead?.(); }\n  return <div className={cx('ui-notification-center', className)}><header><div><h2>Notifications</h2><p>{unread} unread</p></div><button type=\"button\" aria-disabled={!unread} onClick={markAll}>Mark all read</button></header><div className=\"ui-notification-center__tabs\" role=\"tablist\" aria-label=\"Notification filter\">{(['all','mentions','system'] as const).map(item => <button key={item} type=\"button\" role=\"tab\" aria-selected={filter === item} onClick={() => { if (tab === undefined) setInternalFilter(item); onTabChange?.(item); }}>{item[0].toUpperCase()+item.slice(1)} <span>{item === 'all' ? items.length : items.filter(entry => entry.category === item).length}</span></button>)}</div><div className=\"ui-notification-center__list\"><AnimatePresence mode=\"popLayout\" initial={false}>{visible.length ? visible.map(item => {\n    const Icon = item.icon ?? RiNotification3Line;\n    const actions = [item.action, item.secondaryAction].filter(action => action !== undefined);\n    return <motion.article key={item.id} className=\"ui-notification-center__item\" layout initial={reducedMotion ? false : { opacity: 0, y: 8, filter: 'blur(3px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={reducedMotion ? undefined : { opacity: 0, y: -8, filter: 'blur(3px)' }} transition={{ duration: reducedMotion ? 0 : .28, ease: [0.2, .75, .25, 1] }} data-unread={item.unread && !readIds.includes(item.id) || undefined} data-status={item.status ?? 'neutral'}><div className=\"ui-notification-center__avatar\">{item.avatar ? <Avatar size=\"md\" src={item.avatar.src} alt={item.avatar.alt} initials={item.avatar.initials} /> : <Icon size={20} aria-hidden />}</div><div className=\"ui-notification-center__copy\"><div className=\"ui-notification-center__headline\"><strong>{item.title}</strong><div className=\"ui-notification-center__meta\"><time>{item.time}</time>{item.unread && !readIds.includes(item.id) && <button type=\"button\" aria-label={`Mark ${item.title} as read`} onClick={() => markRead(item.id)} />}</div></div><p>{item.description}</p>{actions.length > 0 && <div className=\"ui-notification-center__actions\">{actions.map((action, index) => <button key={`${item.id}-${index}`} type=\"button\" data-variant={action.variant ?? (index === 0 ? 'primary' : 'secondary')} onClick={() => { action.onPress(); onAction?.(item.id, action.label); markRead(item.id); }}>{action.label}</button>)}</div>}</div></motion.article>;\n  }) : <div className=\"ui-notification-center__empty\" key=\"empty\"><RiCheckDoubleLine size={25} aria-hidden /><strong>All caught up</strong><span>There’s nothing new in this view.</span></div>}</AnimatePresence></div></div>;\n}\n",
+      "sha256": "c3fb282da4224bab12b47488b5c4e2871760bc720bcbc1c368d5ce5cac4235e2",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/avatar/avatar",
+          "target": "components/base/avatar/avatar.tsx",
+          "start": 222,
+          "end": 253
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/icon-types",
+          "target": "components/foundations/icon-types.ts",
+          "start": 292,
+          "end": 327
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 350,
+          "end": 360
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/icon-types.ts",
+      "content": "import type { RemixiconComponentType } from '@remixicon/react';\n\nexport type IconComponent = RemixiconComponentType;\n",
+      "sha256": "6d11fae02380869eb7da82a8976b1495c42bc8a3bcaf6fbb83ab5f6c76943d89",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "@remixicon/react": "^4.9.0",
+    "motion": "^12.43.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-avatar",
+      "ui-avatar__initials",
+      "ui-notification-center",
+      "ui-notification-center__actions",
+      "ui-notification-center__avatar",
+      "ui-notification-center__copy",
+      "ui-notification-center__empty",
+      "ui-notification-center__headline",
+      "ui-notification-center__item",
+      "ui-notification-center__list",
+      "ui-notification-center__meta",
+      "ui-notification-center__tabs"
+    ],
+    "prefixes": []
+  }
+}

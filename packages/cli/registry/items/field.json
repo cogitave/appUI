@@ -1,0 +1,114 @@
+{
+  "name": "field",
+  "title": "Field",
+  "group": "Base",
+  "type": "component",
+  "description": "Responsive form layout around shared controls, with their existing labels, descriptions and validation intact. Group columns follow their container; fieldsets provide legends and inherited disabled state.",
+  "sections": [
+    "Preview",
+    "Orientation",
+    "Columns and density",
+    "Fieldset appearances",
+    "Validation",
+    "Disabled groups",
+    "Narrow surfaces",
+    "Right to left"
+  ],
+  "example": "<FieldSet legend=\"Profile\" description=\"Visible to your workspace.\">\n  <FieldGroup>\n    <Field orientation=\"responsive\">\n      <Input label=\"Name\" name=\"name\" isRequired />\n    </Field>\n    <Field orientation=\"responsive\">\n      <Select label=\"Visibility\" options={visibilityOptions} />\n    </Field>\n  </FieldGroup>\n</FieldSet>",
+  "entryFiles": [
+    "components/base/field/field.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/field/field.tsx",
+      "names": [
+        "Field",
+        "FieldGroup",
+        "FieldGroupProps",
+        "FieldOrientation",
+        "FieldProps",
+        "FieldSet",
+        "FieldSetProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/animated-height/animated-height.tsx",
+      "content": "'use client';\n\nimport { useLayoutEffect, useRef, type ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nconst layoutProperties = new Set([\n  'height', 'block-size', 'min-height', 'max-height', 'min-block-size', 'max-block-size',\n  'width', 'inline-size', 'min-width', 'max-width', 'min-inline-size', 'max-inline-size',\n  'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'padding-block-start', 'padding-block-end',\n  'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'margin-block-start', 'margin-block-end',\n  'border-top-width', 'border-bottom-width', 'gap', 'row-gap', 'column-gap', 'grid-template-rows', 'grid-template-columns', 'flex-basis', 'font-size', 'line-height', 'letter-spacing',\n]);\n\n/** Animate real layout height so adjacent content follows without being scaled. */\nexport function AnimatedHeight({ children, className }: { children: ReactNode; className?: string }) {\n  const frameRef = useRef<HTMLDivElement>(null);\n  const contentRef = useRef<HTMLDivElement>(null);\n  useLayoutEffect(() => {\n    const frame = frameRef.current;\n    const content = contentRef.current;\n    if (!frame || !content) return;\n    // Start at the natural size, including when server-rendered content is nonempty.\n    frame.style.transition = 'none';\n    frame.style.height = `${content.offsetHeight}px`;\n    void frame.offsetHeight;\n    frame.style.removeProperty('transition');\n    let alive = true;\n    const observed = new WeakSet<Animation>();\n    const affectsLayout = (animation: Animation) => {\n      if (animation.playState !== 'running') return false;\n      if ('transitionProperty' in animation) return layoutProperties.has(String(animation.transitionProperty));\n      return animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some(frame =>\n        Object.keys(frame).some(property => layoutProperties.has(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)))\n      );\n    };\n    const nestedLayoutIsMoving = () => content.getAnimations({subtree: true}).some(affectsLayout);\n    const restore = () => { if (alive && !nestedLayoutIsMoving()) frame.style.removeProperty('transition'); };\n    const observeMotion = () => {\n      const moving = content.getAnimations({subtree: true}).filter(affectsLayout);\n      for (const animation of moving) if (!observed.has(animation)) {\n        observed.add(animation);\n        animation.finished.then(restore, restore);\n      }\n      return moving.length > 0;\n    };\n    const restoreTransition = (event: TransitionEvent) => {\n      if (layoutProperties.has(event.propertyName)) restore();\n    };\n    content.addEventListener('transitionend', restoreTransition);\n    content.addEventListener('transitioncancel', restoreTransition);\n    const observer = new ResizeObserver(([entry]) => {\n      const height = entry.borderBoxSize?.[0]?.blockSize ?? content.offsetHeight;\n      // A child can already be animating its real height. Follow that geometry\n      // directly, so nested frames do not each add another full transition.\n      const following = observeMotion();\n      if (following) frame.style.transition = 'none';\n      else frame.style.removeProperty('transition');\n      frame.style.height = `${height}px`;\n    });\n    // Helper text and disclosure spacing can change without changing the\n    // content box. Observe the same border box that supplies the target height.\n    observer.observe(content, { box: 'border-box' });\n    return () => {\n      alive = false;\n      observer.disconnect();\n      content.removeEventListener('transitionend', restoreTransition);\n      content.removeEventListener('transitioncancel', restoreTransition);\n    };\n  }, []);\n  return <div ref={frameRef} className={cx('ui-animated-height', className)}><div ref={contentRef} className=\"ui-animated-height__content\">{children}</div></div>;\n}\n",
+      "sha256": "bd3d2a65b9ad3fb8959a9012785ba99c0ec0d99c861b74f86a92dd98f6dc295c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field-context.tsx",
+      "content": "'use client';\n\nimport {createContext, useContext} from 'react';\n\nexport const FieldSetDisabledContext = createContext(false);\n\n/** An individual control cannot re-enable itself inside a disabled fieldset. */\nexport function useFieldDisabled(disabled?: boolean) {\n  return useContext(FieldSetDisabledContext) || disabled;\n}\n",
+      "sha256": "d3fde07fff12a193f847ace6222dd9a1b6e86d51b48d6ae8d1cb06e136df9577",
+      "references": [],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/field/field.tsx",
+      "content": "'use client';\n\nimport {useId, type FieldsetHTMLAttributes, type HTMLAttributes, type ReactNode, type Ref} from 'react';\nimport {AnimatedHeight} from '@/components/base/animated-height/animated-height';\nimport {FieldSetDisabledContext, useFieldDisabled} from './field-context';\nimport {cx} from '@/utils/cx';\n\nexport type FieldOrientation = 'vertical' | 'horizontal' | 'responsive';\nexport type FieldProps = HTMLAttributes<HTMLDivElement> & {\n  orientation?: FieldOrientation;\n  ref?: Ref<HTMLDivElement>;\n};\n\n/** Layout for one shared labeled control. Its label and validation stay mounted. */\nexport function Field({orientation='vertical',children,className,...props}:FieldProps) {\n  return <div {...props} className={cx('ui-field',className)}>\n    <AnimatedHeight><div className=\"ui-field__layout\" data-orientation={orientation}>{children}</div></AnimatedHeight>\n  </div>;\n}\n\nexport type FieldGroupProps = HTMLAttributes<HTMLDivElement> & {\n  columns?: 1 | 2 | 3;\n  density?: 'comfortable' | 'compact';\n  ref?: Ref<HTMLDivElement>;\n};\n\n/** Container queries use this group's width, including inside a narrow dialog. */\nexport function FieldGroup({columns=1,density='comfortable',children,className,...props}:FieldGroupProps) {\n  return <div {...props} className={cx('ui-field-group',className)} data-columns={columns} data-density={density}>\n    <AnimatedHeight><div className=\"ui-field-group__content\">{children}</div></AnimatedHeight>\n  </div>;\n}\n\nexport type FieldSetProps = FieldsetHTMLAttributes<HTMLFieldSetElement> & {\n  legend: ReactNode;\n  description?: string;\n  variant?: 'plain' | 'outline' | 'soft';\n  ref?: Ref<HTMLFieldSetElement>;\n};\n\n/** Native fieldset semantics plus shared disabled state for portaled controls. */\nexport function FieldSet({legend,description,variant='plain',disabled,children,className,'aria-describedby':describedBy,...props}:FieldSetProps) {\n  const id=useId(),isDisabled=useFieldDisabled(disabled);\n  return <FieldSetDisabledContext value={Boolean(isDisabled)}><fieldset {...props} disabled={isDisabled} className={cx('ui-field-set',className)} data-variant={variant} aria-describedby={[describedBy,description?id:undefined].filter(Boolean).join(' ')||undefined}>\n    <legend className=\"ui-field-set__legend\">{legend}</legend>\n    <div className=\"ui-field-set__body\">{description&&<p id={id} className=\"ui-field-set__description\">{description}</p>}{children}</div>\n  </fieldset></FieldSetDisabledContext>;\n}\n",
+      "sha256": "e19c994ff5551e9bb9e9b86e01e4c5cb8cd5eda64c40baf5806d010f4d267916",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/animated-height/animated-height",
+          "target": "components/base/animated-height/animated-height.tsx",
+          "start": 150,
+          "end": 199
+        },
+        {
+          "kind": "module",
+          "value": "./field-context",
+          "target": "components/base/field/field-context.tsx",
+          "start": 259,
+          "end": 274
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 295,
+          "end": 305
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-animated-height",
+      "ui-animated-height__content",
+      "ui-field",
+      "ui-field-group",
+      "ui-field-group__content",
+      "ui-field-set",
+      "ui-field-set__body",
+      "ui-field-set__description",
+      "ui-field-set__legend",
+      "ui-field__layout"
+    ],
+    "prefixes": []
+  }
+}

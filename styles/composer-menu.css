@@ -1,0 +1,94 @@
+.ui-composer__add,
+.ui-composer__voice,
+.ui-composer__send {
+  width: 36px;
+  height: 36px;
+  transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease, opacity var(--motion-fast) ease, transform var(--motion-fast) var(--motion-ease-soft);
+}
+.ui-composer__add > svg { transition: transform .2s cubic-bezier(.4, 0, .2, 1); }
+.ui-composer__add[aria-expanded='true'] > svg { transform: rotate(45deg); }
+.ui-composer__add[aria-expanded='true'] { background: var(--border-control); color: var(--text-strong); }
+.ui-composer { container: composer / inline-size; }
+.ui-composer__entry > textarea { font-size: var(--text-body-regular); line-height: 20px; white-space: pre-wrap; overflow-wrap: anywhere; transition: height .2s cubic-bezier(.2, .8, .2, 1); }
+/* Keep writing space usable when the composer itself is narrow, including in an iframe. */
+@container composer (max-width: 310px) {
+  .ui-composer__entry { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 6px; }
+  .ui-composer__entry > textarea { grid-column: 1 / -1; width: 100%; min-height: 36px; padding: 8px; }
+  .ui-composer__add { grid-column: 1; grid-row: 2; }
+  .ui-composer__footer { grid-column: 2; grid-row: 2; justify-content: flex-end; }
+}
+.ui-composer__entry .ui-select__trigger { font-size: var(--text-body-medium); line-height: 20px; font-weight: var(--text-body-medium--font-weight); }
+.ui-composer__status { gap: 12px; color: var(--text-muted); font-size: var(--text-body-2-medium); line-height: 18px; font-weight: var(--text-body-2-medium--font-weight); }
+.ui-composer-add-menu {
+  z-index: 150;
+  display: grid;
+  gap: 7px;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding: 12px 16px;
+  border: 1px solid var(--border-control);
+  border-radius: 16px;
+  background: var(--surface-base);
+  box-shadow: var(--shadow-menu);
+}
+.ui-composer-add-menu__groups { display: grid; gap: 7px; }
+.ui-composer-add-menu__group { display: grid; gap: 1px; }
+.ui-composer-add-menu__heading {
+  padding: 2px 0 6px;
+  color: var(--text-muted);
+  font-size: var(--text-body-medium);
+  line-height: 19px;
+  font-weight: 400;
+}
+.ui-composer-add-menu__group button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-strong);
+  text-align: left;
+  transition: background var(--motion-fast) ease, transform var(--motion-fast) var(--motion-ease-soft);
+}
+.ui-composer-add-menu__group button:hover,
+.ui-composer-add-menu__group button:focus-visible {
+  background: var(--surface-muted);
+  transform: translateX(2px);
+}
+.ui-composer-add-menu__group button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.ui-composer-add-menu__group button:disabled { opacity: .45; cursor: not-allowed; }
+.ui-composer-add-menu__icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  color: var(--text-muted);
+}
+.ui-composer-add-menu__text { display: flex; align-items: baseline; gap: 5px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.ui-composer-add-menu__text strong { flex: none; color: var(--text-strong); font-size: var(--text-body-medium); line-height: 20px; font-weight: var(--text-body-medium--font-weight); }
+.ui-composer-add-menu__text small { min-width: 0; overflow: hidden; color: var(--text-muted); font-size: var(--text-body-medium); line-height: 20px; text-overflow: ellipsis; }
+.ui-composer-add-menu__group button[data-id='documents'] .ui-composer-add-menu__icon { background: #eceef0; color: #79808a; }
+.ui-composer-add-menu__group button[data-id='spreadsheets'] .ui-composer-add-menu__icon { background: #e7f0ff; color: #2678f5; }
+.ui-composer-add-menu__group button[data-id='presentations'] .ui-composer-add-menu__icon { background: #f0e7ff; color: #8a55e3; }
+.ui-composer-add-menu__group button[data-id='code'] .ui-composer-add-menu__icon { background: #d8f8f1; color: #14a88a; }
+.ui-composer-add-menu__group button[data-id='documents'] .ui-composer-add-menu__icon,
+.ui-composer-add-menu__group button[data-id='spreadsheets'] .ui-composer-add-menu__icon,
+.ui-composer-add-menu__group button[data-id='presentations'] .ui-composer-add-menu__icon,
+.ui-composer-add-menu__group button[data-id='code'] .ui-composer-add-menu__icon { width: 18px; height: 18px; margin: 0 2px; border-radius: 4px; }
+@media (max-width: 480px) {
+  .ui-composer__entry .ui-select__trigger { font-size: 12px; }
+  .ui-composer__status { gap: 5px; font-size: 11px; }
+  .ui-composer-add-menu { padding: 10px 12px; }
+  .ui-composer-add-menu__text strong,
+  .ui-composer-add-menu__text small { font-size: var(--text-body-2-medium); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-composer-add-menu { animation: none; }
+  .ui-composer-add-menu__group button { transition: none; }
+}

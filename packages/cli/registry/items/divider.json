@@ -1,0 +1,64 @@
+{
+  "name": "divider",
+  "title": "Divider",
+  "group": "Base",
+  "type": "component",
+  "description": "A composable separator for dense interfaces. A hairline, framed double line, or soft filled strip can hold text and compact controls.",
+  "sections": [
+    "Preview",
+    "Variants",
+    "Alignment",
+    "Composed content",
+    "Without content"
+  ],
+  "example": "<Divider>Notifications</Divider>\n<Divider variant=\"double\">Today</Divider>\n<Divider variant=\"fill\">Latest activity</Divider>",
+  "entryFiles": [
+    "components/base/divider/divider.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/base/divider/divider.tsx",
+      "names": [
+        "Divider",
+        "DividerAlign",
+        "DividerProps",
+        "DividerVariant"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/divider/divider.tsx",
+      "content": "import type { HTMLAttributes, ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type DividerVariant = 'single' | 'double' | 'fill';\nexport type DividerAlign = 'start' | 'center' | 'end';\nexport type DividerProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {\n  children?: ReactNode;\n  variant?: DividerVariant;\n  align?: DividerAlign;\n};\n\nexport function Divider({ children, variant = 'single', align = 'center', className, ...props }: DividerProps) {\n  const hasContent = children !== undefined && children !== null && children !== false;\n  return <div {...props} role={hasContent ? undefined : 'separator'} aria-orientation={hasContent ? undefined : 'horizontal'} data-variant={variant} data-align={align} data-content={hasContent || undefined} className={cx('ui-divider', className)}>{hasContent && <span className=\"ui-divider__content\">{children}</span>}</div>;\n}\n",
+      "sha256": "c0806ca2e30251056d4a9c36426a6a828338be43be844d460b6c7069c642ff53",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 76,
+          "end": 86
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-divider",
+      "ui-divider__content"
+    ],
+    "prefixes": []
+  }
+}

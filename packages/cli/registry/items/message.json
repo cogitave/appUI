@@ -1,0 +1,130 @@
+{
+  "name": "message",
+  "title": "Message",
+  "group": "Blocks",
+  "type": "block",
+  "description": "A user, assistant or system message with consistent type, optional identity, time, sources and actions. Streaming responses keep their actions out of the way.",
+  "sections": [
+    "Preview",
+    "Bubble surfaces",
+    "Sources and tools",
+    "Streaming response"
+  ],
+  "example": "<Message role=\"assistant\" name=\"Studio assistant\"\n  actions={<MessageActions content={answer} />}\n  footer={<Sources sources={sources} />}\n>\n  <p>{answer}</p>\n</Message>",
+  "entryFiles": [
+    "components/blocks/message/message.tsx"
+  ],
+  "exports": [
+    {
+      "path": "components/blocks/message/message.tsx",
+      "names": [
+        "Message",
+        "MessageProps"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "components/base/avatar/avatar.tsx",
+      "content": "'use client';\n\nimport type { HTMLAttributes } from 'react';\nimport { useEffect, useRef, useState } from 'react';\nimport { cx } from '@/utils/cx';\n\nexport type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';\nexport type AvatarColor = 'neutral' | 'blue' | 'lime' | 'pink';\n\nexport type AvatarProps = Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & {\n  size?: AvatarSize;\n  color?: AvatarColor;\n  initials?: string;\n  src?: string;\n  alt?: string;\n};\n\nexport function Avatar({ size = 'md', color = 'neutral', initials, src, alt, className, ...props }: AvatarProps) {\n  const [failedSource, setFailedSource] = useState<string | null>(null);\n  const imageRef = useRef<HTMLImageElement>(null);\n  const showImage = Boolean(src && src !== failedSource);\n\n  useEffect(() => {\n    const image = imageRef.current;\n    if (!image || !src) return;\n    const fail = () => setFailedSource(src);\n    if (image.complete && image.naturalWidth === 0) fail();\n    image.addEventListener('error', fail);\n    return () => image.removeEventListener('error', fail);\n  }, [src, showImage]);\n\n  return (\n    <span role=\"img\" aria-label={alt || initials || 'Avatar'} data-size={size} data-color={color} className={cx('ui-avatar', className)} {...props}>\n      <span className=\"ui-avatar__initials\" aria-hidden=\"true\">{initials}</span>\n      {showImage && <img ref={imageRef} src={src} alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\" onError={() => setFailedSource(src!)} />}\n    </span>\n  );\n}\n",
+      "sha256": "c6e2f1f5909af8da88f8ba420c072d1b421c3ae4a00527fe823ff3e760ccc13c",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 133,
+          "end": 143
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/base/metal-surface/metal-surface.tsx",
+      "content": "import type { CSSProperties, ReactNode } from 'react';\nimport { cx } from '@/utils/cx';\n\n/** A shared CSS/SVG metallic treatment. Decorative motion respects reduced motion. */\nexport function MetalSurface({ children, size = 56, className }: { children: ReactNode; size?: number; className?: string }) {\n  return <span className={cx('ui-metal-surface', className)} style={{'--metal-size':`${size}px`} as CSSProperties} aria-hidden><span className=\"ui-metal-surface__sweep\"/><span className=\"ui-metal-surface__content\">{children}</span></span>;\n}\n",
+      "sha256": "1d3bc50c0db4c3e313524a3fd91e4af3bd6aefa53d728af93d189627664a0745",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 75,
+          "end": 85
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/blocks/message/message.tsx",
+      "content": "import type { ReactNode } from 'react';\nimport { Avatar } from '@/components/base/avatar/avatar';\nimport { BrandMark } from '@/components/foundations/brand-mark';\nimport { cx } from '@/utils/cx';\n\nexport type MessageProps = {\n  role: 'user'|'assistant'|'system';\n  children: ReactNode;\n  name?: string;\n  avatar?: ReactNode;\n  timestamp?: string;\n  dateTime?: string;\n  actions?: ReactNode;\n  footer?: ReactNode;\n  isStreaming?: boolean;\n  variant?: 'workspace'|'plain'|'bubble';\n  showHeader?: boolean;\n  className?: string;\n};\n\nexport function Message({role,children,name=role==='user'?'You':role==='assistant'?'Assistant':'System',avatar,timestamp,dateTime,actions,footer,isStreaming=false,variant='workspace',showHeader=false,className}: MessageProps) {\n  return <article className={cx('ui-message',className)} data-role={role} data-variant={variant} aria-label={`${name} message`} aria-busy={isStreaming || undefined}>\n    {variant==='workspace' && role==='assistant' && <span className=\"ui-message__avatar\">{avatar ?? <BrandMark size={24}/>}</span>}\n    <div className=\"ui-message__body\">{showHeader && <header className=\"ui-message__header\">{variant!=='workspace' && (avatar ?? (role==='user'?<Avatar size=\"xs\" initials=\"Y\" alt=\"You\"/>:null))}<span>{name}</span>{timestamp && <time dateTime={dateTime}>{timestamp}</time>}</header>}\n    <div className=\"ui-message__content\">{children}</div>{footer && <div className=\"ui-message__footer\">{footer}</div>}{actions && !isStreaming && <div className=\"ui-message__actions\">{actions}</div>}</div>\n  </article>;\n}\n",
+      "sha256": "be0b1fe2a5105676a2ac97fc411e1557c2df46fd817862c02e2286e985ecae7f",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/avatar/avatar",
+          "target": "components/base/avatar/avatar.tsx",
+          "start": 64,
+          "end": 95
+        },
+        {
+          "kind": "module",
+          "value": "@/components/foundations/brand-mark",
+          "target": "components/foundations/brand-mark.tsx",
+          "start": 125,
+          "end": 160
+        },
+        {
+          "kind": "module",
+          "value": "@/utils/cx",
+          "target": "utils/cx.ts",
+          "start": 183,
+          "end": 193
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "components/foundations/brand-mark.tsx",
+      "content": "import { MetalSurface } from '@/components/base/metal-surface/metal-surface';\n\nexport function BrandMark({ size = 34, appearance = 'accent' }: { size?: number; appearance?: 'accent' | 'metal' }) {\n  if (appearance === 'metal') return <MetalSurface size={size}><svg width={size*.7} height={size*.7} viewBox=\"0 0 36 36\" fill=\"none\" aria-hidden><path d=\"M10.5 25.5L17.3 10.5H19L25.5 25.5M13.2 20H22.7\" stroke=\"currentColor\" strokeWidth=\"2.4\" strokeLinecap=\"round\" strokeLinejoin=\"round\"/><circle cx=\"27\" cy=\"9\" r=\"2\" fill=\"currentColor\"/></svg></MetalSurface>;\n  return (\n    <svg width={size} height={size} viewBox=\"0 0 36 36\" fill=\"none\" aria-hidden=\"true\">\n      <rect x=\"1\" y=\"1\" width=\"34\" height=\"34\" rx=\"10\" fill=\"var(--accent-strong)\" />\n      <rect x=\"1.5\" y=\"1.5\" width=\"33\" height=\"33\" rx=\"9.5\" stroke=\"white\" strokeOpacity=\".25\" />\n      <path d=\"M10.5 25.5L17.3 10.5H19L25.5 25.5\" stroke=\"white\" strokeWidth=\"2.4\" strokeLinecap=\"round\" strokeLinejoin=\"round\" />\n      <path d=\"M13.2 20H22.7\" stroke=\"white\" strokeWidth=\"2.4\" strokeLinecap=\"round\" />\n      <circle cx=\"27\" cy=\"9\" r=\"2\" fill=\"white\" fillOpacity=\".55\" />\n    </svg>\n  );\n}\n",
+      "sha256": "e867a87f1e33498002f4af5291361c6a3b1202ae8d066382c59f3f13f6efb301",
+      "references": [
+        {
+          "kind": "module",
+          "value": "@/components/base/metal-surface/metal-surface",
+          "target": "components/base/metal-surface/metal-surface.tsx",
+          "start": 30,
+          "end": 75
+        }
+      ],
+      "encoding": "utf8"
+    },
+    {
+      "path": "utils/cx.ts",
+      "content": "import { extendTailwindMerge } from 'tailwind-merge';\n\nconst typeFamilies = [\n  'large-title', 'display-1', 'display-2', 'display-3', 'display-4',\n  'title-1', 'title-2', 'title-3', 'headline', 'body', 'body-2',\n  'caption-1', 'caption-2',\n] as const;\nconst weights = ['regular', 'medium', 'semibold', 'bold'] as const;\n\n// Custom text styles share Tailwind's text-* namespace with colors.\n// Registering them keeps both classes when they appear together.\nexport const cx = extendTailwindMerge({\n  extend: {\n    classGroups: {\n      'font-size': [{ text: typeFamilies.flatMap((family) => weights.map((weight) => `${family}-${weight}`)) }],\n    },\n  },\n});\n",
+      "sha256": "c69136683e64c8aa39e066b122b50dce9b3ce9481de011c68ffa6f778acde854",
+      "references": [],
+      "encoding": "utf8"
+    }
+  ],
+  "dependencies": {
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0"
+  },
+  "styleRequirements": {
+    "classes": [
+      "ui-avatar",
+      "ui-avatar__initials",
+      "ui-message",
+      "ui-message__actions",
+      "ui-message__avatar",
+      "ui-message__body",
+      "ui-message__content",
+      "ui-message__footer",
+      "ui-message__header",
+      "ui-metal-surface",
+      "ui-metal-surface__content",
+      "ui-metal-surface__sweep"
+    ],
+    "prefixes": []
+  }
+}
